@@ -1,0 +1,117 @@
+import React from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/RootNavigator";
+import { useTheme } from "../theme/ThemeContext";
+import { typography } from "../theme/colors";
+import MyProfile from "./MyProfile";
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+type SettingsRoute =
+  | "MyProfile"
+  | "InterviewExperience"
+  | "AppCustomisation"
+  | "JobPreferences"
+  | "PrivacySecurity"
+  | "Support"
+  | "AboutUs";
+
+const SECTIONS: { label: string; route: SettingsRoute }[] = [
+  { label: "Account", route: "MyProfile" },
+  { label: "Interview experience", route: "InterviewExperience" },
+  { label: "App customisation", route: "AppCustomisation" },
+  { label: "Job preferences", route: "JobPreferences" },
+  { label: "Privacy and security", route: "PrivacySecurity" },
+  { label: "Support", route: "Support" },
+  { label: "About us", route: "AboutUs" },
+];
+
+const Settings = () => {
+  const navigation = useNavigation<Nav>();
+  const { colors, theme } = useTheme();
+  const isDark = theme === "dark";
+  const styles = makeStyles(colors, isDark);
+
+  return (
+    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+      <Text style={styles.logoText}>MY INTERVIEW</Text>
+
+      <Text style={styles.title}>Settings</Text>
+      <Text style={styles.subtitle}>Manage your preferences</Text>
+
+      <View style={styles.card}>
+        {SECTIONS.map(({ label, route }) => (
+          <TouchableOpacity
+            key={label}
+            style={styles.row}
+            onPress={() => navigation.navigate(route)}
+          >
+            <View>
+              <Text style={styles.rowText}>{label}</Text>
+
+              {label === "Interview experience" && (
+                <Text style={styles.rowHelper}>
+                  AI voice, avatar, difficulty, and more.
+                </Text>
+              )}
+            </View>
+
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Version 1.0.0</Text>
+        <Text style={styles.footerText}>
+          Terms & Conditions · Privacy Policy
+        </Text>
+      </View>
+    </ScrollView>
+  );
+};
+
+const makeStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: isDark ? '#1a1a1a' : colors.background },
+    content: { paddingHorizontal: 20, paddingTop: 80, paddingBottom: 24 },
+    logoText: {
+      ...typography.headingSmall,
+      fontWeight: "800",
+      color: colors.primaryBlue,
+      alignSelf: "center",
+      marginBottom: 16,
+    },
+    title: { ...typography.headingSmall, color: isDark ? '#fff' : colors.textDark },
+    subtitle: { ...typography.bodyMedium, color: isDark ? '#aaa' : colors.textMuted, marginBottom: 16 },
+    card: {
+      backgroundColor: isDark ? '#222' : colors.card,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: "hidden",
+    },
+    row: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    rowText: { ...typography.label, color: isDark ? '#fff' : colors.textDark },
+    rowHelper: { ...typography.caption, color: isDark ? '#aaa' : colors.textMuted },
+    chevron: { fontSize: 20, color: isDark ? '#666' : colors.textMuted },
+    footer: { marginTop: 20, alignItems: "center" },
+    footerText: { ...typography.caption, color: isDark ? '#aaa' : colors.textMuted },
+  });
+
+export default Settings;

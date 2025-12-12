@@ -72,16 +72,16 @@ const makeStyles = (colors: any, isDark: boolean) =>
       backgroundColor: isDark ? "#0f0f0f" : "#F3F4F6",
     },
     content: {
-      paddingTop: 80,
+      paddingTop: 70,
       paddingHorizontal: 20,
       paddingBottom: 40,
     },
     logoText: {
-      ...typography.headingMedium,
+      ...typography.heading,
       fontWeight: "800",
       color: colors.primaryBlue,
       alignSelf: "center",
-      marginBottom: 20,
+      marginBottom: 28,
     },
     title: {
       ...typography.headingMedium,

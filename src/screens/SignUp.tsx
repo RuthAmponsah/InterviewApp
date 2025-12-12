@@ -154,14 +154,12 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         total_interviews: 0,
       });
 
-      // 5. Store basic info in AsyncStorage for offline access
+      // 5. Clear all previous user data and store new user info in AsyncStorage
+      await AsyncStorage.clear();
       await AsyncStorage.setItem("userName", name);
       await AsyncStorage.setItem("userEmail", email.toLowerCase());
       await AsyncStorage.setItem("userId", authData.user.id);
       await AsyncStorage.setItem("isLoggedIn", "true");
-
-      // Reset jobRole so Welcome screen starts at Page 1
-      await AsyncStorage.removeItem("jobRole");
 
       // 6. Send welcome email
       const emailSent = await sendWelcomeEmail(email, name);
@@ -315,7 +313,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
   container: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 100,
+    paddingTop: 70,
   },
   logoText: {
     ...typography.heading,

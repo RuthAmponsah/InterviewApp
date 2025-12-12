@@ -32,6 +32,9 @@ import InterviewHistory from "../screens/InterviewHistory";
 import QuestionBank from "../screens/QuestionBank";
 import ProgressDashboard from "../screens/ProgressDashboard";
 import InterviewTips from "../screens/InterviewTips";
+import SuccessStories from "../screens/SuccessStories";
+import AddStory from "../screens/AddStory";
+import AllFeedback from "../screens/AllFeedback";
 
 // -----------------------------
 // STACK NAV TYPES
@@ -61,6 +64,9 @@ export type RootStackParamList = {
   QuestionBank: undefined;
   ProgressDashboard: undefined;
   InterviewTips: undefined;
+  SuccessStories: undefined;
+  AddStory: undefined;
+  AllFeedback: undefined;
   Settings: undefined;
 };
 
@@ -187,6 +193,9 @@ const RootNavigator = () => {
       <Stack.Screen name="QuestionBank" component={QuestionBank} />
       <Stack.Screen name="ProgressDashboard" component={ProgressDashboard} />
       <Stack.Screen name="InterviewTips" component={InterviewTips} />
+      <Stack.Screen name="SuccessStories" component={SuccessStories} />
+      <Stack.Screen name="AddStory" component={AddStory} />
+      <Stack.Screen name="AllFeedback" component={AllFeedback} />
     </Stack.Navigator>
   );
 };

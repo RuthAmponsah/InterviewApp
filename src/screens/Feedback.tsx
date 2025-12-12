@@ -7,6 +7,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../config/supabase';
 
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
 type FeedbackRouteProp = RouteProp<RootStackParamList, 'Feedback'>;
@@ -32,6 +33,7 @@ const Feedback: React.FC = () => {
   const generateFeedback = async () => {
     try {
       const jobRole = await AsyncStorage.getItem('jobRole');
+      const userId = await AsyncStorage.getItem('userId');
       const duration = route.params?.duration || 5;
       const messageCount = route.params?.messageCount || 3;
       
@@ -74,11 +76,33 @@ const Feedback: React.FC = () => {
         improvements.push('Prepare questions to ask the interviewer about the role.');
       }
 
-      setFeedback({
+      const feedbackData = {
         strengths: strengths.slice(0, 3),
         improvements: improvements.slice(0, 3),
         score: Math.min(score, 100),
-      });
+      };
+
+      setFeedback(feedbackData);
+
+      // Save feedback to the most recent interview in database
+      if (userId) {
+        const feedbackText = `Score: ${feedbackData.score}/100. Strengths: ${feedbackData.strengths.join(' ')} Areas to improve: ${feedbackData.improvements.join(' ')}`;
+        
+        const { data: latestInterview } = await supabase
+          .from('interview_history')
+          .select('id')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (latestInterview) {
+          await supabase
+            .from('interview_history')
+            .update({ feedback: feedbackText })
+            .eq('id', latestInterview.id);
+        }
+      }
     } catch (error) {
       console.error('Error generating feedback:', error);
       // Fallback feedback
@@ -153,15 +177,15 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 24,
-      paddingTop: 80,
+      paddingTop: 70,
       paddingBottom: 24,
     },
     logoText: {
-      ...typography.headingMedium,
-      fontWeight: '800',
+      ...typography.heading,
+      fontWeight: "800",
       color: colors.primaryBlue,
-      alignSelf: 'center',
-      marginBottom: 20,
+      alignSelf: "center",
+      marginBottom: 28,
     },
     title: {
       ...typography.headingSmall,

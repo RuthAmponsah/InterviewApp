@@ -108,13 +108,13 @@ const Settings = () => {
 const makeStyles = (colors: any, isDark: boolean) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: isDark ? '#0f0f0f' : '#F3F4F6' },
-    content: { paddingHorizontal: 20, paddingTop: 80, paddingBottom: 24 },
+    content: { paddingHorizontal: 20, paddingTop: 70, paddingBottom: 24 },
     logoText: {
-      ...typography.headingSmall,
+      ...typography.heading,
       fontWeight: "800",
       color: colors.primaryBlue,
       alignSelf: "center",
-      marginBottom: 16,
+      marginBottom: 28,
     },
     title: { ...typography.headingSmall, color: isDark ? '#fff' : colors.textDark },
     subtitle: { ...typography.bodyMedium, color: isDark ? '#aaa' : colors.textMuted, marginBottom: 16 },

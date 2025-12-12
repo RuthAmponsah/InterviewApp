@@ -12,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+import { supabase } from '../config/supabase';
 
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -37,6 +38,8 @@ const Home: React.FC = () => {
   const [name, setName] = useState("User");
   const [tipOfTheDay, setTipOfTheDay] = useState('');
   const [streak, setStreak] = useState(0);
+  const [latestFeedback, setLatestFeedback] = useState<string | null>(null);
+  const [hasInterviews, setHasInterviews] = useState(false);
 
   // ---------------------------
   // 1️⃣ GREETING BASED ON TIME
@@ -103,6 +106,41 @@ const Home: React.FC = () => {
     loadStreak();
   }, []);
 
+  // ---------------------------
+  // 5️⃣ LOAD LATEST FEEDBACK
+  // ---------------------------
+  useEffect(() => {
+    const loadLatestFeedback = async () => {
+      try {
+        const userId = await AsyncStorage.getItem('userId');
+        if (!userId) return;
+
+        const { data, error } = await supabase
+          .from('interview_history')
+          .select('feedback, created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          console.error('Error loading feedback:', error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          setHasInterviews(true);
+          setLatestFeedback(data[0].feedback || 'Complete your interview to see feedback here!');
+        } else {
+          setHasInterviews(false);
+        }
+      } catch (err) {
+        console.error('Error loading feedback:', err);
+      }
+    };
+
+    loadLatestFeedback();
+  }, []);
+
   return (
     <ScrollView
       style={styles.root}
@@ -158,14 +196,24 @@ const Home: React.FC = () => {
       </View>
 
       {/* Latest feedback section */}
-      <View style={styles.card}>
+      <TouchableOpacity 
+        style={styles.card}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate('AllFeedback')}
+      >
         <Text style={styles.cardTitle}>Latest feedback</Text>
         <Text style={styles.cardBody}>
-          “Great examples – next time, add more detail about your impact on the team.”
+          {hasInterviews 
+            ? latestFeedback
+            : "You haven't completed any interviews yet. Come back soon after you do an interview!"}
         </Text>
-      </View>
+      </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card} activeOpacity={0.85}>
+      <TouchableOpacity 
+        style={styles.card} 
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate('SuccessStories')}
+      >
         <Text style={styles.cardTitle}>Success stories</Text>
         <Text style={styles.cardBody}>
           Read how other learners went from nervous to hired after practicing with Aya.
@@ -183,15 +231,15 @@ const makeStyles = (colors: any, isDark: boolean) =>
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 100, // ⬅️ moved everything down
+    paddingTop: 70,
     paddingBottom: 28,
   },
   logoText: {
-    ...typography.headingMedium,
+    ...typography.heading,
     fontWeight: '800',
     color: colors.primaryBlue,
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: 28,
   },
   greeting: {
     ...typography.headingMedium,

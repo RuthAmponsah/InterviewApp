@@ -237,7 +237,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
       backgroundColor: isDark ? '#0f0f0f' : colors.background,
     },
     header: {
-      paddingTop: 80,
+      paddingTop: 70,
       paddingHorizontal: 20,
       paddingBottom: 12,
       borderBottomWidth: 1,

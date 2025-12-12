@@ -79,14 +79,14 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 80,
+    paddingTop: 70,
     paddingBottom: 32,
   },
   logoText: {
-    ...typography.headingMedium,
+    ...typography.heading,
     fontWeight: "800",
     alignSelf: "center",
-    marginBottom: 24,
+    marginBottom: 28,
   },
   title: {
     ...typography.headingMedium,

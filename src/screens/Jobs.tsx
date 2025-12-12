@@ -492,11 +492,11 @@ const makeStyles = (colors: any, isDark: boolean) =>
     paddingTop: 60,
   },
   logoText: {
-    ...typography.headingSmall,
+    ...typography.heading,
     fontWeight: '800',
     color: colors.primaryBlue,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 28,
   },
   headerRow: {
     paddingHorizontal: 20,

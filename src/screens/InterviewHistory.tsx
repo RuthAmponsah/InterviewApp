@@ -280,7 +280,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 24,
-      paddingTop: 80,
+      paddingTop: 70,
       paddingBottom: 32,
     },
     headerRow: {
@@ -294,6 +294,8 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.heading,
       fontWeight: "800",
       color: colors.primaryBlue,
+      alignSelf: "center",
+      marginBottom: 28,
     },
     shareButton: {
       position: 'absolute',

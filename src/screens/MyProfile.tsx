@@ -90,6 +90,9 @@ export default function MyProfile() {
   return (
     <View style={styles.container}>
         <BackButton />
+      
+      <Text style={styles.logoText}>MY INTERVIEW</Text>
+
       {/* Header Section */}
       <View style={styles.header}>
         <View style={styles.avatar}>
@@ -178,8 +181,15 @@ const makeStyles = (colors: any, isDark: boolean) =>
     container: {
       flex: 1,
       paddingHorizontal: 22,
-      paddingTop: 80,
+      paddingTop: 70,
       backgroundColor: isDark ? "#0f0f0f" : "#F2F4F7",
+    },
+    logoText: {
+      ...typography.heading,
+      fontWeight: "800",
+      color: colors.primaryBlue,
+      alignSelf: "center",
+      marginBottom: 28,
     },
 
     /* Header */

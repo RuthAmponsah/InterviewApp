@@ -275,7 +275,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 24,
-      paddingTop: 80,
+      paddingTop: 70,
       paddingBottom: 32,
     },
     logoText: {

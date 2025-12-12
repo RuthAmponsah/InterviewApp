@@ -111,7 +111,8 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
         return;
       }
 
-      // Store user info in AsyncStorage for offline access
+      // Clear all previous user data and store new user info in AsyncStorage
+      await AsyncStorage.clear();
       await AsyncStorage.setItem('isLoggedIn', 'true');
       await AsyncStorage.setItem('userId', authData.user.id);
       await AsyncStorage.setItem('userEmail', userData.email);
@@ -119,6 +120,10 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       
       if (userData.job_role) {
         await AsyncStorage.setItem('jobRole', userData.job_role);
+      }
+      
+      if (userData.profile_photo) {
+        await AsyncStorage.setItem('userProfilePhoto', userData.profile_photo);
       }
 
       setLoading(false);
@@ -238,7 +243,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
   container: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 100,
+    paddingTop: 70,
   },
   logoText: {
     ...typography.heading,

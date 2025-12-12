@@ -17,6 +17,7 @@ import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from "../config/supabase";
+import { initializeInterviewChat, sendMessageToAI } from "../services/aiService";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'InterviewChat'>;
 
@@ -34,6 +35,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [isAiTyping, setIsAiTyping] = useState(false);
   const flatListRef = React.useRef<FlatList>(null);
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -58,6 +60,10 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       
       if (storedRole) {
         setJobRole(storedRole);
+        
+        // Initialize AI with user context
+        initializeInterviewChat(storedRole, userName || undefined);
+        
         const greeting: Message = {
           id: '1',
           from: 'ai',
@@ -66,6 +72,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         setMessages([greeting]);
       } else {
         // Fallback if no role is set
+        initializeInterviewChat('your desired position');
         const greeting: Message = {
           id: '1',
           from: 'ai',
@@ -84,8 +91,8 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
+  const sendMessage = async () => {
+    if (!input.trim() || isAiTyping) return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -94,6 +101,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
     };
 
     setMessages((prev) => [...prev, userMsg]);
+    const userInput = input.trim();
     setInput('');
 
     // Auto-scroll to bottom after sending
@@ -101,18 +109,32 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
-    // Simulate AI response after a delay
-    setTimeout(() => {
+    // Get AI response
+    setIsAiTyping(true);
+    try {
+      const aiResponse = await sendMessageToAI(userInput);
+      
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
         from: 'ai',
-        text: 'That\'s a great answer! Can you tell me more about a specific example?',
+        text: aiResponse,
       };
+      
       setMessages((prev) => [...prev, aiMsg]);
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
-    }, 1500);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        from: 'ai',
+        text: "I'm having trouble responding right now. Could you try again?",
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setIsAiTyping(false);
+    }
   };
 
   const endInterview = async () => {
@@ -215,6 +237,16 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         )}
       />
 
+      {/* Typing indicator */}
+      {isAiTyping && (
+        <View style={styles.typingContainer}>
+          <Text style={styles.senderLabel}>Aya</Text>
+          <View style={styles.typingBubble}>
+            <Text style={styles.typingText}>...</Text>
+          </View>
+        </View>
+      )}
+
       {mode === 'text' && (
         <View style={styles.inputRow}>
           <TextInput
@@ -229,11 +261,11 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
             blurOnSubmit={false}
           />
           <TouchableOpacity 
-            style={[styles.sendBtn, !input.trim() && styles.sendBtnDisabled]} 
+            style={[styles.sendBtn, (!input.trim() || isAiTyping) && styles.sendBtnDisabled]} 
             onPress={sendMessage}
-            disabled={!input.trim()}
+            disabled={!input.trim() || isAiTyping}
           >
-            <Text style={styles.sendText}>Send</Text>
+            <Text style={styles.sendText}>{isAiTyping ? 'Wait...' : 'Send'}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -378,6 +410,24 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodyMedium,
       color: '#FFFFFF',
       fontWeight: '700',
+    },
+    typingContainer: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+    },
+    typingBubble: {
+      backgroundColor: isDark ? '#2a2a2a' : '#F3F4F6',
+      borderRadius: 20,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      alignSelf: 'flex-start',
+      maxWidth: '80%',
+    },
+    typingText: {
+      ...typography.body,
+      color: isDark ? '#888' : colors.textMuted,
+      fontSize: 24,
+      lineHeight: 24,
     },
     voiceFooter: {
       padding: 12,

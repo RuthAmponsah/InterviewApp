@@ -126,20 +126,53 @@ const AllFeedback: React.FC = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          feedbackList.map((item) => (
-            <View key={item.id} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardRole}>{item.job_role}</Text>
-                <Text style={styles.cardDate}>{formatDate(item.date)}</Text>
+          feedbackList.map((item) => {
+            // Parse the feedback text to extract score, strengths, and improvements
+            const scoreMatch = item.feedback.match(/Score:\s*(\d+)\/100/);
+            const strengthsMatch = item.feedback.match(/Strengths:\s*(.+?)\s*Areas to improve:/s);
+            const improvementsMatch = item.feedback.match(/Areas to improve:\s*(.+)$/s);
+            
+            const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
+            const strengths = strengthsMatch ? strengthsMatch[1].trim() : '';
+            const improvements = improvementsMatch ? improvementsMatch[1].trim() : '';
+            
+            return (
+              <View key={item.id} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <View style={styles.headerLeft}>
+                    <Text style={styles.cardRole}>{item.job_role}</Text>
+                    <View style={styles.cardDuration}>
+                      <Text style={styles.durationText}>
+                        ⏱️ {item.duration_minutes} {item.duration_minutes === 1 ? 'minute' : 'minutes'}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.headerRight}>
+                    <Text style={styles.cardDate}>{formatDate(item.date)}</Text>
+                    {score !== null && (
+                      <View style={styles.scoreBox}>
+                        <Text style={styles.scoreText}>{score}/100</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+                
+                {strengths && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>✅ What you did well</Text>
+                    <Text style={styles.sectionText}>{strengths}</Text>
+                  </View>
+                )}
+                
+                {improvements && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>💡 How to improve</Text>
+                    <Text style={styles.sectionText}>{improvements}</Text>
+                  </View>
+                )}
               </View>
-              <View style={styles.cardDuration}>
-                <Text style={styles.durationText}>
-                  ⏱️ {item.duration_minutes} {item.duration_minutes === 1 ? 'minute' : 'minutes'}
-                </Text>
-              </View>
-              <Text style={styles.cardFeedback}>{item.feedback}</Text>
-            </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
     </View>
@@ -238,34 +271,72 @@ const makeStyles = (colors: any, isDark: boolean) =>
       shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 3,
+      borderWidth: 1,
+      borderColor: isDark ? '#444' : colors.border,
     },
     cardHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 8,
+      alignItems: 'flex-start',
+      marginBottom: 16,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? '#444' : colors.border,
+    },
+    headerLeft: {
+      flex: 1,
+    },
+    headerRight: {
+      alignItems: 'flex-end',
     },
     cardRole: {
       ...typography.bodyMedium,
       fontWeight: '700',
       color: colors.primaryBlue,
-      flex: 1,
+      marginBottom: 6,
+      fontSize: 16,
     },
     cardDate: {
-      ...typography.bodySmall,
-      color: colors.textMuted,
+      ...typography.caption,
+      color: isDark ? '#888' : colors.textMuted,
+      marginBottom: 8,
     },
     cardDuration: {
-      marginBottom: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     durationText: {
-      ...typography.bodySmall,
-      color: colors.textMuted,
+      ...typography.caption,
+      color: isDark ? '#888' : colors.textMuted,
+      fontSize: 12,
     },
-    cardFeedback: {
-      ...typography.bodyMedium,
-      color: isDark ? '#e0e0e0' : colors.textDark,
-      lineHeight: 22,
+    scoreBox: {
+      backgroundColor: colors.primaryBlue,
+      borderRadius: 8,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      marginTop: 4,
+    },
+    scoreText: {
+      ...typography.bodySmall,
+      fontWeight: '700',
+      color: '#fff',
+      fontSize: 14,
+    },
+    section: {
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      ...typography.bodySmall,
+      fontWeight: '700',
+      color: isDark ? '#fff' : colors.textDark,
+      marginBottom: 8,
+      fontSize: 14,
+    },
+    sectionText: {
+      ...typography.bodySmall,
+      color: isDark ? '#b5b5b5' : colors.textMuted,
+      lineHeight: 20,
     },
   });
 

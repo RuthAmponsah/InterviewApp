@@ -155,14 +155,32 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         const durationMs = Date.now() - startTime;
         const durationMinutes = Math.round(durationMs / 60000);
 
+        console.log('Saving interview to database...');
+        console.log('User ID:', userId);
+        console.log('Job Role:', jobRole);
+        console.log('Duration:', durationMinutes);
+
         // Save to interview_history
-        await supabase.from('interview_history').insert({
-          user_id: userId,
-          job_role: jobRole,
-          mode: mode,
-          duration_minutes: durationMinutes,
-          date: new Date().toISOString(),
-        });
+        const { data: insertedInterview, error: insertError } = await supabase
+          .from('interview_history')
+          .insert({
+            user_id: userId,
+            job_role: jobRole,
+            mode: mode,
+            duration_minutes: durationMinutes,
+            date: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('❌ Error inserting interview:', insertError);
+          console.error('Full error details:', JSON.stringify(insertError, null, 2));
+        } else {
+          console.log('✅ Interview saved successfully!');
+          console.log('Interview data:', insertedInterview);
+          console.log('Interview ID:', insertedInterview?.id);
+        }
 
         // Update user_progress total_interviews count
         const { data: progress } = await supabase
@@ -180,9 +198,14 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         
         // Navigate with performance metrics for AI feedback
         const messageCount = messages.filter(m => m.from === 'user').length;
+        const interviewId = insertedInterview?.id;
+        
+        console.log('Navigating to Feedback with ID:', interviewId);
+        
         navigation.navigate('Feedback', { 
           duration: durationMinutes, 
-          messageCount 
+          messageCount,
+          interviewId: interviewId // Pass the ID directly
         });
         return;
       }
@@ -199,21 +222,17 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={{ flex: 1 }}>
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.headerTitle}>MY INTERVIEW</Text>
-              <View style={styles.timerContainer}>
-                <Text style={styles.timerText}>🕐 {formatTime(elapsedTime)}</Text>
-              </View>
-            </View>
-            <TouchableOpacity onPress={endInterview}>
-              <Text style={styles.endInterview}>End interview</Text>
-            </TouchableOpacity>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>MY INTERVIEW</Text>
+          <View style={styles.timerContainer}>
+            <Text style={styles.timerText}>🕐 {formatTime(elapsedTime)}</Text>
           </View>
         </View>
-      </TouchableWithoutFeedback>
+        <TouchableOpacity onPress={endInterview}>
+          <Text style={styles.endInterview}>End interview</Text>
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         ref={flatListRef}

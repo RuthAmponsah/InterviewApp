@@ -50,7 +50,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   InterviewType: undefined;
   InterviewChat: { mode: "text" | "voice" };
-  Feedback: { duration?: number; messageCount?: number } | undefined;
+  Feedback: { duration?: number; messageCount?: number; interviewId?: string } | undefined;
   MyProfile: undefined;
   EditProfile: undefined;
   InterviewExperience: undefined;

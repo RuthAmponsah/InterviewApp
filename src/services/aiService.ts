@@ -73,19 +73,62 @@ export const sendMessageToAI = async (userMessage: string): Promise<string> => {
 
 export const getConversationSummary = async (): Promise<string> => {
   try {
+    console.log('Getting conversation summary...');
+    console.log('Conversation history length:', conversationHistory.length);
+    console.log('Full history:', JSON.stringify(conversationHistory, null, 2));
+    
+    if (conversationHistory.length <= 1) {
+      console.log('Not enough conversation history to generate summary');
+      return "Not enough conversation data to generate feedback.";
+    }
+    
     const summaryPrompt = {
       role: 'user' as const,
-      content: 'Please provide a brief summary of this interview practice session, highlighting key strengths and areas for improvement.',
+      content: `Please analyze this interview practice session and provide honest, critical feedback in this format:
+
+STRENGTHS:
+- [Specific positive observation 1]
+- [Specific positive observation 2]
+- [Specific positive observation 3]
+
+IMPROVEMENTS:
+- [Specific actionable improvement 1]
+- [Specific actionable improvement 2]
+- [Specific actionable improvement 3]
+
+SCORE: [0-100]
+
+CRITICAL: Only evaluate the USER'S responses. Do NOT give credit for MY (the interviewer's) questions or guidance. Ignore my responses entirely when scoring.
+
+Scoring criteria - be HARSH and REALISTIC:
+- 90-100: Outstanding - Detailed STAR method examples, quantifiable results, highly professional language, perfect alignment with questions, demonstrates deep expertise
+- 75-89: Very Good - Specific examples with some detail, mostly professional, good structure, addresses questions well
+- 60-74: Adequate - Vague answers, limited examples, somewhat relevant but lacks depth, needs better structure
+- 40-59: Poor - Very brief responses (1-2 sentences), casual/unprofessional language, no concrete examples, doesn't fully answer questions
+- 20-39: Very Poor - Single word answers, completely off-topic, shows no preparation or effort
+- 0-19: Unacceptable - Inappropriate responses, refusal to engage, gibberish
+
+Key factors to score HARSHLY on:
+- Answer LENGTH: Brief answers (under 3 sentences) = automatic score penalty
+- SPECIFICITY: Vague answers like "I like security" without examples = low score
+- PROFESSIONALISM: Casual language like "it's scooo" or "money" = major penalty
+- RELEVANCE: Not answering the actual question asked = deduct points
+- EXAMPLES: No concrete examples or stories = significant deduction
+- DEPTH: Surface-level responses without technical knowledge = low score
+
+Remember: The user is practicing for a REAL interview. Be critical to help them improve. Most practice sessions should score 40-60 unless truly exceptional.`,
     };
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [...conversationHistory, summaryPrompt],
       model: "llama-3.3-70b-versatile",
       temperature: 0.5,
-      max_tokens: 300,
+      max_tokens: 400,
     });
 
-    return chatCompletion.choices[0]?.message?.content || "Practice session completed.";
+    const result = chatCompletion.choices[0]?.message?.content || "Practice session completed.";
+    console.log('AI Summary result:', result);
+    return result;
   } catch (error) {
     console.error('Error generating summary:', error);
     return "Unable to generate summary at this time.";

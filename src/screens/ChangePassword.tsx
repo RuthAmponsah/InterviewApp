@@ -16,6 +16,7 @@ import TextInputField from "../components/TextInputField";
 import PrimaryButton from "../components/PrimaryButton";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+import { supabase } from "../config/supabase";
 
 const ChangePassword: React.FC = () => {
   const { colors, theme } = useTheme();
@@ -44,13 +45,38 @@ const ChangePassword: React.FC = () => {
       return;
     }
 
-    // TODO: Add real password validation against stored password
     setLoading(true);
 
-    // Simulate API call
-    setTimeout(async () => {
-      // Save new password (in real app, this would go to backend)
-      await AsyncStorage.setItem("userPassword", newPassword);
+    try {
+      // First verify current password by attempting sign in
+      const email = await AsyncStorage.getItem("userEmail");
+      if (!email) {
+        setLoading(false);
+        Alert.alert("Error", "Could not verify user. Please sign in again.");
+        return;
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        setLoading(false);
+        Alert.alert("Error", "Current password is incorrect.");
+        return;
+      }
+
+      // Current password is correct, now update to new password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        setLoading(false);
+        Alert.alert("Error", updateError.message);
+        return;
+      }
 
       setLoading(false);
       Alert.alert("Success", "Your password has been updated successfully.");
@@ -59,7 +85,11 @@ const ChangePassword: React.FC = () => {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    }, 700);
+    } catch (error) {
+      setLoading(false);
+      Alert.alert("Error", "Failed to change password. Please try again.");
+      console.error("Change password error:", error);
+    }
   };
 
   return (

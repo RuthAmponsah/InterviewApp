@@ -184,7 +184,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
       borderColor: colors.primaryBlue,
     },
     checklistText: {
-      ...typography.body,
+      ...typography.bodySmall,
       color: isDark ? '#e5e5e5' : colors.textDark,
       flex: 1,
     },

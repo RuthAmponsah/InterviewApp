@@ -172,9 +172,9 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
 
       setLoading(false);
       
-      // Show success message
+      // Show success message with email verification instructions
       showSuccess(
-        `Welcome ${name}! 🎉\n\nYour account has been created successfully.\n\nA welcome email has been sent to ${email}.\n\nLet's get started with your interview preparation!`
+        `Welcome ${name}! 🎉\n\nYour account has been created successfully.\n\n📧 IMPORTANT: Please check your email (${email}) and click the verification link to activate your account.\n\nOnce verified, you can sign in and start your interview preparation journey!`
       );
 
     } catch (error) {
@@ -287,10 +287,10 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
               style={styles.modalButton}
               onPress={() => {
                 setWarningVisible(false);
-                // Only navigate to Welcome after user dismisses success message
+                // For success, navigate back to SignIn screen to verify email first
                 if (isSuccessMessage) {
                   setTimeout(() => {
-                    navigation.replace("Welcome");
+                    navigation.replace("SignIn");
                   }, 300);
                 }
               }}

@@ -82,9 +82,9 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
         
         // Handle specific error messages
         if (authError.message.includes('Invalid login credentials')) {
-          showError('Invalid Credentials', 'The email or password you entered is incorrect. Please try again.');
+          showError('Invalid Credentials', 'The email or password you entered is incorrect. Please try again.\n\nIf you just signed up, make sure you verified your email first by clicking the link sent to your inbox.');
         } else if (authError.message.includes('Email not confirmed')) {
-          showError('Email Not Verified', 'Please verify your email address before signing in.');
+          showError('Email Not Verified', 'Please check your email inbox and click the verification link we sent you. Once verified, you can sign in.\n\nDon\'t see the email? Check your spam folder or sign up again.');
         } else {
           showError('Sign In Failed', authError.message);
         }

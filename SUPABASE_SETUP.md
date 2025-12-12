@@ -1,5 +1,30 @@
 # Supabase Setup Instructions
 
+## 🔐 Important: Email Verification Settings
+
+**Before creating accounts, configure email verification:**
+
+### Option 1: Disable Email Verification (For Development/Testing)
+1. Go to Supabase Dashboard → Authentication → Providers
+2. Click on "Email" provider
+3. Scroll down to "Email Confirmation"
+4. **Uncheck "Enable email confirmations"**
+5. Save changes
+
+This allows users to sign in immediately after signup without verifying email.
+
+### Option 2: Enable Email Verification (For Production)
+1. Keep "Enable email confirmations" checked
+2. Configure email templates in Authentication → Email Templates
+3. Users MUST click verification link in email before signing in
+
+**Current App Behavior:**
+- After signup, users are redirected to SignIn screen
+- They must verify email (if enabled) before signing in
+- Clear error messages guide users through the process
+
+---
+
 ## ✅ Step 1: Create Users Table
 
 Go to your Supabase dashboard → SQL Editor → New Query, and run this:

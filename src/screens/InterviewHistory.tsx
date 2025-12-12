@@ -132,7 +132,7 @@ export default function InterviewHistory({ navigation }: any) {
         <Text style={styles.logoText}>MY INTERVIEW</Text>
         {stats.total > 0 && (
           <TouchableOpacity style={styles.shareButton} onPress={shareResults}>
-            <Ionicons name="share-social-outline" size={24} color={colors.primary} />
+            <Ionicons name="share-social-outline" size={24} color={colors.primaryBlue} />
           </TouchableOpacity>
         )}
       </View>

@@ -3,12 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import PrimaryButton from "../components/PrimaryButton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import BackButton from "../components/BackButton";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+import { supabase } from "../config/supabase";
 
 // ⭐ FIX: Add proper navigation typing
 type ProfileNav = NativeStackNavigationProp<RootStackParamList, "MyProfile">;
@@ -24,19 +25,48 @@ export default function MyProfile() {
   const [email, setEmail] = useState("ruthrocwel@example.com");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
-  // Load saved profile data from storage
-  useEffect(() => {
-    const loadProfile = async () => {
+  // Load saved profile data from storage and Supabase
+  const loadProfile = async () => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      
+      if (userId) {
+        // Fetch latest data from Supabase
+        const { data, error } = await supabase
+          .from('users')
+          .select('name, email, profile_photo')
+          .eq('id', userId)
+          .single();
+
+        if (data) {
+          setName(data.name);
+          setEmail(data.email);
+          if (data.profile_photo) {
+            setProfilePhoto(data.profile_photo);
+            await AsyncStorage.setItem("userProfilePhoto", data.profile_photo);
+          }
+        }
+      }
+
+      // Fallback to AsyncStorage if offline
       const storedName = await AsyncStorage.getItem("userName");
       const storedEmail = await AsyncStorage.getItem("userEmail");
       const storedPhoto = await AsyncStorage.getItem("userProfilePhoto");
       
-      if (storedName) setName(storedName);
-      if (storedEmail) setEmail(storedEmail);
-      if (storedPhoto) setProfilePhoto(storedPhoto);
-    };
-    loadProfile();
-  }, []);
+      if (!name && storedName) setName(storedName);
+      if (!email && storedEmail) setEmail(storedEmail);
+      if (!profilePhoto && storedPhoto) setProfilePhoto(storedPhoto);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
+
+  // Reload profile when screen comes into focus (after editing)
+  useFocusEffect(
+    React.useCallback(() => {
+      loadProfile();
+    }, [])
+  );
 
   return (
     <View style={styles.container}>

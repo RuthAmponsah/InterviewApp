@@ -20,6 +20,7 @@ import BackButton from "../components/BackButton";
 import TextInputField from "../components/TextInputField";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+import { supabase } from "../config/supabase";
 
 export default function EditProfile({ navigation }: any) {
   const { colors, theme } = useTheme();
@@ -78,6 +79,59 @@ export default function EditProfile({ navigation }: any) {
 
     if (!result.canceled) {
       setProfilePhoto(result.assets[0].uri);
+      // Upload immediately to Supabase
+      await uploadProfilePhoto(result.assets[0].uri);
+    }
+  };
+
+  const uploadProfilePhoto = async (uri: string) => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      if (!userId) return;
+
+      // Convert image to blob
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      
+      // Create unique filename
+      const fileExt = uri.split('.').pop();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const filePath = `profile-photos/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, blob, {
+          contentType: 'image/jpeg',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        Alert.alert('Error', 'Failed to upload photo. Please try again.');
+        return;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      if (urlData?.publicUrl) {
+        // Update database with photo URL
+        await supabase
+          .from('users')
+          .update({ profile_photo: urlData.publicUrl })
+          .eq('id', userId);
+
+        // Store in AsyncStorage
+        await AsyncStorage.setItem("userProfilePhoto", urlData.publicUrl);
+        
+        console.log('✅ Photo uploaded successfully!');
+      }
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      Alert.alert('Error', 'Failed to upload photo.');
     }
   };
 
@@ -89,20 +143,49 @@ export default function EditProfile({ navigation }: any) {
 
     setLoading(true);
 
-    // Save all fields
-    await AsyncStorage.setItem("userName", name);
-    await AsyncStorage.setItem("userEmail", email);
-    await AsyncStorage.setItem("userPhone", phone);
-    await AsyncStorage.setItem("userBio", bio);
-    await AsyncStorage.setItem("userGender", gender);
-    await AsyncStorage.setItem("userAge", age);
-    if (profilePhoto) {
-      await AsyncStorage.setItem("userProfilePhoto", profilePhoto);
-    }
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      
+      if (userId) {
+        // Update Supabase database
+        const { error } = await supabase
+          .from('users')
+          .update({
+            name: name,
+            phone: phone || null,
+            bio: bio || null,
+            gender: gender || null,
+            age: age ? parseInt(age) : null,
+          })
+          .eq('id', userId);
 
-    setLoading(false);
-    Alert.alert("Success", "Your profile has been updated.");
-    navigation.goBack();
+        if (error) {
+          console.error('Update error:', error);
+          Alert.alert("Error", "Failed to update profile in database.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Save to AsyncStorage for offline access
+      await AsyncStorage.setItem("userName", name);
+      await AsyncStorage.setItem("userEmail", email);
+      await AsyncStorage.setItem("userPhone", phone);
+      await AsyncStorage.setItem("userBio", bio);
+      await AsyncStorage.setItem("userGender", gender);
+      await AsyncStorage.setItem("userAge", age);
+      if (profilePhoto) {
+        await AsyncStorage.setItem("userProfilePhoto", profilePhoto);
+      }
+
+      setLoading(false);
+      Alert.alert("Success", "Your profile has been updated.");
+      navigation.goBack();
+    } catch (error) {
+      setLoading(false);
+      Alert.alert("Error", "Something went wrong. Please try again.");
+      console.error('Save profile error:', error);
+    }
   };
 
   return (

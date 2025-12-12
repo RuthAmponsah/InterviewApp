@@ -118,13 +118,48 @@ Your app will now:
 - Never lost
 - Can share data across platforms
 
+## 📸 Step 4: Create Storage Bucket for Profile Photos
+
+1. Go to **Storage** in Supabase dashboard
+2. Click **New bucket**
+3. Name it: `avatars`
+4. Make it **Public** (check the box)
+5. Click **Create bucket**
+
+### Set Storage Policies
+
+Click on the `avatars` bucket → **Policies** → **New Policy** → **Custom**
+
+**Policy 1: Anyone can upload**
+```sql
+CREATE POLICY "Anyone can upload avatar"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'avatars');
+```
+
+**Policy 2: Anyone can view**
+```sql
+CREATE POLICY "Anyone can view avatars"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'avatars');
+```
+
+**Policy 3: Users can update own photos**
+```sql
+CREATE POLICY "Users can update own avatar"
+ON storage.objects FOR UPDATE
+USING (bucket_id = 'avatars');
+```
+
 ## 🎯 Next Steps
 
-After running the SQL above:
+After running the SQL and creating storage bucket:
 1. Test sign up with a new account
 2. Check Supabase dashboard → Table Editor → users (you'll see your user!)
 3. Test sign in
-4. Your data persists even if you close the app
+4. Go to My Profile → Edit Profile → Change photo
+5. Upload a photo and see it in Storage → avatars
+6. Your data persists even if you close the app
 
 ## 🐛 Troubleshooting
 

@@ -154,12 +154,13 @@ const makeStyles = (colors: any, isDark: boolean) =>
       elevation: 3,
     },
     checklistTitle: {
-      ...typography.headingSmall,
+      ...typography.body,
+      fontWeight: '600',
       color: isDark ? '#fff' : colors.textDark,
       marginBottom: 4,
     },
     checklistSubtitle: {
-      ...typography.bodySmall,
+      ...typography.caption,
       color: isDark ? '#b5b5b5' : colors.textMuted,
       marginBottom: 16,
     },

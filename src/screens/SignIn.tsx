@@ -18,6 +18,7 @@ import TextInputField from '../components/TextInputField';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+import { supabase } from "../config/supabase";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
@@ -70,49 +71,69 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
     setLoading(true);
 
     try {
-      // Retrieve stored user credentials
-      const storedEmail = await AsyncStorage.getItem('userEmail');
-      const storedPassword = await AsyncStorage.getItem('userPassword');
+      // Sign in with Supabase
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.toLowerCase(),
+        password: password,
+      });
 
-      // Check if user account exists
-      if (!storedEmail || !storedPassword) {
+      if (authError) {
         setLoading(false);
-        showError('No Account Found', 'No account exists with this email. Please sign up first.');
+        
+        // Handle specific error messages
+        if (authError.message.includes('Invalid login credentials')) {
+          showError('Invalid Credentials', 'The email or password you entered is incorrect. Please try again.');
+        } else if (authError.message.includes('Email not confirmed')) {
+          showError('Email Not Verified', 'Please verify your email address before signing in.');
+        } else {
+          showError('Sign In Failed', authError.message);
+        }
         return;
       }
 
-      // Check if email matches
-      if (email.toLowerCase() !== storedEmail.toLowerCase()) {
+      if (!authData.user) {
         setLoading(false);
-        showError('Email Not Found', 'No account exists with this email address. Please check your email or sign up.');
+        showError('Sign In Failed', 'Unable to sign in. Please try again.');
         return;
       }
 
-      // Check if password matches
-      if (password !== storedPassword) {
+      // Fetch user profile from database
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (userError || !userData) {
         setLoading(false);
-        showError('Wrong Password', 'The password you entered is incorrect. Please try again or reset your password.');
+        showError('Error', 'Could not load user profile. Please try again.');
+        console.error('User fetch error:', userError);
         return;
       }
 
-      // Successful login - both email and password are correct
+      // Store user info in AsyncStorage for offline access
       await AsyncStorage.setItem('isLoggedIn', 'true');
+      await AsyncStorage.setItem('userId', authData.user.id);
+      await AsyncStorage.setItem('userEmail', userData.email);
+      await AsyncStorage.setItem('userName', userData.name);
       
-      setTimeout(() => {
-        setLoading(false);
-        // Check if user has completed onboarding (jobRole set)
-        AsyncStorage.getItem('jobRole').then((jobRole) => {
-          if (jobRole) {
-            navigation.replace('MainTabs');
-          } else {
-            navigation.replace('Welcome');
-          }
-        });
-      }, 500);
+      if (userData.job_role) {
+        await AsyncStorage.setItem('jobRole', userData.job_role);
+      }
+
+      setLoading(false);
+      
+      // Navigate based on whether user has completed onboarding
+      if (userData.job_role) {
+        navigation.replace('MainTabs');
+      } else {
+        navigation.replace('Welcome');
+      }
 
     } catch (error) {
       setLoading(false);
       showError('Error', 'Something went wrong. Please try again.');
+      console.error('Sign in error:', error);
     }
   };
 

@@ -1,0 +1,143 @@
+# Supabase Setup Instructions
+
+## ✅ Step 1: Create Users Table
+
+Go to your Supabase dashboard → SQL Editor → New Query, and run this:
+
+```sql
+-- Create users table
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  gender TEXT CHECK (gender IN ('M', 'F')),
+  age INTEGER CHECK (age >= 16),
+  phone TEXT,
+  bio TEXT,
+  profile_photo TEXT,
+  job_role TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create user_preferences table
+CREATE TABLE user_preferences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  theme TEXT DEFAULT 'system',
+  notif_push BOOLEAN DEFAULT true,
+  notif_email BOOLEAN DEFAULT true,
+  notif_practice BOOLEAN DEFAULT true,
+  notif_feedback BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create user_progress table
+CREATE TABLE user_progress (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  streak INTEGER DEFAULT 0,
+  last_used_date DATE DEFAULT CURRENT_DATE,
+  total_interviews INTEGER DEFAULT 0,
+  saved_jobs TEXT[] DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable Row Level Security
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;
+
+-- Create policies (users can only access their own data)
+CREATE POLICY "Users can view own data" ON users
+  FOR SELECT USING (auth.uid()::text = id::text);
+
+CREATE POLICY "Users can insert own data" ON users
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can update own data" ON users
+  FOR UPDATE USING (auth.uid()::text = id::text);
+
+CREATE POLICY "Users can view own preferences" ON user_preferences
+  FOR SELECT USING (auth.uid()::text = user_id::text);
+
+CREATE POLICY "Users can insert own preferences" ON user_preferences
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can update own preferences" ON user_preferences
+  FOR UPDATE USING (auth.uid()::text = user_id::text);
+
+CREATE POLICY "Users can view own progress" ON user_progress
+  FOR SELECT USING (auth.uid()::text = user_id::text);
+
+CREATE POLICY "Users can insert own progress" ON user_progress
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can update own progress" ON user_progress
+  FOR UPDATE USING (auth.uid()::text = user_id::text);
+```
+
+## ✅ Step 2: Enable Email Authentication
+
+1. Go to **Authentication** → **Providers** → **Email**
+2. **Enable** Email provider
+3. **Disable** "Confirm email" (or configure email templates if you want verification)
+4. Click **Save**
+
+## ✅ Step 3: Test in Your App
+
+Run your app with:
+```bash
+npx expo start
+```
+
+Your app will now:
+- ✅ Store users in Supabase (cloud database)
+- ✅ Work with Expo Go (no dev client needed)
+- ✅ Sync across devices
+- ✅ Have proper authentication
+- ✅ Never lose data when app is deleted
+
+## 🔒 Security Notes
+
+- User data is protected by Row Level Security (RLS)
+- Users can only access their own data
+- API key is safe to expose in client code (it's the "anon" key)
+- Database queries are secured by policies
+
+## 📱 What Changed from AsyncStorage
+
+**Before (AsyncStorage):**
+- Data stored locally on device only
+- Lost when app deleted
+- No sync across devices
+
+**After (Supabase):**
+- Data stored in cloud
+- Accessible from any device
+- Never lost
+- Can share data across platforms
+
+## 🎯 Next Steps
+
+After running the SQL above:
+1. Test sign up with a new account
+2. Check Supabase dashboard → Table Editor → users (you'll see your user!)
+3. Test sign in
+4. Your data persists even if you close the app
+
+## 🐛 Troubleshooting
+
+**"Error creating user"**
+- Check SQL ran successfully
+- Check Authentication is enabled
+- Check your API key is correct in supabase.ts
+
+**"Email already exists"**
+- That email is already registered
+- Use a different email or delete from Supabase dashboard
+
+**Can't see data in Supabase**
+- Go to Table Editor → users
+- Refresh the page
+- Check if Authentication → Users shows your account

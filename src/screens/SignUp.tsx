@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { sendWelcomeEmail } from "../services/emailService";
+import { supabase } from "../config/supabase";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
@@ -68,7 +69,7 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
     setIsSuccessMessage(true);
   };
 
-  // SAVE USER DATA + SEND WELCOME EMAIL + GO TO WELCOME PAGE
+  // SAVE USER DATA TO SUPABASE + SEND WELCOME EMAIL + GO TO WELCOME PAGE
   const handleSignUp = async () => {
     if (!name || !email || !password) return;
 
@@ -96,17 +97,73 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
     setLoading(true);
 
     try {
-      // Save all user data from signup
+      // 1. Create auth user in Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email.toLowerCase(),
+        password: password,
+      });
+
+      if (authError) {
+        setLoading(false);
+        if (authError.message.includes('already registered')) {
+          showWarning("This email is already registered. Please sign in instead.");
+        } else {
+          showWarning(authError.message);
+        }
+        return;
+      }
+
+      if (!authData.user) {
+        setLoading(false);
+        showWarning("Failed to create account. Please try again.");
+        return;
+      }
+
+      // 2. Create user profile in database
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: email.toLowerCase(),
+          name: name,
+          gender: upperGender,
+          age: ageNum,
+        });
+
+      if (profileError) {
+        setLoading(false);
+        showWarning("Account created but profile setup failed. Please contact support.");
+        console.error('Profile creation error:', profileError);
+        return;
+      }
+
+      // 3. Create user preferences
+      await supabase.from('user_preferences').insert({
+        user_id: authData.user.id,
+        theme: 'system',
+        notif_push: true,
+        notif_email: true,
+        notif_practice: true,
+        notif_feedback: true,
+      });
+
+      // 4. Create user progress
+      await supabase.from('user_progress').insert({
+        user_id: authData.user.id,
+        streak: 0,
+        total_interviews: 0,
+      });
+
+      // 5. Store basic info in AsyncStorage for offline access
       await AsyncStorage.setItem("userName", name);
-      await AsyncStorage.setItem("userEmail", email);
-      await AsyncStorage.setItem("userPassword", password);
-      await AsyncStorage.setItem("userGender", upperGender);
-      await AsyncStorage.setItem("userAge", age);
+      await AsyncStorage.setItem("userEmail", email.toLowerCase());
+      await AsyncStorage.setItem("userId", authData.user.id);
+      await AsyncStorage.setItem("isLoggedIn", "true");
 
       // Reset jobRole so Welcome screen starts at Page 1
       await AsyncStorage.removeItem("jobRole");
 
-      // Send welcome email
+      // 6. Send welcome email
       const emailSent = await sendWelcomeEmail(email, name);
       
       if (emailSent) {
@@ -115,14 +172,12 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         console.log('⚠️ Account created but email failed to send');
       }
 
-      setTimeout(() => {
-        setLoading(false);
-        
-        // Show success message with email confirmation
-        showSuccess(
-          `Welcome ${name}! 🎉\n\nYour account has been created successfully.\n\nA welcome email has been sent to ${email}.\n\nLet's get started with your interview preparation!`
-        );
-      }, 1000);
+      setLoading(false);
+      
+      // Show success message
+      showSuccess(
+        `Welcome ${name}! 🎉\n\nYour account has been created successfully.\n\nA welcome email has been sent to ${email}.\n\nLet's get started with your interview preparation!`
+      );
 
     } catch (error) {
       setLoading(false);

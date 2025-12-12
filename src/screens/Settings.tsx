@@ -101,7 +101,7 @@ const Settings = () => {
 
 const makeStyles = (colors: any, isDark: boolean) =>
   StyleSheet.create({
-    root: { flex: 1, backgroundColor: isDark ? '#1a1a1a' : colors.background },
+    root: { flex: 1, backgroundColor: isDark ? '#0f0f0f' : '#F3F4F6' },
     content: { paddingHorizontal: 20, paddingTop: 80, paddingBottom: 24 },
     logoText: {
       ...typography.headingSmall,
@@ -113,11 +113,16 @@ const makeStyles = (colors: any, isDark: boolean) =>
     title: { ...typography.headingSmall, color: isDark ? '#fff' : colors.textDark },
     subtitle: { ...typography.bodyMedium, color: isDark ? '#aaa' : colors.textMuted, marginBottom: 16 },
     card: {
-      backgroundColor: isDark ? '#222' : colors.card,
-      borderRadius: 18,
+      backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
+      borderRadius: 20,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: isDark ? '#333' : colors.border,
       overflow: "hidden",
+      shadowColor: '#000',
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 3,
     },
     row: {
       flexDirection: "row",

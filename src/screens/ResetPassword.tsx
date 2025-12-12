@@ -128,7 +128,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     container: {
       flex: 1,
       paddingHorizontal: 24,
-      paddingTop: 48,
+      paddingTop: 80,
     },
     logoText: {
       ...typography.heading,

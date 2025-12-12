@@ -51,7 +51,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
       flex: 1,
       backgroundColor: isDark ? '#0f0f0f' : colors.background,
       paddingHorizontal: 24,
-      paddingTop: 64,
+      paddingTop: 80,
     },
     logoText: {
       ...typography.headingMedium,

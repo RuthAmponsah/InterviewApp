@@ -32,16 +32,42 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const styles = makeStyles(colors, isDark);
   const { mode } = route.params;
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      from: 'ai',
-      text: 'Hello! I\'m Aya, your interview coach. Let\'s practice together. Tell me about yourself and what role you\'re preparing for.',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const flatListRef = React.useRef<FlatList>(null);
   const [startTime] = useState(Date.now());
+  const [jobRole, setJobRole] = useState('');
+
+  React.useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const storedRole = await AsyncStorage.getItem('jobRole');
+      const userName = await AsyncStorage.getItem('userName');
+      
+      if (storedRole) {
+        setJobRole(storedRole);
+        const greeting: Message = {
+          id: '1',
+          from: 'ai',
+          text: `Hello${userName ? ' ' + userName : ''}! I'm Aya, your interview coach. I see you're preparing for a ${storedRole} position. Let's practice together! Tell me about yourself and why you're interested in this role.`,
+        };
+        setMessages([greeting]);
+      } else {
+        // Fallback if no role is set
+        const greeting: Message = {
+          id: '1',
+          from: 'ai',
+          text: 'Hello! I\'m Aya, your interview coach. Let\'s practice together. Tell me about yourself.',
+        };
+        setMessages([greeting]);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
 
   const sendMessage = () => {
     if (!input.trim()) return;
@@ -77,7 +103,6 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const endInterview = async () => {
     try {
       const userId = await AsyncStorage.getItem("userId");
-      const jobRole = await AsyncStorage.getItem("jobRole");
       
       if (userId && jobRole) {
         // Calculate duration in minutes

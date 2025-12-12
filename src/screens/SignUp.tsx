@@ -122,40 +122,65 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         return;
       }
 
-      // 2. Create user profile in database
-      const { error: profileError } = await supabase
+      // 2. Check if user profile already exists, if not create it
+      const { data: existingUser } = await supabase
         .from('users')
-        .insert({
-          id: authData.user.id,
-          email: email.toLowerCase(),
-          name: name,
-          gender: upperGender,
-          age: ageNum,
-        });
+        .select('id')
+        .eq('id', authData.user.id)
+        .single();
 
-      if (profileError) {
-        setLoading(false);
-        showWarning("Account created but profile setup failed. Please contact support.");
-        console.error('Profile creation error:', profileError);
-        return;
+      if (!existingUser) {
+        // Create user profile in database
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            email: email.toLowerCase(),
+            name: name,
+            gender: upperGender,
+            age: ageNum,
+          });
+
+        if (profileError) {
+          setLoading(false);
+          showWarning("Account created but profile setup failed. Please contact support.");
+          console.error('Profile creation error:', profileError);
+          return;
+        }
       }
 
-      // 3. Create user preferences
-      await supabase.from('user_preferences').insert({
-        user_id: authData.user.id,
-        theme: 'system',
-        notif_push: true,
-        notif_email: true,
-        notif_practice: true,
-        notif_feedback: true,
-      });
+      // 3. Create user preferences (if not exists)
+      const { data: existingPrefs } = await supabase
+        .from('user_preferences')
+        .select('id')
+        .eq('user_id', authData.user.id)
+        .single();
 
-      // 4. Create user progress
-      await supabase.from('user_progress').insert({
-        user_id: authData.user.id,
-        streak: 0,
-        total_interviews: 0,
-      });
+      if (!existingPrefs) {
+        await supabase.from('user_preferences').insert({
+          user_id: authData.user.id,
+          theme: 'system',
+          notif_push: true,
+          notif_email: true,
+          notif_practice: true,
+          notif_feedback: true,
+        });
+      }
+
+      // 4. Create user progress (if not exists)
+      const { data: existingProgress } = await supabase
+        .from('user_progress')
+        .select('id')
+        .eq('user_id', authData.user.id)
+        .single();
+
+      if (!existingProgress) {
+        await supabase.from('user_progress').insert({
+          user_id: authData.user.id,
+          streak: 0,
+          total_interviews: 0,
+        });
+      }
 
       // 5. Clear all previous user data and store new user info in AsyncStorage
       await AsyncStorage.clear();

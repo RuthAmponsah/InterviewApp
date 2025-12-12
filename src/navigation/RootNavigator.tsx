@@ -30,6 +30,8 @@ import ChangePassword from "../screens/ChangePassword";
 import Notifications from "../screens/Notifications";
 import InterviewHistory from "../screens/InterviewHistory";
 import QuestionBank from "../screens/QuestionBank";
+import ProgressDashboard from "../screens/ProgressDashboard";
+import InterviewTips from "../screens/InterviewTips";
 
 // -----------------------------
 // STACK NAV TYPES
@@ -43,7 +45,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   InterviewType: undefined;
   InterviewChat: { mode: "text" | "voice" };
-  Feedback: undefined;
+  Feedback: { duration?: number; messageCount?: number } | undefined;
   MyProfile: undefined;
   EditProfile: undefined;
   InterviewExperience: undefined;
@@ -57,6 +59,8 @@ export type RootStackParamList = {
   Notifications: undefined;
   InterviewHistory: undefined;
   QuestionBank: undefined;
+  ProgressDashboard: undefined;
+  InterviewTips: undefined;
   Settings: undefined;
 };
 
@@ -181,6 +185,8 @@ const RootNavigator = () => {
       <Stack.Screen name="HelpCentre" component={HelpCentre} />
       <Stack.Screen name="InterviewHistory" component={InterviewHistory} />
       <Stack.Screen name="QuestionBank" component={QuestionBank} />
+      <Stack.Screen name="ProgressDashboard" component={ProgressDashboard} />
+      <Stack.Screen name="InterviewTips" component={InterviewTips} />
     </Stack.Navigator>
   );
 };

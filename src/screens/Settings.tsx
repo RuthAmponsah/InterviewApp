@@ -22,6 +22,8 @@ type SettingsRoute =
   | "MyProfile"
   | "InterviewHistory"
   | "QuestionBank"
+  | "ProgressDashboard"
+  | "InterviewTips"
   | "InterviewExperience"
   | "AppCustomisation"
   | "JobPreferences"
@@ -32,7 +34,9 @@ type SettingsRoute =
 const SECTIONS: { label: string; route: SettingsRoute }[] = [
   { label: "Account", route: "MyProfile" },
   { label: "Interview history", route: "InterviewHistory" },
+  { label: "Progress dashboard", route: "ProgressDashboard" },
   { label: "Question bank", route: "QuestionBank" },
+  { label: "Interview tips", route: "InterviewTips" },
   { label: "Interview experience", route: "InterviewExperience" },
   { label: "App customisation", route: "AppCustomisation" },
   { label: "Job preferences", route: "JobPreferences" },

@@ -131,12 +131,21 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
             .update({ total_interviews: (progress.total_interviews || 0) + 1 })
             .eq('user_id', userId);
         }
+        
+        // Navigate with performance metrics for AI feedback
+        const messageCount = messages.filter(m => m.from === 'user').length;
+        navigation.navigate('Feedback', { 
+          duration: durationMinutes, 
+          messageCount 
+        });
+        return;
       }
     } catch (error) {
       console.error('Error saving interview:', error);
     }
     
-    navigation.navigate('Feedback');
+    // Fallback navigation without params
+    navigation.navigate('Feedback', undefined);
   };
 
   return (

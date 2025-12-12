@@ -73,17 +73,45 @@ export default function QuestionBank({ navigation }: any) {
   const isDark = theme === "dark";
   const styles = makeStyles(colors, isDark);
   
-  const [selectedCategory, setSelectedCategory] = useState<QuestionCategory | 'All'>('All');
+  const [selectedCategory, setSelectedCategory] = useState<QuestionCategory | 'All' | 'Favorites'>('All');
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [answer, setAnswer] = useState('');
   const [customQuestions, setCustomQuestions] = useState<Question[]>([]);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
   const [newQuestion, setNewQuestion] = useState('');
   const [newCategory, setNewCategory] = useState<QuestionCategory>('Behavioral');
 
   useEffect(() => {
     loadCustomQuestions();
+    loadFavorites();
   }, []);
+
+  const loadFavorites = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('favorite_questions');
+      if (saved) {
+        setFavorites(new Set(JSON.parse(saved)));
+      }
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (questionId: string) => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(questionId)) {
+      newFavorites.delete(questionId);
+    } else {
+      newFavorites.add(questionId);
+    }
+    setFavorites(newFavorites);
+    try {
+      await AsyncStorage.setItem('favorite_questions', JSON.stringify(Array.from(newFavorites)));
+    } catch (error) {
+      console.error('Error saving favorites:', error);
+    }
+  };
 
   const loadCustomQuestions = async () => {
     try {
@@ -149,6 +177,8 @@ export default function QuestionBank({ navigation }: any) {
     ? allQuestions
     : selectedCategory === 'Custom'
     ? customQuestions
+    : selectedCategory === 'Favorites'
+    ? allQuestions.filter(q => favorites.has(q.id))
     : allQuestions.filter(q => q.category === selectedCategory);
 
   const saveAnswer = async () => {
@@ -198,6 +228,20 @@ export default function QuestionBank({ navigation }: any) {
               All ({allQuestions.length})
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, selectedCategory === 'Favorites' && styles.filterChipActive]}
+            onPress={() => setSelectedCategory('Favorites')}
+          >
+            <Ionicons 
+              name={selectedCategory === 'Favorites' ? "star" : "star-outline"} 
+              size={16} 
+              color={selectedCategory === 'Favorites' ? '#fff' : colors.textDark}
+              style={{ marginRight: 4 }}
+            />
+            <Text style={[styles.filterText, selectedCategory === 'Favorites' && styles.filterTextActive]}>
+              Favorites ({favorites.size})
+            </Text>
+          </TouchableOpacity>
           {CATEGORIES.map((cat) => (
             <TouchableOpacity
               key={cat}
@@ -236,14 +280,26 @@ export default function QuestionBank({ navigation }: any) {
                     <Text style={styles.questionText}>{question.text}</Text>
                     <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
                   </TouchableOpacity>
-                  {question.isCustom && (
+                  <View style={styles.actionButtons}>
                     <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => deleteCustomQuestion(question.id)}
+                      style={styles.favoriteButton}
+                      onPress={() => toggleFavorite(question.id)}
                     >
-                      <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                      <Ionicons 
+                        name={favorites.has(question.id) ? "star" : "star-outline"} 
+                        size={20} 
+                        color={favorites.has(question.id) ? "#FFD700" : colors.textMuted}
+                      />
                     </TouchableOpacity>
-                  )}
+                    {question.isCustom && (
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => deleteCustomQuestion(question.id)}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               ))
             )}
@@ -406,6 +462,8 @@ const makeStyles = (colors: any, isDark: boolean) =>
       marginRight: 8,
       borderWidth: 1,
       borderColor: isDark ? '#333' : colors.border,
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     filterChipActive: {
       backgroundColor: colors.primaryBlue,
@@ -485,6 +543,13 @@ const makeStyles = (colors: any, isDark: boolean) =>
       borderRadius: 6,
       alignSelf: 'flex-start',
       marginBottom: 8,
+    },
+    actionButtons: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    favoriteButton: {
+      padding: 16,
     },
     deleteButton: {
       padding: 16,

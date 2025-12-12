@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import BackButton from "../components/BackButton";
@@ -14,12 +15,13 @@ import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-type QuestionCategory = 'Behavioral' | 'Technical' | 'Situational' | 'Strengths';
+type QuestionCategory = 'Behavioral' | 'Technical' | 'Situational' | 'Strengths' | 'Custom';
 
 type Question = {
   id: string;
   category: QuestionCategory;
   text: string;
+  isCustom?: boolean;
 };
 
 const PRACTICE_QUESTIONS: Question[] = [
@@ -64,7 +66,7 @@ const PRACTICE_QUESTIONS: Question[] = [
   { id: '32', category: 'Strengths', text: 'What is your greatest accomplishment?' },
 ];
 
-const CATEGORIES: QuestionCategory[] = ['Behavioral', 'Technical', 'Situational', 'Strengths'];
+const CATEGORIES: QuestionCategory[] = ['Behavioral', 'Technical', 'Situational', 'Strengths', 'Custom'];
 
 export default function QuestionBank({ navigation }: any) {
   const { colors, theme } = useTheme();
@@ -74,10 +76,80 @@ export default function QuestionBank({ navigation }: any) {
   const [selectedCategory, setSelectedCategory] = useState<QuestionCategory | 'All'>('All');
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [answer, setAnswer] = useState('');
+  const [customQuestions, setCustomQuestions] = useState<Question[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newQuestion, setNewQuestion] = useState('');
+  const [newCategory, setNewCategory] = useState<QuestionCategory>('Behavioral');
 
+  useEffect(() => {
+    loadCustomQuestions();
+  }, []);
+
+  const loadCustomQuestions = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('custom_questions');
+      if (saved) {
+        setCustomQuestions(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading custom questions:', error);
+    }
+  };
+
+  const saveCustomQuestions = async (questions: Question[]) => {
+    try {
+      await AsyncStorage.setItem('custom_questions', JSON.stringify(questions));
+      setCustomQuestions(questions);
+    } catch (error) {
+      console.error('Error saving custom questions:', error);
+    }
+  };
+
+  const addCustomQuestion = () => {
+    if (!newQuestion.trim()) {
+      Alert.alert('Error', 'Please enter a question');
+      return;
+    }
+
+    const question: Question = {
+      id: `custom_${Date.now()}`,
+      category: newCategory,
+      text: newQuestion.trim(),
+      isCustom: true,
+    };
+
+    const updated = [...customQuestions, question];
+    saveCustomQuestions(updated);
+    setNewQuestion('');
+    setShowAddModal(false);
+    Alert.alert('Success', 'Custom question added!');
+  };
+
+  const deleteCustomQuestion = (id: string) => {
+    Alert.alert(
+      'Delete Question',
+      'Are you sure you want to delete this custom question?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            const updated = customQuestions.filter(q => q.id !== id);
+            saveCustomQuestions(updated);
+          },
+        },
+      ]
+    );
+  };
+
+  const allQuestions = [...PRACTICE_QUESTIONS, ...customQuestions];
+  
   const filteredQuestions = selectedCategory === 'All' 
-    ? PRACTICE_QUESTIONS 
-    : PRACTICE_QUESTIONS.filter(q => q.category === selectedCategory);
+    ? allQuestions
+    : selectedCategory === 'Custom'
+    ? customQuestions
+    : allQuestions.filter(q => q.category === selectedCategory);
 
   const saveAnswer = async () => {
     if (!selectedQuestion || !answer.trim()) {
@@ -101,7 +173,15 @@ export default function QuestionBank({ navigation }: any) {
       <ScrollView contentContainerStyle={styles.content}>
         <BackButton />
         
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.logoText}>MY INTERVIEW</Text>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => setShowAddModal(true)}
+          >
+            <Ionicons name="add-circle" size={28} color={colors.primaryBlue} />
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.title}>Question Bank</Text>
         <Text style={styles.subtitle}>
@@ -115,7 +195,7 @@ export default function QuestionBank({ navigation }: any) {
             onPress={() => setSelectedCategory('All')}
           >
             <Text style={[styles.filterText, selectedCategory === 'All' && styles.filterTextActive]}>
-              All ({PRACTICE_QUESTIONS.length})
+              All ({allQuestions.length})
             </Text>
           </TouchableOpacity>
           {CATEGORIES.map((cat) => (
@@ -134,19 +214,39 @@ export default function QuestionBank({ navigation }: any) {
         {/* Questions List */}
         {!selectedQuestion ? (
           <View style={styles.questionsList}>
-            {filteredQuestions.map((question) => (
-              <TouchableOpacity
-                key={question.id}
-                style={styles.questionCard}
-                onPress={() => setSelectedQuestion(question)}
-              >
-                <View style={styles.questionHeader}>
-                  <Text style={styles.categoryBadge}>{question.category}</Text>
+            {filteredQuestions.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="document-text-outline" size={48} color={colors.textMuted} />
+                <Text style={styles.emptyText}>No questions yet</Text>
+                <Text style={styles.emptySubtext}>Add your first custom question!</Text>
+              </View>
+            ) : (
+              filteredQuestions.map((question) => (
+                <View key={question.id} style={styles.questionCard}>
+                  <TouchableOpacity
+                    style={styles.questionContent}
+                    onPress={() => setSelectedQuestion(question)}
+                  >
+                    <View style={styles.questionHeader}>
+                      <Text style={styles.categoryBadge}>{question.category}</Text>
+                      {question.isCustom && (
+                        <Text style={styles.customBadge}>Custom</Text>
+                      )}
+                    </View>
+                    <Text style={styles.questionText}>{question.text}</Text>
+                    <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                  </TouchableOpacity>
+                  {question.isCustom && (
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => deleteCustomQuestion(question.id)}
+                    >
+                      <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <Text style={styles.questionText}>{question.text}</Text>
-                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-              </TouchableOpacity>
-            ))}
+              ))
+            )}
           </View>
         ) : (
           <View style={styles.answerSection}>
@@ -187,6 +287,71 @@ Result: What was the outcome?"
           </View>
         )}
       </ScrollView>
+
+      {/* Add Custom Question Modal */}
+      <Modal
+        visible={showAddModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Custom Question</Text>
+            
+            <Text style={styles.inputLabel}>Question</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter your question..."
+              placeholderTextColor={isDark ? '#666' : '#999'}
+              value={newQuestion}
+              onChangeText={setNewQuestion}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+
+            <Text style={styles.inputLabel}>Category</Text>
+            <View style={styles.categoryGrid}>
+              {['Behavioral', 'Technical', 'Situational', 'Strengths'].map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[
+                    styles.categoryOption,
+                    newCategory === cat && styles.categoryOptionSelected
+                  ]}
+                  onPress={() => setNewCategory(cat as QuestionCategory)}
+                >
+                  <Text style={[
+                    styles.categoryOptionText,
+                    newCategory === cat && styles.categoryOptionTextSelected
+                  ]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setShowAddModal(false);
+                  setNewQuestion('');
+                }}
+              >
+                <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalButtonSave]}
+                onPress={addCustomQuestion}
+              >
+                <Text style={styles.modalButtonTextSave}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -202,12 +367,22 @@ const makeStyles = (colors: any, isDark: boolean) =>
       paddingTop: 80,
       paddingBottom: 32,
     },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 28,
+      position: 'relative',
+    },
     logoText: {
       ...typography.heading,
       fontWeight: "800",
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
+    },
+    addButton: {
+      position: 'absolute',
+      right: 0,
+      padding: 4,
     },
     title: {
       ...typography.headingMedium,
@@ -248,9 +423,32 @@ const makeStyles = (colors: any, isDark: boolean) =>
     questionsList: {
       gap: 12,
     },
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: 48,
+    },
+    emptyText: {
+      ...typography.bodyMedium,
+      fontWeight: '600',
+      color: isDark ? '#fff' : colors.textDark,
+      marginTop: 12,
+    },
+    emptySubtext: {
+      ...typography.bodySmall,
+      color: isDark ? '#b5b5b5' : colors.textMuted,
+      marginTop: 4,
+    },
     questionCard: {
       backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
       borderRadius: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E5E7EB',
+    },
+    questionContent: {
+      flex: 1,
       padding: 16,
       flexDirection: 'row',
       alignItems: 'center',
@@ -263,6 +461,8 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     questionHeader: {
       marginBottom: 8,
+      flexDirection: 'row',
+      gap: 8,
     },
     categoryBadge: {
       ...typography.caption,
@@ -274,6 +474,20 @@ const makeStyles = (colors: any, isDark: boolean) =>
       borderRadius: 6,
       alignSelf: 'flex-start',
       marginBottom: 8,
+    },
+    customBadge: {
+      ...typography.caption,
+      color: '#8B5CF6',
+      fontWeight: '600',
+      backgroundColor: '#8B5CF6' + '15',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      alignSelf: 'flex-start',
+      marginBottom: 8,
+    },
+    deleteButton: {
+      padding: 16,
     },
     questionText: {
       ...typography.bodyMedium,
@@ -335,5 +549,96 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodyMedium,
       color: '#FFFFFF',
       fontWeight: '600',
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 20,
+    },
+    modalContent: {
+      backgroundColor: isDark ? "#1d1d1d" : "#fff",
+      borderRadius: 20,
+      padding: 24,
+      width: "100%",
+      maxWidth: 400,
+    },
+    modalTitle: {
+      ...typography.headingSmall,
+      color: isDark ? "#fff" : colors.textDark,
+      marginBottom: 20,
+      textAlign: "center",
+    },
+    inputLabel: {
+      ...typography.bodyMedium,
+      fontWeight: "600",
+      color: isDark ? "#b5b5b5" : colors.textMuted,
+      marginBottom: 8,
+      marginTop: 12,
+    },
+    modalInput: {
+      backgroundColor: isDark ? '#2a2a2a' : '#F9FAFB',
+      borderRadius: 12,
+      padding: 12,
+      ...typography.bodyMedium,
+      color: isDark ? '#fff' : colors.textDark,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E5E7EB',
+      minHeight: 80,
+    },
+    categoryGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginBottom: 20,
+    },
+    categoryOption: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 12,
+      backgroundColor: isDark ? '#2a2a2a' : '#F9FAFB',
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E5E7EB',
+    },
+    categoryOptionSelected: {
+      backgroundColor: colors.primaryBlue,
+      borderColor: colors.primaryBlue,
+    },
+    categoryOptionText: {
+      ...typography.bodySmall,
+      color: isDark ? '#fff' : colors.textDark,
+      fontWeight: '500',
+    },
+    categoryOptionTextSelected: {
+      color: '#fff',
+      fontWeight: '600',
+    },
+    modalButtons: {
+      flexDirection: "row",
+      gap: 12,
+      marginTop: 8,
+    },
+    modalButton: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    modalButtonCancel: {
+      backgroundColor: isDark ? "#2a2a2a" : "#F3F4F6",
+    },
+    modalButtonSave: {
+      backgroundColor: colors.primaryBlue,
+    },
+    modalButtonTextCancel: {
+      ...typography.bodyMedium,
+      fontWeight: "600",
+      color: isDark ? "#fff" : colors.textDark,
+    },
+    modalButtonTextSave: {
+      ...typography.bodyMedium,
+      fontWeight: "600",
+      color: "#fff",
     },
   });

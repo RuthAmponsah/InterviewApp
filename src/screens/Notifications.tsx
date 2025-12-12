@@ -5,11 +5,20 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
+  TouchableOpacity,
+  Modal,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BackButton from "../components/BackButton";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+import { 
+  requestNotificationPermissions, 
+  scheduleDailyReminder, 
+  cancelDailyReminder,
+  sendTestNotification,
+} from "../services/notificationService";
 
 const Notifications: React.FC = () => {
   const { colors, theme } = useTheme();
@@ -20,6 +29,9 @@ const Notifications: React.FC = () => {
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [practiceReminders, setPracticeReminders] = useState(false);
   const [feedbackAlerts, setFeedbackAlerts] = useState(false);
+  const [reminderTime, setReminderTime] = useState({ hour: 18, minute: 0 });
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [permissionsGranted, setPermissionsGranted] = useState(false);
 
   // Load preferences
   useEffect(() => {
@@ -28,11 +40,21 @@ const Notifications: React.FC = () => {
       const email = await AsyncStorage.getItem("notif_email");
       const practice = await AsyncStorage.getItem("notif_practice");
       const feedback = await AsyncStorage.getItem("notif_feedback");
+      const savedHour = await AsyncStorage.getItem("reminderHour");
+      const savedMinute = await AsyncStorage.getItem("reminderMinute");
 
       if (push === "true") setPushEnabled(true);
       if (email === "true") setEmailEnabled(true);
       if (practice === "true") setPracticeReminders(true);
       if (feedback === "true") setFeedbackAlerts(true);
+      
+      if (savedHour && savedMinute) {
+        setReminderTime({ hour: parseInt(savedHour), minute: parseInt(savedMinute) });
+      }
+
+      // Request permissions on load
+      const granted = await requestNotificationPermissions();
+      setPermissionsGranted(granted);
     };
     loadPreferences();
   }, []);
@@ -45,6 +67,33 @@ const Notifications: React.FC = () => {
   ) => {
     setter(value);
     await AsyncStorage.setItem(key, value.toString());
+    
+    // Handle practice reminders scheduling
+    if (key === "notif_practice") {
+      if (value && permissionsGranted) {
+        await scheduleDailyReminder(reminderTime.hour, reminderTime.minute);
+      } else {
+        await cancelDailyReminder();
+      }
+    }
+  };
+
+  const updateReminderTime = async (hour: number, minute: number) => {
+    setReminderTime({ hour, minute });
+    await AsyncStorage.setItem("reminderHour", hour.toString());
+    await AsyncStorage.setItem("reminderMinute", minute.toString());
+    
+    // Reschedule if reminders are enabled
+    if (practiceReminders && permissionsGranted) {
+      await scheduleDailyReminder(hour, minute);
+    }
+  };
+
+  const formatTime = (hour: number, minute: number) => {
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    const displayMinute = minute.toString().padStart(2, '0');
+    return `${displayHour}:${displayMinute} ${period}`;
   };
 
   return (
@@ -122,6 +171,16 @@ const Notifications: React.FC = () => {
           />
         </View>
 
+        {practiceReminders && (
+          <TouchableOpacity 
+            style={styles.timeRow}
+            onPress={() => setShowTimePicker(true)}
+          >
+            <Text style={styles.timeLabel}>Reminder time</Text>
+            <Text style={styles.timeValue}>{formatTime(reminderTime.hour, reminderTime.minute)}</Text>
+          </TouchableOpacity>
+        )}
+
         <View style={styles.row}>
           <View style={styles.rowTextContainer}>
             <Text style={styles.rowTitle}>Feedback alerts</Text>
@@ -139,6 +198,74 @@ const Notifications: React.FC = () => {
           />
         </View>
       </View>
+
+      {/* Time Picker Modal */}
+      <Modal
+        visible={showTimePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowTimePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Set Reminder Time</Text>
+            
+            <View style={styles.timePickerContainer}>
+              <View style={styles.pickerColumn}>
+                <Text style={styles.pickerLabel}>Hour</Text>
+                <ScrollView style={styles.picker} showsVerticalScrollIndicator={false}>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      style={[styles.pickerItem, reminderTime.hour === i && styles.pickerItemSelected]}
+                      onPress={() => setReminderTime({ ...reminderTime, hour: i })}
+                    >
+                      <Text style={[styles.pickerText, reminderTime.hour === i && styles.pickerTextSelected]}>
+                        {i.toString().padStart(2, '0')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View style={styles.pickerColumn}>
+                <Text style={styles.pickerLabel}>Minute</Text>
+                <ScrollView style={styles.picker} showsVerticalScrollIndicator={false}>
+                  {[0, 15, 30, 45].map((min) => (
+                    <TouchableOpacity
+                      key={min}
+                      style={[styles.pickerItem, reminderTime.minute === min && styles.pickerItemSelected]}
+                      onPress={() => setReminderTime({ ...reminderTime, minute: min })}
+                    >
+                      <Text style={[styles.pickerText, reminderTime.minute === min && styles.pickerTextSelected]}>
+                        {min.toString().padStart(2, '0')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setShowTimePicker(false)}
+              >
+                <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalButtonSave]}
+                onPress={() => {
+                  updateReminderTime(reminderTime.hour, reminderTime.minute);
+                  setShowTimePicker(false);
+                }}
+              >
+                <Text style={styles.modalButtonTextSave}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -210,6 +337,106 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.caption,
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginTop: 2,
+    },
+    timeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      backgroundColor: isDark ? "#2a2a2a" : "#F9FAFB",
+      borderRadius: 12,
+      marginVertical: 8,
+    },
+    timeLabel: {
+      ...typography.bodyMedium,
+      color: isDark ? "#b5b5b5" : colors.textMuted,
+    },
+    timeValue: {
+      ...typography.bodyMedium,
+      fontWeight: "600",
+      color: isDark ? "#fff" : colors.primaryBlue,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 20,
+    },
+    modalContent: {
+      backgroundColor: isDark ? "#1d1d1d" : "#fff",
+      borderRadius: 20,
+      padding: 24,
+      width: "100%",
+      maxWidth: 400,
+    },
+    modalTitle: {
+      ...typography.headingSmall,
+      color: isDark ? "#fff" : colors.textDark,
+      marginBottom: 20,
+      textAlign: "center",
+    },
+    timePickerContainer: {
+      flexDirection: "row",
+      gap: 16,
+      marginBottom: 24,
+    },
+    pickerColumn: {
+      flex: 1,
+    },
+    pickerLabel: {
+      ...typography.bodyMedium,
+      fontWeight: "600",
+      color: isDark ? "#b5b5b5" : colors.textMuted,
+      marginBottom: 8,
+      textAlign: "center",
+    },
+    picker: {
+      maxHeight: 200,
+      backgroundColor: isDark ? "#2a2a2a" : "#F9FAFB",
+      borderRadius: 12,
+    },
+    pickerItem: {
+      paddingVertical: 12,
+      alignItems: "center",
+    },
+    pickerItemSelected: {
+      backgroundColor: isDark ? "#3b82f6" : colors.primaryBlue,
+    },
+    pickerText: {
+      ...typography.bodyMedium,
+      color: isDark ? "#b5b5b5" : colors.textDark,
+    },
+    pickerTextSelected: {
+      color: "#fff",
+      fontWeight: "600",
+    },
+    modalButtons: {
+      flexDirection: "row",
+      gap: 12,
+    },
+    modalButton: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    modalButtonCancel: {
+      backgroundColor: isDark ? "#2a2a2a" : "#F3F4F6",
+    },
+    modalButtonSave: {
+      backgroundColor: colors.primaryBlue,
+    },
+    modalButtonTextCancel: {
+      ...typography.bodyMedium,
+      fontWeight: "600",
+      color: isDark ? "#fff" : colors.textDark,
+    },
+    modalButtonTextSave: {
+      ...typography.bodyMedium,
+      fontWeight: "600",
+      color: "#fff",
     },
   });
 

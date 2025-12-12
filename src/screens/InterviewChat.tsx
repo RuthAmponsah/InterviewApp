@@ -15,6 +15,8 @@ import {
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from "../config/supabase";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'InterviewChat'>;
 
@@ -39,6 +41,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   ]);
   const [input, setInput] = useState('');
   const flatListRef = React.useRef<FlatList>(null);
+  const [startTime] = useState(Date.now());
 
   const sendMessage = () => {
     if (!input.trim()) return;
@@ -71,7 +74,43 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
     }, 1500);
   };
 
-  const endInterview = () => {
+  const endInterview = async () => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      const jobRole = await AsyncStorage.getItem("jobRole");
+      
+      if (userId && jobRole) {
+        // Calculate duration in minutes
+        const durationMs = Date.now() - startTime;
+        const durationMinutes = Math.round(durationMs / 60000);
+
+        // Save to interview_history
+        await supabase.from('interview_history').insert({
+          user_id: userId,
+          job_role: jobRole,
+          mode: mode,
+          duration_minutes: durationMinutes,
+          date: new Date().toISOString(),
+        });
+
+        // Update user_progress total_interviews count
+        const { data: progress } = await supabase
+          .from('user_progress')
+          .select('total_interviews')
+          .eq('user_id', userId)
+          .single();
+
+        if (progress) {
+          await supabase
+            .from('user_progress')
+            .update({ total_interviews: (progress.total_interviews || 0) + 1 })
+            .eq('user_id', userId);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving interview:', error);
+    }
+    
     navigation.navigate('Feedback');
   };
 

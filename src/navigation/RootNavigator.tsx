@@ -29,6 +29,7 @@ import HelpCentre from "../screens/HelpCentre";
 import ChangePassword from "../screens/ChangePassword";
 import Notifications from "../screens/Notifications";
 import InterviewHistory from "../screens/InterviewHistory";
+import QuestionBank from "../screens/QuestionBank";
 
 // -----------------------------
 // STACK NAV TYPES
@@ -55,6 +56,7 @@ export type RootStackParamList = {
   ChangePassword: undefined;
   Notifications: undefined;
   InterviewHistory: undefined;
+  QuestionBank: undefined;
   Settings: undefined;
 };
 
@@ -178,6 +180,7 @@ const RootNavigator = () => {
       <Stack.Screen name="AboutUs" component={AboutUs} />
       <Stack.Screen name="HelpCentre" component={HelpCentre} />
       <Stack.Screen name="InterviewHistory" component={InterviewHistory} />
+      <Stack.Screen name="QuestionBank" component={QuestionBank} />
     </Stack.Navigator>
   );
 };

@@ -21,6 +21,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 type SettingsRoute =
   | "MyProfile"
   | "InterviewHistory"
+  | "QuestionBank"
   | "InterviewExperience"
   | "AppCustomisation"
   | "JobPreferences"
@@ -31,6 +32,7 @@ type SettingsRoute =
 const SECTIONS: { label: string; route: SettingsRoute }[] = [
   { label: "Account", route: "MyProfile" },
   { label: "Interview history", route: "InterviewHistory" },
+  { label: "Question bank", route: "QuestionBank" },
   { label: "Interview experience", route: "InterviewExperience" },
   { label: "App customisation", route: "AppCustomisation" },
   { label: "Job preferences", route: "JobPreferences" },

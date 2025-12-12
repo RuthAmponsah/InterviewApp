@@ -133,17 +133,28 @@ const Home: React.FC = () => {
 
       {/* Row of cards */}
       <View style={styles.row}>
-        <View style={[styles.card, styles.smallCard]}>
-          <Text style={styles.cardTag}>Daily tip</Text>
-          <Text style={styles.cardTitle}>Tip of the day</Text>
-          <Text style={styles.cardBody}>{tipOfTheDay}</Text>
-        </View>
+        <TouchableOpacity
+          style={[styles.card, styles.smallCard]}
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate('QuestionBank')}
+        >
+          <Text style={styles.cardTag}>Practice 📝</Text>
+          <Text style={styles.cardTitle}>Question Bank</Text>
+          <Text style={styles.cardBody}>32 common questions</Text>
+        </TouchableOpacity>
 
         <View style={[styles.card, styles.smallCard]}>
           <Text style={styles.cardTag}>Streak 🔥</Text>
           <Text style={styles.cardTitle}>{streak} day streak</Text>
           <Text style={styles.cardBody}>Consistency builds confidence.</Text>
         </View>
+      </View>
+
+      {/* Daily Tip Card */}
+      <View style={styles.card}>
+        <Text style={styles.cardTag}>Daily tip</Text>
+        <Text style={styles.cardTitle}>Tip of the day</Text>
+        <Text style={styles.cardBody}>{tipOfTheDay}</Text>
       </View>
 
       {/* Latest feedback section */}

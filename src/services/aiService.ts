@@ -1,8 +1,9 @@
 import Groq from "groq-sdk";
+import { Audio } from 'expo-av';
 
 // Initialize Groq client
 // Get your free API key from: https://console.groq.com/keys
-const GROQ_API_KEY = "YOUR_GROQ_API_KEY_HERE"; // Replace with your actual key
+const GROQ_API_KEY = "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"; // Replace with your actual key
 
 const groq = new Groq({
   apiKey: GROQ_API_KEY,
@@ -48,7 +49,7 @@ export const sendMessageToAI = async (userMessage: string): Promise<string> => {
     // Call Groq API
     const chatCompletion = await groq.chat.completions.create({
       messages: conversationHistory,
-      model: "llama-3.1-70b-versatile", // Fast and high quality
+      model: "llama-3.3-70b-versatile", // Latest and best model
       temperature: 0.7,
       max_tokens: 200, // Keep responses concise
       top_p: 1,
@@ -79,7 +80,7 @@ export const getConversationSummary = async (): Promise<string> => {
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [...conversationHistory, summaryPrompt],
-      model: "llama-3.1-70b-versatile",
+      model: "llama-3.3-70b-versatile",
       temperature: 0.5,
       max_tokens: 300,
     });
@@ -93,4 +94,62 @@ export const getConversationSummary = async (): Promise<string> => {
 
 export const clearConversationHistory = () => {
   conversationHistory = [];
+};
+
+// Text-to-Speech using PlayAI
+let currentSound: Audio.Sound | null = null;
+
+export const speakText = async (text: string): Promise<boolean> => {
+  try {
+    // Stop any currently playing audio
+    if (currentSound) {
+      await currentSound.stopAsync();
+      await currentSound.unloadAsync();
+      currentSound = null;
+    }
+
+    // Configure audio mode for playback
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: true,
+      shouldDuckAndroid: true,
+    });
+
+    // Use free StreamElements TTS API (no API key needed!)
+    const ttsUrl = `https://api.streamelements.com/kappa/v2/speech?voice=Brian&text=${encodeURIComponent(text)}`;
+    
+    // Load and play the audio
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: ttsUrl },
+      { shouldPlay: true }
+    );
+      
+    currentSound = sound;
+      
+    // Clean up when finished
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (status.isLoaded && status.didJustFinish) {
+        sound.unloadAsync();
+        currentSound = null;
+      }
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error with text-to-speech:', error);
+    return false;
+  }
+};
+
+export const stopSpeaking = async () => {
+  if (currentSound) {
+    try {
+      await currentSound.stopAsync();
+      await currentSound.unloadAsync();
+      currentSound = null;
+    } catch (error) {
+      console.error('Error stopping audio:', error);
+    }
+  }
 };

@@ -17,7 +17,8 @@ import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from "../config/supabase";
-import { initializeInterviewChat, sendMessageToAI } from "../services/aiService";
+import { initializeInterviewChat, sendMessageToAI, speakText, stopSpeaking } from "../services/aiService";
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'InterviewChat'>;
 
@@ -36,6 +37,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isAiTyping, setIsAiTyping] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const flatListRef = React.useRef<FlatList>(null);
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -124,6 +126,13 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
+
+      // Speak the AI response if in voice mode
+      if (mode === 'voice') {
+        setIsSpeaking(true);
+        await speakText(aiResponse);
+        setIsSpeaking(false);
+      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       const errorMsg: Message = {
@@ -272,10 +281,19 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
 
       {mode === 'voice' && (
         <View style={styles.voiceFooter}>
-          <Text style={styles.voiceText}>
-            Voice mode coming soon — for now, you can use text mode to practice
-            your answers.
-          </Text>
+          {isSpeaking ? (
+            <View style={styles.speakingIndicator}>
+              <Ionicons name="volume-high" size={24} color={colors.primaryBlue} />
+              <Text style={styles.speakingText}>Aya is speaking...</Text>
+            </View>
+          ) : (
+            <>
+              <Ionicons name="mic" size={24} color={colors.primaryBlue} style={{ marginRight: 8 }} />
+              <Text style={styles.voiceText}>
+                Voice mode enabled! Aya will speak her responses. Type your answers below.
+              </Text>
+            </>
+          )}
         </View>
       )}
     </KeyboardAvoidingView>
@@ -433,12 +451,25 @@ const makeStyles = (colors: any, isDark: boolean) =>
       padding: 12,
       borderTopWidth: 1,
       borderTopColor: isDark ? '#333' : colors.border,
-      backgroundColor: isDark ? '#2b2415' : '#FEF3C7',
+      backgroundColor: isDark ? '#1d3a2b' : '#DCFCE7',
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     voiceText: {
       ...typography.bodySmall,
       fontSize: 13,
-      color: isDark ? '#f3c77a' : '#92400E',
+      color: isDark ? '#86EFAC' : '#16A34A',
+      flex: 1,
+    },
+    speakingIndicator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    speakingText: {
+      ...typography.bodySmall,
+      color: colors.primaryBlue,
+      fontWeight: '600',
     },
   });
 

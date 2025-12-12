@@ -12,11 +12,15 @@ import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import MyProfile from "./MyProfile";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "../config/supabase";
+import { Ionicons } from "@expo/vector-icons";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 type SettingsRoute =
   | "MyProfile"
+  | "InterviewHistory"
   | "InterviewExperience"
   | "AppCustomisation"
   | "JobPreferences"
@@ -26,6 +30,7 @@ type SettingsRoute =
 
 const SECTIONS: { label: string; route: SettingsRoute }[] = [
   { label: "Account", route: "MyProfile" },
+  { label: "Interview history", route: "InterviewHistory" },
   { label: "Interview experience", route: "InterviewExperience" },
   { label: "App customisation", route: "AppCustomisation" },
   { label: "Job preferences", route: "JobPreferences" },
@@ -69,6 +74,21 @@ const Settings = () => {
         ))}
       </View>
 
+      {/* Logout Button */}
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={async () => {
+          // Sign out from Supabase
+          await supabase.auth.signOut();
+          // Clear local storage
+          await AsyncStorage.setItem("isLoggedIn", "false");
+          navigation.navigate("SignIn");
+        }}
+      >
+        <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
+        <Text style={styles.logoutText}>Log out</Text>
+      </TouchableOpacity>
+
       <View style={styles.footer}>
         <Text style={styles.footerText}>Version 1.0.0</Text>
         <Text style={styles.footerText}>
@@ -110,6 +130,23 @@ const makeStyles = (colors: any, isDark: boolean) =>
     rowText: { ...typography.label, color: isDark ? '#fff' : colors.textDark },
     rowHelper: { ...typography.caption, color: isDark ? '#aaa' : colors.textMuted },
     chevron: { fontSize: 20, color: isDark ? '#666' : colors.textMuted },
+    logoutButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: isDark ? '#222' : '#FFF',
+      borderRadius: 12,
+      paddingVertical: 14,
+      marginTop: 20,
+      borderWidth: 1,
+      borderColor: '#FF3B30',
+    },
+    logoutText: {
+      ...typography.bodyMedium,
+      color: '#FF3B30',
+      fontWeight: '600',
+    },
     footer: { marginTop: 20, alignItems: "center" },
     footerText: { ...typography.caption, color: isDark ? '#aaa' : colors.textMuted },
   });

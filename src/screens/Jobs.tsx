@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FlatList,
   Linking,
@@ -9,11 +9,14 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+import { supabase } from "../config/supabase";
 
 const CATEGORIES = [
   'All Jobs',
+  'Saved Jobs',
   'Cyber Security',
   'Data Analyst',
   'IT Support',
@@ -257,23 +260,75 @@ const Jobs: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('All Jobs');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load saved jobs from Supabase on mount
+  useEffect(() => {
+    loadSavedJobs();
+  }, []);
+
+  const loadSavedJobs = async () => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('user_progress')
+        .select('saved_jobs')
+        .eq('user_id', userId)
+        .single();
+
+      if (data && data.saved_jobs) {
+        setSavedJobs(data.saved_jobs);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading saved jobs:', error);
+      setLoading(false);
+    }
+  };
 
   // Filter jobs based on category
   const filteredJobs =
     selectedCategory === 'All Jobs'
       ? MOCK_JOBS
+      : selectedCategory === 'Saved Jobs'
+      ? MOCK_JOBS.filter((j) => savedJobs.includes(j.id))
       : MOCK_JOBS.filter((j) => j.category === selectedCategory);
 
   const openJob = (job: Job) => {
     Linking.openURL(job.url);
   };
 
-  const toggleSaveJob = (jobId: string) => {
-    setSavedJobs((prev) =>
-      prev.includes(jobId)
-        ? prev.filter((id) => id !== jobId)
-        : [...prev, jobId]
-    );
+  const toggleSaveJob = async (jobId: string) => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      if (!userId) return;
+
+      const newSavedJobs = savedJobs.includes(jobId)
+        ? savedJobs.filter((id) => id !== jobId)
+        : [...savedJobs, jobId];
+
+      // Update state immediately for UI feedback
+      setSavedJobs(newSavedJobs);
+
+      // Save to Supabase
+      const { error } = await supabase
+        .from('user_progress')
+        .update({ saved_jobs: newSavedJobs })
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error saving job:', error);
+        // Revert state if save failed
+        setSavedJobs(savedJobs);
+      }
+    } catch (error) {
+      console.error('Error toggling saved job:', error);
+    }
   };
 
   const getPostedText = (days: number) => {
@@ -315,7 +370,7 @@ const Jobs: React.FC = () => {
         </TouchableOpacity>
 
         {dropdownOpen && (
-          <View style={styles.dropdownMenu}>
+          <ScrollView style={styles.dropdownMenu} nestedScrollEnabled>
             {CATEGORIES.map((cat) => (
               <TouchableOpacity
                 key={cat}
@@ -338,7 +393,7 @@ const Jobs: React.FC = () => {
                 )}
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         )}
       </View>
 

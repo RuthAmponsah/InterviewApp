@@ -43,10 +43,23 @@ CREATE TABLE user_progress (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create interview_history table
+CREATE TABLE interview_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  job_role TEXT NOT NULL,
+  mode TEXT CHECK (mode IN ('text', 'voice')) NOT NULL,
+  duration_minutes INTEGER DEFAULT 0,
+  feedback_score INTEGER CHECK (feedback_score >= 0 AND feedback_score <= 100),
+  date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Enable Row Level Security
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE interview_history ENABLE ROW LEVEL SECURITY;
 
 -- Create policies (users can only access their own data)
 CREATE POLICY "Users can view own data" ON users
@@ -75,6 +88,15 @@ CREATE POLICY "Users can insert own progress" ON user_progress
 
 CREATE POLICY "Users can update own progress" ON user_progress
   FOR UPDATE USING (auth.uid()::text = user_id::text);
+
+CREATE POLICY "Users can view own history" ON interview_history
+  FOR SELECT USING (auth.uid()::text = user_id::text);
+
+CREATE POLICY "Users can insert own history" ON interview_history
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can delete own history" ON interview_history
+  FOR DELETE USING (auth.uid()::text = user_id::text);
 ```
 
 ## ✅ Step 2: Enable Email Authentication

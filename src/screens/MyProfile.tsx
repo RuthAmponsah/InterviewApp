@@ -109,14 +109,19 @@ export default function MyProfile() {
       </View>
 
       {/* Logout Button */}
-      <PrimaryButton
-        title="Log out"
+      <TouchableOpacity
+        style={styles.logoutButton}
         onPress={async () => {
-          // Only clear login status, keep user data
+          // Sign out from Supabase
+          await supabase.auth.signOut();
+          // Clear local storage
           await AsyncStorage.setItem("isLoggedIn", "false");
-          navigation.replace("SignIn");    // Go to sign-in & block back navigation
+          navigation.replace("SignIn");
         }}
-      />
+      >
+        <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
+        <Text style={styles.logoutText}>Log out</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -183,7 +188,22 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     rowText: {
       ...typography.bodyMedium,
-      fontWeight: "500",
-      color: isDark ? "#fff" : "#333",
+      color: isDark ? "#fff" : "#111",
+    },
+    logoutButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: isDark ? '#222' : '#FFF',
+      borderRadius: 12,
+      paddingVertical: 14,
+      borderWidth: 1,
+      borderColor: '#FF3B30',
+    },
+    logoutText: {
+      ...typography.bodyMedium,
+      color: '#FF3B30',
+      fontWeight: '600',
     },
   });

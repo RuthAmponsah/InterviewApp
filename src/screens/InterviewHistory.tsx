@@ -72,6 +72,31 @@ export default function InterviewHistory({ navigation }: any) {
     setStats({ total, thisMonth, avgDuration });
   };
 
+  const getWeeklyData = () => {
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      return date.toISOString().split('T')[0];
+    });
+
+    return last7Days.map(day => {
+      const count = interviews.filter(i => i.date.split('T')[0] === day).length;
+      return { date: day, count };
+    });
+  };
+
+  const getTopRoles = () => {
+    const roleCounts: { [key: string]: number } = {};
+    interviews.forEach(i => {
+      roleCounts[i.job_role] = (roleCounts[i.job_role] || 0) + 1;
+    });
+    
+    return Object.entries(roleCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+      .map(([role, count]) => ({ role, count }));
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -132,6 +157,73 @@ export default function InterviewHistory({ navigation }: any) {
           <Text style={styles.statLabel}>Avg Time</Text>
         </View>
       </View>
+
+      {/* Analytics Section */}
+      {interviews.length > 0 && (
+        <>
+          {/* Weekly Activity */}
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsTitle}>📊 Last 7 Days</Text>
+            <View style={styles.chartContainer}>
+              {getWeeklyData().map((day, index) => {
+                const maxCount = Math.max(...getWeeklyData().map(d => d.count), 1);
+                const heightPercentage = (day.count / maxCount) * 100;
+                const dayName = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' });
+                
+                return (
+                  <View key={index} style={styles.barContainer}>
+                    <View style={styles.barWrapper}>
+                      <View 
+                        style={[
+                          styles.bar, 
+                          { 
+                            height: `${Math.max(heightPercentage, 5)}%`,
+                            backgroundColor: day.count > 0 ? colors.primaryBlue : (isDark ? '#2a2a2a' : '#E5E7EB'),
+                          }
+                        ]}
+                      >
+                        {day.count > 0 && (
+                          <Text style={styles.barCount}>{day.count}</Text>
+                        )}
+                      </View>
+                    </View>
+                    <Text style={styles.barLabel}>{dayName}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Top Roles */}
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsTitle}>🎯 Most Practiced Roles</Text>
+            {getTopRoles().map((item, index) => {
+              const maxCount = Math.max(...getTopRoles().map(r => r.count));
+              const widthPercentage = (item.count / maxCount) * 100;
+              
+              return (
+                <View key={index} style={styles.roleItem}>
+                  <View style={styles.roleHeader}>
+                    <Text style={styles.roleName}>{item.role}</Text>
+                    <Text style={styles.roleCount}>{item.count} interview{item.count !== 1 ? 's' : ''}</Text>
+                  </View>
+                  <View style={styles.progressBarBg}>
+                    <View 
+                      style={[
+                        styles.progressBar, 
+                        { 
+                          width: `${widthPercentage}%`,
+                          backgroundColor: index === 0 ? '#10B981' : index === 1 ? colors.primaryBlue : '#8B5CF6',
+                        }
+                      ]} 
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </>
+      )}
 
       {/* Interview List */}
       <View style={styles.card}>
@@ -234,6 +326,8 @@ const makeStyles = (colors: any, isDark: boolean) =>
       shadowRadius: 10,
       shadowOffset: { width: 0, height: 4 },
       elevation: 2,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E5E7EB',
     },
     statNumber: {
       ...typography.headingMedium,
@@ -323,5 +417,87 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodyMedium,
       color: colors.accentGreen,
       fontWeight: '700',
+    },
+    analyticsCard: {
+      backgroundColor: isDark ? "#1d1d1d" : "#FFFFFF",
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E5E7EB',
+    },
+    analyticsTitle: {
+      ...typography.bodyMedium,
+      fontWeight: '700',
+      color: isDark ? "#fff" : colors.textDark,
+      marginBottom: 16,
+    },
+    chartContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+      height: 140,
+      gap: 4,
+    },
+    barContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+    },
+    barWrapper: {
+      width: '100%',
+      height: 100,
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+    },
+    bar: {
+      width: '100%',
+      borderRadius: 6,
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      paddingTop: 4,
+      minHeight: 5,
+    },
+    barCount: {
+      ...typography.caption,
+      color: '#fff',
+      fontWeight: '700',
+    },
+    barLabel: {
+      ...typography.caption,
+      color: isDark ? "#888" : colors.textMuted,
+      marginTop: 6,
+    },
+    roleItem: {
+      marginBottom: 16,
+    },
+    roleHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    roleName: {
+      ...typography.bodyMedium,
+      color: isDark ? "#fff" : colors.textDark,
+      fontWeight: '600',
+    },
+    roleCount: {
+      ...typography.bodySmall,
+      color: isDark ? "#888" : colors.textMuted,
+    },
+    progressBarBg: {
+      height: 8,
+      backgroundColor: isDark ? '#2a2a2a' : '#E5E7EB',
+      borderRadius: 4,
+      overflow: 'hidden',
+    },
+    progressBar: {
+      height: '100%',
+      borderRadius: 4,
     },
   });

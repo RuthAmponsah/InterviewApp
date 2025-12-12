@@ -11,6 +11,7 @@ import {
   Image,
   TouchableWithoutFeedback,
   Keyboard,
+  Modal,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,6 +36,9 @@ export default function EditProfile({ navigation }: any) {
   const [age, setAge] = useState("");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -62,10 +66,8 @@ export default function EditProfile({ navigation }: any) {
     // Request permission
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Permission needed",
-        "Please allow access to your photos to change your profile picture."
-      );
+      setErrorMessage("Please allow access to your photos to change your profile picture.");
+      setErrorVisible(true);
       return;
     }
 
@@ -108,7 +110,8 @@ export default function EditProfile({ navigation }: any) {
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        Alert.alert('Error', 'Failed to upload photo. Please try again.');
+        setErrorMessage('Failed to upload photo. Please try again.');
+        setErrorVisible(true);
         return;
       }
 
@@ -131,13 +134,15 @@ export default function EditProfile({ navigation }: any) {
       }
     } catch (error) {
       console.error('Photo upload error:', error);
-      Alert.alert('Error', 'Failed to upload photo.');
+      setErrorMessage('Failed to upload photo.');
+      setErrorVisible(true);
     }
   };
 
   const saveProfile = async () => {
     if (!name) {
-      Alert.alert("Error", "Name is required.");
+      setErrorMessage("Name is required.");
+      setErrorVisible(true);
       return;
     }
 
@@ -161,7 +166,8 @@ export default function EditProfile({ navigation }: any) {
 
         if (error) {
           console.error('Update error:', error);
-          Alert.alert("Error", "Failed to update profile in database.");
+          setErrorMessage("Failed to update profile in database.");
+          setErrorVisible(true);
           setLoading(false);
           return;
         }
@@ -179,11 +185,11 @@ export default function EditProfile({ navigation }: any) {
       }
 
       setLoading(false);
-      Alert.alert("Success", "Your profile has been updated.");
-      navigation.goBack();
+      setSuccessVisible(true);
     } catch (error) {
       setLoading(false);
-      Alert.alert("Error", "Something went wrong. Please try again.");
+      setErrorMessage("Something went wrong. Please try again.");
+      setErrorVisible(true);
       console.error('Save profile error:', error);
     }
   };
@@ -297,6 +303,45 @@ export default function EditProfile({ navigation }: any) {
           </ScrollView>
         </View>
       </TouchableWithoutFeedback>
+
+      {/* Success Modal */}
+      <Modal transparent visible={successVisible} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={[styles.modalWarning, styles.modalSuccess]}>
+              ✅ Success
+            </Text>
+            <Text style={styles.modalText}>Your profile has been updated.</Text>
+            <TouchableOpacity 
+              style={styles.modalButton} 
+              onPress={() => {
+                setSuccessVisible(false);
+                setTimeout(() => navigation.goBack(), 300);
+              }}
+            >
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Error Modal */}
+      <Modal transparent visible={errorVisible} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalWarning}>
+              ⚠️ Warning
+            </Text>
+            <Text style={styles.modalText}>{errorMessage}</Text>
+            <TouchableOpacity 
+              style={styles.modalButton} 
+              onPress={() => setErrorVisible(false)}
+            >
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -373,5 +418,47 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     rowHalf: {
       flex: 1,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.7)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    modalBox: {
+      width: "85%",
+      backgroundColor: isDark ? "#1d1d1d" : "#FFFFFF",
+      borderRadius: 20,
+      padding: 24,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: isDark ? "#333" : "#E5E7EB",
+    },
+    modalWarning: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: "#EF4444",
+      marginBottom: 12,
+    },
+    modalSuccess: {
+      color: "#10B981",
+    },
+    modalText: {
+      ...typography.bodyMedium,
+      color: isDark ? "#b5b5b5" : "#6B7280",
+      textAlign: "center",
+      marginBottom: 20,
+    },
+    modalButton: {
+      width: "100%",
+      backgroundColor: colors.primaryBlue,
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    modalButtonText: {
+      ...typography.label,
+      color: "#FFFFFF",
+      fontWeight: "600",
     },
   });

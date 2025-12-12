@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import PrimaryButton from "../components/PrimaryButton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -108,12 +108,17 @@ export default function MyProfile() {
 
   return (
     <View style={styles.container}>
-        <BackButton />
+      <BackButton />
       
       <Text style={styles.logoText}>MY INTERVIEW</Text>
 
-      {/* Profile Completion */}
-      <View style={styles.completionCard}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Profile Completion - Only show if not complete */}
+        {profileCompletion < 100 && (
+        <View style={styles.completionCard}>
         <View style={styles.completionHeader}>
           <Text style={styles.completionTitle}>Profile Completion</Text>
           <Text style={styles.completionPercentage}>{profileCompletion}%</Text>
@@ -121,14 +126,13 @@ export default function MyProfile() {
         <View style={styles.progressBarContainer}>
           <View style={[styles.progressBar, { width: `${profileCompletion}%` }]} />
         </View>
-        {profileCompletion < 100 && (
-          <Text style={styles.completionHint}>
-            {profileCompletion < 50 
-              ? "Complete your profile to get personalized recommendations" 
-              : "Almost there! Finish your profile to unlock all features"}
-          </Text>
-        )}
+        <Text style={styles.completionHint}>
+          {profileCompletion < 50 
+            ? "Complete your profile to get personalized recommendations" 
+            : "Almost there! Finish your profile to unlock all features"}
+        </Text>
       </View>
+        )}
 
       {/* Header Section */}
       <View style={styles.header}>
@@ -144,28 +148,43 @@ export default function MyProfile() {
       </View>
 
       {/* Achievements Card */}
-      {/* Achievements Card */}
       <View style={styles.achievementsCard}>
-        <Text style={styles.cardTitle}>
-          🏆 Achievements
-        </Text>
+        <View style={styles.achievementsHeader}>
+          <Text style={styles.achievementsTitle}>🏆 Achievements</Text>
+          <Text style={styles.achievementsSubtitle}>Unlock badges by practicing regularly</Text>
+        </View>
         <View style={styles.badgesContainer}>
           <View style={[styles.badge, achievements.streak7 && styles.badgeUnlocked]}>
-            <Text style={styles.badgeIcon}>{achievements.streak7 ? "🔥" : "🔒"}</Text>
+            <View style={styles.badgeIconContainer}>
+              <Text style={styles.badgeIcon}>{achievements.streak7 ? "🔥" : "🔒"}</Text>
+            </View>
             <Text style={[styles.badgeLabel, achievements.streak7 && styles.badgeLabelUnlocked]}>
-              7-Day Streak
+              7-Day
+            </Text>
+            <Text style={[styles.badgeSubLabel, achievements.streak7 && styles.badgeLabelUnlocked]}>
+              Streak
             </Text>
           </View>
           <View style={[styles.badge, achievements.interviews10 && styles.badgeUnlocked]}>
-            <Text style={styles.badgeIcon}>{achievements.interviews10 ? "🎯" : "🔒"}</Text>
+            <View style={styles.badgeIconContainer}>
+              <Text style={styles.badgeIcon}>{achievements.interviews10 ? "🎯" : "🔒"}</Text>
+            </View>
             <Text style={[styles.badgeLabel, achievements.interviews10 && styles.badgeLabelUnlocked]}>
-              10 Interviews
+              10 Mock
+            </Text>
+            <Text style={[styles.badgeSubLabel, achievements.interviews10 && styles.badgeLabelUnlocked]}>
+              Interviews
             </Text>
           </View>
           <View style={[styles.badge, achievements.questions20 && styles.badgeUnlocked]}>
-            <Text style={styles.badgeIcon}>{achievements.questions20 ? "📚" : "🔒"}</Text>
+            <View style={styles.badgeIconContainer}>
+              <Text style={styles.badgeIcon}>{achievements.questions20 ? "📚" : "🔒"}</Text>
+            </View>
             <Text style={[styles.badgeLabel, achievements.questions20 && styles.badgeLabelUnlocked]}>
-              20 Questions
+              20 Custom
+            </Text>
+            <Text style={[styles.badgeSubLabel, achievements.questions20 && styles.badgeLabelUnlocked]}>
+              Questions
             </Text>
           </View>
         </View>
@@ -209,6 +228,7 @@ export default function MyProfile() {
         <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
         <Text style={styles.logoutText}>Log out</Text>
       </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 }
@@ -227,6 +247,9 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: colors.primaryBlue,
       alignSelf: "center",
       marginBottom: 28,
+    },
+    scrollContent: {
+      paddingBottom: 40,
     },
     completionCard: {
       backgroundColor: isDark ? "#1c1c1c" : "#FFFFFF",
@@ -306,17 +329,27 @@ const makeStyles = (colors: any, isDark: boolean) =>
       backgroundColor: isDark ? "#1d1d1d" : "#fff",
       borderRadius: 20,
       paddingHorizontal: 20,
-      paddingVertical: 20,
+      paddingVertical: 24,
       marginBottom: 25,
       shadowColor: "#000",
-      shadowOpacity: 0.05,
-      shadowRadius: 10,
-      elevation: 3,
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 4,
       borderWidth: 1,
       borderColor: isDark ? "#333" : "#E6E6E6",
     },
-    cardTitle: {
+    achievementsHeader: {
+      marginBottom: 20,
+    },
+    achievementsTitle: {
+      ...typography.headingMedium,
+      fontWeight: "700",
       color: isDark ? "#fff" : "#111",
+      marginBottom: 4,
+    },
+    achievementsSubtitle: {
+      ...typography.bodySmall,
+      color: isDark ? "#9CA3AF" : "#6B7280",
     },
     badgesContainer: {
       flexDirection: "row",
@@ -326,29 +359,46 @@ const makeStyles = (colors: any, isDark: boolean) =>
     badge: {
       flex: 1,
       alignItems: "center",
-      paddingVertical: 16,
-      paddingHorizontal: 8,
-      borderRadius: 12,
-      backgroundColor: isDark ? "#2a2a2a" : "#F3F4F6",
+      paddingVertical: 20,
+      paddingHorizontal: 12,
+      borderRadius: 16,
+      backgroundColor: isDark ? "#2a2a2a" : "#F9FAFB",
       borderWidth: 2,
       borderColor: isDark ? "#444" : "#E5E7EB",
     },
     badgeUnlocked: {
       backgroundColor: isDark ? "#1e3a5f" : "#EFF6FF",
-      borderColor: isDark ? "#3b82f6" : "#3b82f6",
+      borderColor: colors.primaryBlue,
+      borderWidth: 2,
+    },
+    badgeIconContainer: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: isDark ? "#333" : "#F3F4F6",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 12,
     },
     badgeIcon: {
-      fontSize: 36,
-      marginBottom: 8,
+      fontSize: 32,
     },
     badgeLabel: {
-      fontSize: 12,
-      fontWeight: "600",
+      fontSize: 13,
+      fontWeight: "700",
       textAlign: "center",
       color: isDark ? "#9CA3AF" : "#6B7280",
+      marginBottom: 2,
+    },
+    badgeSubLabel: {
+      fontSize: 11,
+      fontWeight: "500",
+      textAlign: "center",
+      color: isDark ? "#6B7280" : "#9CA3AF",
     },
     badgeLabelUnlocked: {
-      color: isDark ? "#60A5FA" : "#3b82f6",
+      color: colors.primaryBlue,
+      fontWeight: "700",
     },
 
     /* Options Card */

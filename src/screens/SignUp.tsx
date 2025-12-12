@@ -97,10 +97,13 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
     setLoading(true);
 
     try {
-      // 1. Create auth user in Supabase
+      // 1. Create auth user in Supabase (with autoConfirm for development)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.toLowerCase(),
         password: password,
+        options: {
+          emailRedirectTo: undefined, // Skip email verification redirect
+        }
       });
 
       if (authError) {
@@ -172,9 +175,9 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
 
       setLoading(false);
       
-      // Show success message with email verification instructions
+      // Show success message
       showSuccess(
-        `Welcome ${name}! 🎉\n\nYour account has been created successfully.\n\n📧 IMPORTANT: Please check your email (${email}) and click the verification link to activate your account.\n\nOnce verified, you can sign in and start your interview preparation journey!`
+        `Welcome ${name}! 🎉\n\nYour account has been created successfully!\n\nYou can now sign in and start your interview preparation journey!`
       );
 
     } catch (error) {
@@ -287,10 +290,10 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
               style={styles.modalButton}
               onPress={() => {
                 setWarningVisible(false);
-                // For success, navigate back to SignIn screen to verify email first
+                // Navigate to Welcome screen to continue onboarding
                 if (isSuccessMessage) {
                   setTimeout(() => {
-                    navigation.replace("SignIn");
+                    navigation.replace("Welcome");
                   }, 300);
                 }
               }}

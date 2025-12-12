@@ -36,10 +36,19 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const [input, setInput] = useState('');
   const flatListRef = React.useRef<FlatList>(null);
   const [startTime] = useState(Date.now());
+  const [elapsedTime, setElapsedTime] = useState(0);
   const [jobRole, setJobRole] = useState('');
 
   React.useEffect(() => {
     loadUserData();
+    
+    // Update elapsed time every second
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setElapsedTime(elapsed);
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const loadUserData = async () => {
@@ -67,6 +76,12 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
     } catch (error) {
       console.error('Error loading user data:', error);
     }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const sendMessage = () => {
@@ -156,7 +171,12 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>MY INTERVIEW</Text>
+            <View style={styles.headerLeft}>
+              <Text style={styles.headerTitle}>MY INTERVIEW</Text>
+              <View style={styles.timerContainer}>
+                <Text style={styles.timerText}>🕐 {formatTime(elapsedTime)}</Text>
+              </View>
+            </View>
             <TouchableOpacity onPress={endInterview}>
               <Text style={styles.endInterview}>End interview</Text>
             </TouchableOpacity>
@@ -247,10 +267,23 @@ const makeStyles = (colors: any, isDark: boolean) =>
       alignItems: 'center',
       backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
     },
+    headerLeft: {
+      flex: 1,
+    },
     headerTitle: {
       ...typography.headingSmall,
       fontSize: 18,
       color: colors.primaryBlue,
+      marginBottom: 4,
+    },
+    timerContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    timerText: {
+      ...typography.bodySmall,
+      color: isDark ? '#9CA3AF' : '#6B7280',
+      fontWeight: '600',
     },
     endInterview: {
       ...typography.bodySmall,

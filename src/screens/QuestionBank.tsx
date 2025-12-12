@@ -10,6 +10,7 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from 'expo-haptics';
 import BackButton from "../components/BackButton";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
@@ -101,10 +102,14 @@ export default function QuestionBank({ navigation }: any) {
 
   const toggleFavorite = async (questionId: string) => {
     const newFavorites = new Set(favorites);
+    const isAdding = !newFavorites.has(questionId);
+    
     if (newFavorites.has(questionId)) {
       newFavorites.delete(questionId);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
       newFavorites.add(questionId);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     setFavorites(newFavorites);
     try {

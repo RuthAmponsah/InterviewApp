@@ -1,5 +1,6 @@
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from "react-native";
+import * as Haptics from 'expo-haptics';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 
@@ -21,6 +22,11 @@ const PrimaryButton = ({
   const { colors } = useTheme();  // ⭐ FIX
   const isPrimary = variant === "primary";
 
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onPress();
+  };
+
   return (
     <TouchableOpacity
       style={[
@@ -29,7 +35,7 @@ const PrimaryButton = ({
           borderColor: colors.primaryBlue },
         (disabled || loading) && styles.disabled,
       ]}
-      onPress={onPress}
+      onPress={handlePress}
       disabled={disabled || loading}
     >
       {loading ? (

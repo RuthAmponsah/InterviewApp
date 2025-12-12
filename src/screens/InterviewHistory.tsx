@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from 'expo-haptics';
 import BackButton from "../components/BackButton";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
+import { SkeletonListItem } from '../components/Skeleton';
 
 type InterviewRecord = {
   id: string;
@@ -22,6 +24,7 @@ export default function InterviewHistory({ navigation }: any) {
   const styles = makeStyles(colors, isDark);
   const [interviews, setInterviews] = useState<InterviewRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     thisMonth: 0,
@@ -54,6 +57,37 @@ export default function InterviewHistory({ navigation }: any) {
     } catch (error) {
       console.error('Error loading interview history:', error);
       setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await loadInterviewHistory();
+    setRefreshing(false);
+  };
+
+  const deleteInterview = async (interviewId: string) => {
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('interview_history')
+        .delete()
+        .eq('id', interviewId);
+
+      if (error) {
+        console.error('Error deleting interview:', error);
+        return;
+      }
+
+      // Update local state
+      const updatedInterviews = interviews.filter(i => i.id !== interviewId);
+      setInterviews(updatedInterviews);
+      calculateStats(updatedInterviews);
+    } catch (error) {
+      console.error('Error deleting interview:', error);
     }
   };
 
@@ -125,7 +159,18 @@ export default function InterviewHistory({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+    <ScrollView 
+      style={styles.root} 
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primaryBlue}
+          colors={[colors.primaryBlue]}
+        />
+      }
+    >
       <BackButton />
       
       <View style={styles.headerRow}>
@@ -228,7 +273,11 @@ export default function InterviewHistory({ navigation }: any) {
       {/* Interview List */}
       <View style={styles.card}>
         {loading ? (
-          <Text style={styles.emptyText}>Loading...</Text>
+          <>
+            <SkeletonListItem />
+            <SkeletonListItem />
+            <SkeletonListItem />
+          </>
         ) : interviews.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="clipboard-outline" size={48} color={colors.textMuted} />
@@ -238,32 +287,44 @@ export default function InterviewHistory({ navigation }: any) {
             </Text>
             <TouchableOpacity
               style={styles.startButton}
-              onPress={() => navigation.navigate('InterviewType')}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                navigation.navigate('InterviewType');
+              }}
             >
               <Text style={styles.startButtonText}>Start Interview</Text>
             </TouchableOpacity>
           </View>
         ) : (
           interviews.map((interview) => (
-            <View key={interview.id} style={styles.interviewItem}>
-              <View style={styles.interviewIcon}>
-                <Ionicons
-                  name={interview.mode === 'text' ? 'chatbubbles' : 'mic'}
-                  size={20}
-                  color={colors.primaryBlue}
-                />
-              </View>
-              <View style={styles.interviewDetails}>
-                <Text style={styles.interviewRole}>{interview.job_role}</Text>
-                <Text style={styles.interviewMeta}>
-                  {formatDate(interview.date)} • {interview.duration_minutes} min
-                </Text>
-              </View>
-              {interview.feedback_score && (
-                <View style={styles.scoreCircle}>
-                  <Text style={styles.scoreText}>{interview.feedback_score}</Text>
+            <View key={interview.id} style={styles.interviewItemContainer}>
+              <View style={styles.interviewItem}>
+                <View style={styles.interviewIcon}>
+                  <Ionicons
+                    name={interview.mode === 'text' ? 'chatbubbles' : 'mic'}
+                    size={20}
+                    color={colors.primaryBlue}
+                  />
                 </View>
-              )}
+                <View style={styles.interviewDetails}>
+                  <Text style={styles.interviewRole}>{interview.job_role}</Text>
+                  <Text style={styles.interviewMeta}>
+                    {formatDate(interview.date)} • {interview.duration_minutes} min
+                  </Text>
+                </View>
+                {interview.feedback_score && (
+                  <View style={styles.scoreContainer}>
+                    <Text style={styles.scoreText}>{interview.feedback_score}</Text>
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => deleteInterview(interview.id)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={20} color="#EF4444" />
+              </TouchableOpacity>
             </View>
           ))
         )}
@@ -378,12 +439,22 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: '#FFFFFF',
       fontWeight: '600',
     },
+    interviewItemContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "#2a2a2a" : colors.border,
+    },
     interviewItem: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#2a2a2a" : colors.border,
+    },
+    deleteButton: {
+      padding: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     interviewIcon: {
       width: 40,
@@ -407,7 +478,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodySmall,
       color: isDark ? "#888" : colors.textMuted,
     },
-    scoreCircle: {
+    scoreContainer: {
       width: 36,
       height: 36,
       borderRadius: 18,

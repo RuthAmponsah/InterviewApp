@@ -78,10 +78,15 @@ export default function MyProfile() {
           .eq('user_id', userId)
           .single();
 
+        // Check custom questions count
+        const customQuestionsStr = await AsyncStorage.getItem('customQuestions');
+        const customQuestions = customQuestionsStr ? JSON.parse(customQuestionsStr) : [];
+        const hasCustomQuestions = customQuestions.length >= 20;
+
         setAchievements({
           streak7: streak >= 7,
           interviews10: (progress?.total_interviews || 0) >= 10,
-          questions20: false, // Will implement question tracking later
+          questions20: hasCustomQuestions,
         });
       }
 

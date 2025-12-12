@@ -22,6 +22,7 @@ import TextInputField from "../components/TextInputField";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
+import SuccessAnimation from "../components/SuccessAnimation";
 
 export default function EditProfile({ navigation }: any) {
   const { colors, theme } = useTheme();
@@ -37,6 +38,7 @@ export default function EditProfile({ navigation }: any) {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -185,7 +187,7 @@ export default function EditProfile({ navigation }: any) {
       }
 
       setLoading(false);
-      setSuccessVisible(true);
+      setShowSuccessAnimation(true);
     } catch (error) {
       setLoading(false);
       setErrorMessage("Something went wrong. Please try again.");
@@ -304,26 +306,16 @@ export default function EditProfile({ navigation }: any) {
         </View>
       </TouchableWithoutFeedback>
 
-      {/* Success Modal */}
-      <Modal transparent visible={successVisible} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={[styles.modalWarning, styles.modalSuccess]}>
-              ✅ Success
-            </Text>
-            <Text style={styles.modalText}>Your profile has been updated.</Text>
-            <TouchableOpacity 
-              style={styles.modalButton} 
-              onPress={() => {
-                setSuccessVisible(false);
-                setTimeout(() => navigation.goBack(), 300);
-              }}
-            >
-              <Text style={styles.modalButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      {/* Success Animation */}
+      <SuccessAnimation
+        visible={showSuccessAnimation}
+        message="Profile Updated!"
+        icon="checkmark-circle"
+        onComplete={() => {
+          setShowSuccessAnimation(false);
+          setTimeout(() => navigation.goBack(), 300);
+        }}
+      />
 
       {/* Error Modal */}
       <Modal transparent visible={errorVisible} animationType="fade">

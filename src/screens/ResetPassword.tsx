@@ -5,10 +5,10 @@ import {
     Platform,
     StyleSheet,
     Text,
-    TouchableOpacity,
     View,
     TouchableWithoutFeedback,
     Keyboard,
+    Alert,
 } from 'react-native';
 import PrimaryButton from '../components/PrimaryButton';
 import TextInputField from '../components/TextInputField';
@@ -16,34 +16,38 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
-import { Alert } from 'react-native';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'ResetPassword'>;
 
-const ForgotPassword: React.FC<Props> = ({ navigation }) => {
+const ResetPassword: React.FC<Props> = ({ navigation }) => {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const styles = makeStyles(colors, isDark);
-  const [email, setEmail] = useState('');
-  const [sent, setSent] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const onSendLink = async () => {
-    if (!email) return;
+  const onResetPassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields.');
+      return;
+    }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters long.');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Send password reset email via Supabase
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'myinterviewapp://reset-password', // Deep link for your app
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
       });
 
       setLoading(false);
@@ -53,15 +57,19 @@ const ForgotPassword: React.FC<Props> = ({ navigation }) => {
         return;
       }
 
-      // Success - show confirmation
-      setSent(true);
       Alert.alert(
-        'Check Your Email',
-        `A password reset link has been sent to ${email}. Please check your inbox and follow the instructions.`
+        'Success',
+        'Your password has been reset successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('SignIn'),
+          },
+        ]
       );
     } catch (error) {
       setLoading(false);
-      Alert.alert('Error', 'Failed to send reset link. Please try again.');
+      Alert.alert('Error', 'Failed to reset password. Please try again.');
       console.error('Password reset error:', error);
     }
   };
@@ -73,40 +81,41 @@ const ForgotPassword: React.FC<Props> = ({ navigation }) => {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
+          <Text style={styles.logoText}>MY INTERVIEW</Text>
 
-        <Text style={styles.title}>Forgot password</Text>
-        <Text style={styles.subtitle}>
-          Enter your email and we’ll send you a password reset link.
-        </Text>
+          <Text style={styles.title}>Reset password</Text>
+          <Text style={styles.subtitle}>
+            Enter your new password below.
+          </Text>
 
-        <View style={styles.form}>
-          <TextInputField
-            label="Email"
-            placeholder="Your email address"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-          />
+          <View style={styles.form}>
+            <TextInputField
+              label="New password"
+              placeholder="Enter new password"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+            />
 
-          <PrimaryButton
-            title={sent ? 'Link sent' : 'Send link'}
-            onPress={onSendLink}
-            loading={loading}
-            disabled={!email}
-          />
+            <TextInputField
+              label="Confirm password"
+              placeholder="Re-enter new password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+            />
 
-          {sent && (
-            <Text style={styles.infoText}>
-              If an account exists with this email, a recovery link has been
-              sent.
+            <Text style={styles.hintText}>
+              Password must be at least 8 characters long.
             </Text>
-          )}
-        </View>
 
-        <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
-          <Text style={styles.backLink}>Back to sign in</Text>
-        </TouchableOpacity>
+            <PrimaryButton
+              title="Reset password"
+              onPress={onResetPassword}
+              loading={loading}
+              disabled={!newPassword || !confirmPassword}
+            />
+          </View>
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
@@ -148,18 +157,11 @@ const makeStyles = (colors: any, isDark: boolean) =>
       shadowOffset: { width: 0, height: 4 },
       elevation: 3,
     },
-    infoText: {
+    hintText: {
       ...typography.bodySmall,
-      marginTop: 10,
-      color: isDark ? '#b5b5b5' : colors.textMuted,
-    },
-    backLink: {
-      ...typography.label,
-      marginTop: 18,
-      alignSelf: 'center',
-      color: colors.primaryBlue,
+      color: isDark ? '#888' : colors.textMuted,
+      marginBottom: 12,
     },
   });
 
-export default ForgotPassword;
-
+export default ResetPassword;

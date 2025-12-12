@@ -9,6 +9,7 @@ import { useTheme } from "../theme/ThemeContext";
 import SignIn from "../screens/SignIn";
 import SignUp from "../screens/SignUp";
 import ForgotPassword from "../screens/ForgotPassword";
+import ResetPassword from "../screens/ResetPassword";
 import Welcome from "../screens/Welcome";
 import Home from "../screens/Home";
 import Jobs from "../screens/Jobs";
@@ -35,6 +36,7 @@ export type RootStackParamList = {
   SignIn: undefined;
   SignUp: undefined;
   ForgotPassword: undefined;
+  ResetPassword: undefined;
   Welcome: undefined;
   MainTabs: undefined;
   InterviewType: undefined;
@@ -145,6 +147,7 @@ const RootNavigator = () => {
       <Stack.Screen name="SignIn" component={SignIn} />
       <Stack.Screen name="SignUp" component={SignUp} />
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+      <Stack.Screen name="ResetPassword" component={ResetPassword} />
 
       {/* Intro */}
       <Stack.Screen name="Welcome" component={Welcome} />

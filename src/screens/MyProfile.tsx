@@ -24,6 +24,11 @@ export default function MyProfile() {
   const [name, setName] = useState("User");
   const [email, setEmail] = useState("ruthrocwel@example.com");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [achievements, setAchievements] = useState({
+    streak7: false,
+    interviews10: false,
+    questions20: false,
+  });
 
   // Load saved profile data from storage and Supabase
   const loadProfile = async () => {
@@ -46,6 +51,20 @@ export default function MyProfile() {
             await AsyncStorage.setItem("userProfilePhoto", data.profile_photo);
           }
         }
+
+        // Check achievements
+        const streak = parseInt(await AsyncStorage.getItem("streak") || "0");
+        const { data: progress } = await supabase
+          .from('user_progress')
+          .select('total_interviews')
+          .eq('user_id', userId)
+          .single();
+
+        setAchievements({
+          streak7: streak >= 7,
+          interviews10: (progress?.total_interviews || 0) >= 10,
+          questions20: false, // Will implement question tracking later
+        });
       }
 
       // Fallback to AsyncStorage if offline
@@ -82,6 +101,34 @@ export default function MyProfile() {
         </View>
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.email}>{email}</Text>
+      </View>
+
+      {/* Achievements Card */}
+      {/* Achievements Card */}
+      <View style={styles.achievementsCard}>
+        <Text style={styles.cardTitle}>
+          🏆 Achievements
+        </Text>
+        <View style={styles.badgesContainer}>
+          <View style={[styles.badge, achievements.streak7 && styles.badgeUnlocked]}>
+            <Text style={styles.badgeIcon}>{achievements.streak7 ? "🔥" : "🔒"}</Text>
+            <Text style={[styles.badgeLabel, achievements.streak7 && styles.badgeLabelUnlocked]}>
+              7-Day Streak
+            </Text>
+          </View>
+          <View style={[styles.badge, achievements.interviews10 && styles.badgeUnlocked]}>
+            <Text style={styles.badgeIcon}>{achievements.interviews10 ? "🎯" : "🔒"}</Text>
+            <Text style={[styles.badgeLabel, achievements.interviews10 && styles.badgeLabelUnlocked]}>
+              10 Interviews
+            </Text>
+          </View>
+          <View style={[styles.badge, achievements.questions20 && styles.badgeUnlocked]}>
+            <Text style={styles.badgeIcon}>{achievements.questions20 ? "📚" : "🔒"}</Text>
+            <Text style={[styles.badgeLabel, achievements.questions20 && styles.badgeLabelUnlocked]}>
+              20 Questions
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* Options Section */}
@@ -164,6 +211,56 @@ const makeStyles = (colors: any, isDark: boolean) =>
     email: {
       ...typography.label,
       color: isDark ? "#b5b5b5" : "#666",
+    },
+
+    /* Achievements Card */
+    achievementsCard: {
+      backgroundColor: isDark ? "#1d1d1d" : "#fff",
+      borderRadius: 20,
+      paddingHorizontal: 20,
+      paddingVertical: 20,
+      marginBottom: 25,
+      shadowColor: "#000",
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      elevation: 3,
+      borderWidth: 1,
+      borderColor: isDark ? "#333" : "#E6E6E6",
+    },
+    cardTitle: {
+      color: isDark ? "#fff" : "#111",
+    },
+    badgesContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    badge: {
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 16,
+      paddingHorizontal: 8,
+      borderRadius: 12,
+      backgroundColor: isDark ? "#2a2a2a" : "#F3F4F6",
+      borderWidth: 2,
+      borderColor: isDark ? "#444" : "#E5E7EB",
+    },
+    badgeUnlocked: {
+      backgroundColor: isDark ? "#1e3a5f" : "#EFF6FF",
+      borderColor: isDark ? "#3b82f6" : "#3b82f6",
+    },
+    badgeIcon: {
+      fontSize: 36,
+      marginBottom: 8,
+    },
+    badgeLabel: {
+      fontSize: 12,
+      fontWeight: "600",
+      textAlign: "center",
+      color: isDark ? "#9CA3AF" : "#6B7280",
+    },
+    badgeLabelUnlocked: {
+      color: isDark ? "#60A5FA" : "#3b82f6",
     },
 
     /* Options Card */

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BackButton from "../components/BackButton";
@@ -87,11 +87,30 @@ export default function InterviewHistory({ navigation }: any) {
     }
   };
 
+  const shareResults = async () => {
+    const message = `🎯 I've completed ${stats.total} interview practice sessions with MY INTERVIEW!\n\n📊 Stats:\n• This month: ${stats.thisMonth} interviews\n• Average duration: ${stats.avgDuration} minutes\n\nPractice makes perfect! 💪`;
+    
+    try {
+      await Share.share({
+        message,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <BackButton />
       
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.logoText}>MY INTERVIEW</Text>
+        {stats.total > 0 && (
+          <TouchableOpacity style={styles.shareButton} onPress={shareResults}>
+            <Ionicons name="share-social-outline" size={24} color={colors.primary} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <Text style={styles.title}>Interview History</Text>
       <Text style={styles.subtitle}>
@@ -172,12 +191,22 @@ const makeStyles = (colors: any, isDark: boolean) =>
       paddingTop: 80,
       paddingBottom: 32,
     },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 28,
+      position: 'relative',
+    },
     logoText: {
       ...typography.heading,
       fontWeight: "800",
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
+    },
+    shareButton: {
+      position: 'absolute',
+      right: 0,
+      padding: 8,
     },
     title: {
       ...typography.headingMedium,

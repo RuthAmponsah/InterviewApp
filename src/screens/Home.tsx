@@ -307,11 +307,52 @@ const Home: React.FC = () => {
           }}
         >
           <Text style={styles.cardTitle}>Latest feedback</Text>
-          <Text style={styles.cardBody}>
-            {hasInterviews 
-              ? latestFeedback
-              : "You haven't completed any interviews yet. Come back soon after you do an interview!"}
-          </Text>
+          {hasInterviews ? (
+            (() => {
+              // Parse the feedback text
+              const scoreMatch = latestFeedback.match(/Score:\s*(\d+)\/100/);
+              const strengthsMatch = latestFeedback.match(/Strengths:\s*(.+?)\s*Areas to improve:/s);
+              const improvementsMatch = latestFeedback.match(/Areas to improve:\s*(.+)$/s);
+              
+              const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
+              const strengths = strengthsMatch ? strengthsMatch[1].trim() : '';
+              const improvements = improvementsMatch ? improvementsMatch[1].trim() : '';
+              
+              return (
+                <>
+                  {score !== null && (
+                    <View style={styles.scoreBox}>
+                      <Text style={styles.scoreText}>{score}/100</Text>
+                    </View>
+                  )}
+                  
+                  {strengths && (
+                    <View style={styles.feedbackSection}>
+                      <Text style={styles.feedbackSectionTitle}>✅ What you did well</Text>
+                      <Text style={styles.feedbackSectionText} numberOfLines={3}>
+                        {strengths}
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {improvements && (
+                    <View style={styles.feedbackSection}>
+                      <Text style={styles.feedbackSectionTitle}>💡 How to improve</Text>
+                      <Text style={styles.feedbackSectionText} numberOfLines={3}>
+                        {improvements}
+                      </Text>
+                    </View>
+                  )}
+                  
+                  <Text style={styles.tapToViewMore}>Tap to view all feedback →</Text>
+                </>
+              );
+            })()
+          ) : (
+            <Text style={styles.cardBody}>
+              You haven't completed any interviews yet. Come back soon after you do an interview!
+            </Text>
+          )}
         </TouchableOpacity>
       )}
 
@@ -439,6 +480,43 @@ const makeStyles = (colors: any, isDark: boolean) =>
   cardBody: {
     ...typography.bodySmall,
     color: isDark ? '#aaa' : colors.textMuted,
+  },
+  scoreBox: {
+    backgroundColor: colors.primaryBlue,
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  scoreText: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: '#fff',
+    fontSize: 14,
+  },
+  feedbackSection: {
+    marginBottom: 12,
+  },
+  feedbackSectionTitle: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: isDark ? '#fff' : colors.textDark,
+    marginBottom: 6,
+    fontSize: 13,
+  },
+  feedbackSectionText: {
+    ...typography.bodySmall,
+    color: isDark ? '#b5b5b5' : colors.textMuted,
+    lineHeight: 18,
+    fontSize: 13,
+  },
+  tapToViewMore: {
+    ...typography.caption,
+    color: colors.primaryBlue,
+    fontWeight: '600',
+    marginTop: 8,
   },
   modalOverlay: {
     flex: 1,

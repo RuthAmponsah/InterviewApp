@@ -307,7 +307,7 @@ const Home: React.FC = () => {
           }}
         >
           <Text style={styles.cardTitle}>Latest feedback</Text>
-          {hasInterviews ? (
+          {hasInterviews && latestFeedback ? (
             (() => {
               // Parse the feedback text
               const scoreMatch = latestFeedback.match(/Score:\s*(\d+)\/100/);

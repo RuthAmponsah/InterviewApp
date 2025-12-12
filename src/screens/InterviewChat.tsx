@@ -72,6 +72,13 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
           text: `Hello${userName ? ' ' + userName : ''}! I'm Aya, your interview coach. I see you're preparing for a ${storedRole} position. Let's practice together! Tell me about yourself and why you're interested in this role.`,
         };
         setMessages([greeting]);
+        
+        // Speak the greeting in voice mode
+        if (mode === 'voice') {
+          setIsSpeaking(true);
+          await speakText(greeting.text);
+          setIsSpeaking(false);
+        }
       } else {
         // Fallback if no role is set
         initializeInterviewChat('your desired position');
@@ -81,6 +88,13 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
           text: 'Hello! I\'m Aya, your interview coach. Let\'s practice together. Tell me about yourself.',
         };
         setMessages([greeting]);
+        
+        // Speak the greeting in voice mode
+        if (mode === 'voice') {
+          setIsSpeaking(true);
+          await speakText(greeting.text);
+          setIsSpeaking(false);
+        }
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -127,11 +141,13 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
 
-      // Speak the AI response if in voice mode
+      // In voice mode: speak the AI response and wait for it to finish before user can respond
       if (mode === 'voice') {
+        setIsAiTyping(true); // Keep "thinking" state while speaking
         setIsSpeaking(true);
         await speakText(aiResponse);
         setIsSpeaking(false);
+        setIsAiTyping(false); // Now ready for user response
       }
     } catch (error) {
       console.error('Error getting AI response:', error);
@@ -299,20 +315,53 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       )}
 
       {mode === 'voice' && (
-        <View style={styles.voiceFooter}>
-          {isSpeaking ? (
-            <View style={styles.speakingIndicator}>
-              <Ionicons name="volume-high" size={24} color={colors.primaryBlue} />
-              <Text style={styles.speakingText}>Aya is speaking...</Text>
+        <View style={styles.voiceContainer}>
+          {/* Animated voice circle */}
+          <View style={styles.voiceCircleContainer}>
+            <View style={[styles.voiceCircle, isSpeaking && styles.voiceCircleActive]}>
+              <Ionicons 
+                name={isSpeaking ? "volume-high" : "mic"} 
+                size={48} 
+                color="#fff" 
+              />
             </View>
-          ) : (
-            <>
-              <Ionicons name="mic" size={24} color={colors.primaryBlue} style={{ marginRight: 8 }} />
-              <Text style={styles.voiceText}>
-                Voice mode enabled! Aya will speak her responses. Type your answers below.
-              </Text>
-            </>
-          )}
+            {isSpeaking && (
+              <>
+                <View style={[styles.pulseCircle, styles.pulse1]} />
+                <View style={[styles.pulseCircle, styles.pulse2]} />
+                <View style={[styles.pulseCircle, styles.pulse3]} />
+              </>
+            )}
+          </View>
+          
+          {/* Status text */}
+          <Text style={styles.voiceStatusText}>
+            {isSpeaking ? 'Aya is speaking...' : 'Listening...'}
+          </Text>
+          
+          {/* Text input below */}
+          <View style={styles.voiceInputContainer}>
+            <TextInput
+              style={styles.voiceInput}
+              placeholder="Type your answer here..."
+              placeholderTextColor={isDark ? '#666' : colors.textMuted}
+              value={input}
+              onChangeText={setInput}
+              multiline
+              maxLength={500}
+            />
+            <TouchableOpacity 
+              style={[styles.voiceSendBtn, (!input.trim() || isAiTyping) && styles.sendBtnDisabled]} 
+              onPress={sendMessage}
+              disabled={!input.trim() || isAiTyping}
+            >
+              <Ionicons 
+                name="send" 
+                size={20} 
+                color={(!input.trim() || isAiTyping) ? '#999' : '#fff'} 
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </KeyboardAvoidingView>
@@ -465,6 +514,101 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: isDark ? '#888' : colors.textMuted,
       fontSize: 24,
       lineHeight: 24,
+    },
+    voiceContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingBottom: 20,
+    },
+    voiceCircleContainer: {
+      position: 'relative',
+      width: 200,
+      height: 200,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 30,
+    },
+    voiceCircle: {
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+      backgroundColor: colors.primaryBlue,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: colors.primaryBlue,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 8,
+      zIndex: 10,
+    },
+    voiceCircleActive: {
+      backgroundColor: '#10B981',
+      shadowColor: '#10B981',
+    },
+    pulseCircle: {
+      position: 'absolute',
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      borderColor: '#10B981',
+      opacity: 0.6,
+    },
+    pulse1: {
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      opacity: 0.4,
+    },
+    pulse2: {
+      width: 160,
+      height: 160,
+      borderRadius: 80,
+      opacity: 0.3,
+    },
+    pulse3: {
+      width: 180,
+      height: 180,
+      borderRadius: 90,
+      opacity: 0.2,
+    },
+    voiceStatusText: {
+      ...typography.bodyMedium,
+      fontSize: 18,
+      fontWeight: '600',
+      color: isDark ? '#fff' : colors.textDark,
+      marginBottom: 40,
+    },
+    voiceInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      paddingHorizontal: 20,
+      gap: 10,
+      width: '100%',
+    },
+    voiceInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: isDark ? '#444' : colors.border,
+      borderRadius: 24,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      maxHeight: 100,
+      minHeight: 44,
+      ...typography.bodyMedium,
+      color: isDark ? '#fff' : colors.textDark,
+      backgroundColor: isDark ? '#2a2a2a' : '#F9FAFB',
+    },
+    voiceSendBtn: {
+      backgroundColor: colors.primaryBlue,
+      borderRadius: 24,
+      width: 44,
+      height: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     voiceFooter: {
       padding: 12,

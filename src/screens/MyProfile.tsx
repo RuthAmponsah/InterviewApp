@@ -33,7 +33,7 @@ export default function MyProfile() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Calculate profile completion percentage
-  const calculateCompletion = () => {
+  const calculateCompletion = async () => {
     let completedItems = 0;
     const totalItems = 4;
 
@@ -42,17 +42,28 @@ export default function MyProfile() {
     if (profilePhoto) completedItems++;
     
     // Check if job role is set
-    AsyncStorage.getItem('jobRole').then(role => {
-      if (role) completedItems++;
-      const percentage = Math.round((completedItems / totalItems) * 100);
-      setProfileCompletion(percentage);
-    });
+    const role = await AsyncStorage.getItem('jobRole');
+    if (role) completedItems++;
+    
+    const percentage = Math.round((completedItems / totalItems) * 100);
+    setProfileCompletion(percentage);
+    
+    // Save completion status so it doesn't show again once complete
+    if (percentage === 100) {
+      await AsyncStorage.setItem('profileComplete', 'true');
+    }
   };
 
   // Load saved profile data from storage and Supabase
   const loadProfile = async () => {
     try {
       const userId = await AsyncStorage.getItem("userId");
+      
+      // Check if profile was already marked as complete
+      const isComplete = await AsyncStorage.getItem('profileComplete');
+      if (isComplete === 'true') {
+        setProfileCompletion(100);
+      }
       
       if (userId) {
         // Fetch latest data from Supabase
@@ -107,15 +118,18 @@ export default function MyProfile() {
   // Reload profile when screen comes into focus (after editing)
   useFocusEffect(
     React.useCallback(() => {
-      loadProfile();
-      calculateCompletion();
+      const loadData = async () => {
+        await loadProfile();
+        await calculateCompletion();
+      };
+      loadData();
     }, [])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
     await loadProfile();
-    calculateCompletion();
+    await calculateCompletion();
     setRefreshing(false);
   };
 

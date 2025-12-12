@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
@@ -29,6 +30,7 @@ const AddStory: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [interviewCount, setInterviewCount] = useState(0);
   const [timeframe, setTimeframe] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -134,6 +136,12 @@ const AddStory: React.FC = () => {
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadUserData();
+    setRefreshing(false);
+  };
+
   return (
     <View style={styles.container}>
       <BackButton />
@@ -142,6 +150,13 @@ const AddStory: React.FC = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primaryBlue}
+          />
+        }
       >
         <Text style={styles.logoText}>MY INTERVIEW</Text>
         <Text style={styles.title}>Share Your Success Story</Text>

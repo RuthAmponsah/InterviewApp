@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -112,9 +113,17 @@ const SuccessStories: React.FC = () => {
   const isDark = theme === 'dark';
   const styles = makeStyles(colors, isDark);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // Simulate data refresh
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setRefreshing(false);
   };
 
   return (
@@ -125,6 +134,13 @@ const SuccessStories: React.FC = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primaryBlue}
+          />
+        }
       >
         <Text style={styles.logoText}>MY INTERVIEW</Text>
         <Text style={styles.title}>Success Stories</Text>

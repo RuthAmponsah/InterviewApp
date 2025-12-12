@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Dimensions, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BackButton from "../components/BackButton";
@@ -21,6 +21,7 @@ export default function ProgressDashboard() {
     lastWeek: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadProgressData();
@@ -87,6 +88,12 @@ export default function ProgressDashboard() {
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadProgressData();
+    setRefreshing(false);
+  };
+
   const getWeekProgress = () => {
     const change = stats.lastWeek === 0 ? 100 : 
       ((stats.thisWeek - stats.lastWeek) / stats.lastWeek) * 100;
@@ -104,7 +111,17 @@ export default function ProgressDashboard() {
   const weekProgress = getWeekProgress();
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+    <ScrollView 
+      style={styles.root} 
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primaryBlue}
+        />
+      }
+    >
       <BackButton />
       
       <Text style={styles.logoText}>MY INTERVIEW</Text>

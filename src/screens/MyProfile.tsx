@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import PrimaryButton from "../components/PrimaryButton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -30,6 +30,7 @@ export default function MyProfile() {
     questions20: false,
   });
   const [profileCompletion, setProfileCompletion] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Calculate profile completion percentage
   const calculateCompletion = () => {
@@ -111,6 +112,13 @@ export default function MyProfile() {
     }, [])
   );
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadProfile();
+    calculateCompletion();
+    setRefreshing(false);
+  };
+
   return (
     <View style={styles.container}>
       <BackButton />
@@ -120,6 +128,13 @@ export default function MyProfile() {
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primaryBlue}
+          />
+        }
       >
         {/* Profile Completion - Only show if not complete */}
         {profileCompletion < 100 && (

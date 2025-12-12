@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -261,6 +262,7 @@ const Jobs: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Load saved jobs from Supabase on mount
   useEffect(() => {
@@ -289,6 +291,12 @@ const Jobs: React.FC = () => {
       console.error('Error loading saved jobs:', error);
       setLoading(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadSavedJobs();
+    setRefreshing(false);
   };
 
   // Filter jobs based on category
@@ -403,6 +411,13 @@ const Jobs: React.FC = () => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.jobList}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primaryBlue}
+          />
+        }
         renderItem={({ item }) => {
           const isSaved = savedJobs.includes(item.id);
           return (

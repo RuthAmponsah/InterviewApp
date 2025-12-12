@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import BackButton from "../components/BackButton";
@@ -182,6 +183,7 @@ export default function InterviewTips() {
   
   const [selectedCategory, setSelectedCategory] = useState<TipCategory | 'All'>('All');
   const [expandedTips, setExpandedTips] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
 
   const filteredTips = selectedCategory === 'All' 
     ? TIPS 
@@ -197,9 +199,25 @@ export default function InterviewTips() {
     setExpandedTips(newExpanded);
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // Simulate refresh
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setRefreshing(false);
+  };
+
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primaryBlue}
+          />
+        }
+      >
         <BackButton />
         
         <Text style={styles.logoText}>MY INTERVIEW</Text>

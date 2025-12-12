@@ -6,6 +6,7 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -34,6 +35,7 @@ const AllFeedback: React.FC = () => {
 
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadAllFeedback();
@@ -66,6 +68,12 @@ const AllFeedback: React.FC = () => {
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadAllFeedback();
+    setRefreshing(false);
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -83,6 +91,13 @@ const AllFeedback: React.FC = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primaryBlue}
+          />
+        }
       >
         <Text style={styles.logoText}>MY INTERVIEW</Text>
         <Text style={styles.title}>All Feedback</Text>

@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   Modal,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from 'expo-haptics';
@@ -83,6 +84,7 @@ export default function QuestionBank({ navigation }: any) {
   const [newQuestion, setNewQuestion] = useState('');
   const [newCategory, setNewCategory] = useState<QuestionCategory>('Behavioral');
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadCustomQuestions();
@@ -211,9 +213,25 @@ export default function QuestionBank({ navigation }: any) {
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadCustomQuestions();
+    await loadFavorites();
+    setRefreshing(false);
+  };
+
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primaryBlue}
+          />
+        }
+      >
         <BackButton />
         
         <View style={styles.headerRow}>

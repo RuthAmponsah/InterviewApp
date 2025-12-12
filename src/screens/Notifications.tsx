@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Modal,
   Platform,
+  RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BackButton from "../components/BackButton";
@@ -32,6 +33,7 @@ const Notifications: React.FC = () => {
   const [reminderTime, setReminderTime] = useState({ hour: 18, minute: 0 });
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Load preferences
   useEffect(() => {
@@ -58,6 +60,30 @@ const Notifications: React.FC = () => {
     };
     loadPreferences();
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    const push = await AsyncStorage.getItem("notif_push");
+    const email = await AsyncStorage.getItem("notif_email");
+    const practice = await AsyncStorage.getItem("notif_practice");
+    const feedback = await AsyncStorage.getItem("notif_feedback");
+    const savedHour = await AsyncStorage.getItem("reminderHour");
+    const savedMinute = await AsyncStorage.getItem("reminderMinute");
+
+    if (push === "true") setPushEnabled(true);
+    else setPushEnabled(false);
+    if (email === "true") setEmailEnabled(true);
+    else setEmailEnabled(false);
+    if (practice === "true") setPracticeReminders(true);
+    else setPracticeReminders(false);
+    if (feedback === "true") setFeedbackAlerts(true);
+    else setFeedbackAlerts(false);
+    
+    if (savedHour && savedMinute) {
+      setReminderTime({ hour: parseInt(savedHour), minute: parseInt(savedMinute) });
+    }
+    setRefreshing(false);
+  };
 
   // Save individual preference
   const togglePreference = async (
@@ -101,6 +127,13 @@ const Notifications: React.FC = () => {
       style={styles.root}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primaryBlue}
+        />
+      }
     >
       <BackButton />
 

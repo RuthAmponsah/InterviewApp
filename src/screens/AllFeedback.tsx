@@ -5,8 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/colors';
 import BackButton from '../components/BackButton';
@@ -21,8 +24,10 @@ interface FeedbackItem {
   duration_minutes: number;
 }
 
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
 const AllFeedback: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<Nav>();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const styles = makeStyles(colors, isDark);
@@ -97,9 +102,13 @@ const AllFeedback: React.FC = () => {
             <Text style={styles.emptyText}>
               Complete your first interview to start receiving personalized feedback and track your progress!
             </Text>
-            <Text style={styles.emptySubtext}>
-              Start an interview now to get AI-powered insights.
-            </Text>
+            <TouchableOpacity
+              style={styles.startButton}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('InterviewType')}
+            >
+              <Text style={styles.startButtonText}>Start Interview Now</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           feedbackList.map((item) => (
@@ -185,13 +194,24 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: colors.textMuted,
       textAlign: 'center',
       lineHeight: 24,
-      marginBottom: 8,
+      marginBottom: 24,
     },
-    emptySubtext: {
+    startButton: {
+      backgroundColor: colors.primaryBlue,
+      borderRadius: 12,
+      paddingVertical: 16,
+      paddingHorizontal: 32,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    startButtonText: {
       ...typography.bodyMedium,
-      color: colors.primaryBlue,
+      fontWeight: '700',
+      color: '#fff',
       textAlign: 'center',
-      fontWeight: '600',
     },
     card: {
       backgroundColor: isDark ? '#2a2a2a' : '#fff',

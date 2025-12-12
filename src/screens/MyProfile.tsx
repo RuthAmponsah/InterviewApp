@@ -29,6 +29,24 @@ export default function MyProfile() {
     interviews10: false,
     questions20: false,
   });
+  const [profileCompletion, setProfileCompletion] = useState(0);
+
+  // Calculate profile completion percentage
+  const calculateCompletion = () => {
+    let completedItems = 0;
+    const totalItems = 4;
+
+    if (name && name !== "User") completedItems++;
+    if (email) completedItems++;
+    if (profilePhoto) completedItems++;
+    
+    // Check if job role is set
+    AsyncStorage.getItem('jobRole').then(role => {
+      if (role) completedItems++;
+      const percentage = Math.round((completedItems / totalItems) * 100);
+      setProfileCompletion(percentage);
+    });
+  };
 
   // Load saved profile data from storage and Supabase
   const loadProfile = async () => {
@@ -84,6 +102,7 @@ export default function MyProfile() {
   useFocusEffect(
     React.useCallback(() => {
       loadProfile();
+      calculateCompletion();
     }, [])
   );
 
@@ -92,6 +111,24 @@ export default function MyProfile() {
         <BackButton />
       
       <Text style={styles.logoText}>MY INTERVIEW</Text>
+
+      {/* Profile Completion */}
+      <View style={styles.completionCard}>
+        <View style={styles.completionHeader}>
+          <Text style={styles.completionTitle}>Profile Completion</Text>
+          <Text style={styles.completionPercentage}>{profileCompletion}%</Text>
+        </View>
+        <View style={styles.progressBarContainer}>
+          <View style={[styles.progressBar, { width: `${profileCompletion}%` }]} />
+        </View>
+        {profileCompletion < 100 && (
+          <Text style={styles.completionHint}>
+            {profileCompletion < 50 
+              ? "Complete your profile to get personalized recommendations" 
+              : "Almost there! Finish your profile to unlock all features"}
+          </Text>
+        )}
+      </View>
 
       {/* Header Section */}
       <View style={styles.header}>
@@ -190,6 +227,47 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: colors.primaryBlue,
       alignSelf: "center",
       marginBottom: 28,
+    },
+    completionCard: {
+      backgroundColor: isDark ? "#1c1c1c" : "#FFFFFF",
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: isDark ? "#333" : colors.border,
+    },
+    completionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    completionTitle: {
+      ...typography.bodyMedium,
+      fontWeight: "600",
+      color: isDark ? "#fff" : colors.textDark,
+    },
+    completionPercentage: {
+      ...typography.bodyMedium,
+      fontWeight: "700",
+      color: colors.primaryBlue,
+    },
+    progressBarContainer: {
+      height: 8,
+      backgroundColor: isDark ? "#2a2a2a" : "#E5E7EB",
+      borderRadius: 4,
+      overflow: "hidden",
+      marginBottom: 8,
+    },
+    progressBar: {
+      height: "100%",
+      backgroundColor: colors.primaryBlue,
+      borderRadius: 4,
+    },
+    completionHint: {
+      ...typography.bodySmall,
+      color: colors.textMuted,
+      lineHeight: 18,
     },
 
     /* Header */

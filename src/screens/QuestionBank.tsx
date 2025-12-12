@@ -81,6 +81,7 @@ export default function QuestionBank({ navigation }: any) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newQuestion, setNewQuestion] = useState('');
   const [newCategory, setNewCategory] = useState<QuestionCategory>('Behavioral');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadCustomQuestions();
@@ -173,13 +174,20 @@ export default function QuestionBank({ navigation }: any) {
 
   const allQuestions = [...PRACTICE_QUESTIONS, ...customQuestions];
   
-  const filteredQuestions = selectedCategory === 'All' 
+  let filteredQuestions = selectedCategory === 'All' 
     ? allQuestions
     : selectedCategory === 'Custom'
     ? customQuestions
     : selectedCategory === 'Favorites'
     ? allQuestions.filter(q => favorites.has(q.id))
     : allQuestions.filter(q => q.category === selectedCategory);
+
+  // Apply search filter
+  if (searchQuery.trim()) {
+    filteredQuestions = filteredQuestions.filter(q => 
+      q.text.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
 
   const saveAnswer = async () => {
     if (!selectedQuestion || !answer.trim()) {
@@ -217,6 +225,23 @@ export default function QuestionBank({ navigation }: any) {
         <Text style={styles.subtitle}>
           Practice answering common interview questions
         </Text>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search questions..."
+            placeholderTextColor={colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Category Filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
@@ -450,7 +475,26 @@ const makeStyles = (colors: any, isDark: boolean) =>
     subtitle: {
       ...typography.bodyMedium,
       color: isDark ? "#b5b5b5" : colors.textMuted,
-      marginBottom: 20,
+      marginBottom: 16,
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? '#2a2a2a' : '#fff',
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: isDark ? '#3a3a3a' : colors.border,
+    },
+    searchIcon: {
+      marginRight: 8,
+    },
+    searchInput: {
+      flex: 1,
+      ...typography.bodyMedium,
+      color: isDark ? '#fff' : colors.textDark,
     },
     filterRow: {
       flexDirection: 'row',

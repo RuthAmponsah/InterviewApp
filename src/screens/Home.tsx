@@ -40,6 +40,7 @@ const Home: React.FC = () => {
   const [streak, setStreak] = useState(0);
   const [latestFeedback, setLatestFeedback] = useState<string | null>(null);
   const [hasInterviews, setHasInterviews] = useState(false);
+  const [lastActive, setLastActive] = useState<string | null>(null);
 
   // ---------------------------
   // 1️⃣ GREETING BASED ON TIME
@@ -130,6 +131,23 @@ const Home: React.FC = () => {
         if (data && data.length > 0) {
           setHasInterviews(true);
           setLatestFeedback(data[0].feedback || 'Complete your interview to see feedback here!');
+          
+          // Calculate last active
+          const lastDate = new Date(data[0].created_at);
+          const now = new Date();
+          const diffTime = Math.abs(now.getTime() - lastDate.getTime());
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (diffDays === 0) {
+            setLastActive('Today');
+          } else if (diffDays === 1) {
+            setLastActive('Yesterday');
+          } else if (diffDays < 7) {
+            setLastActive(`${diffDays} days ago`);
+          } else {
+            const weeks = Math.floor(diffDays / 7);
+            setLastActive(`${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`);
+          }
         } else {
           setHasInterviews(false);
         }
@@ -153,9 +171,14 @@ const Home: React.FC = () => {
         {greeting}, {name}
       </Text>
 
-      <Text style={styles.subGreeting}>
-        Ready to practice and move one step closer to your next role?
-      </Text>
+      <View style={styles.greetingRow}>
+        <Text style={styles.subGreeting}>
+          Ready to practice and move one step closer to your next role?
+        </Text>
+        {lastActive && (
+          <Text style={styles.lastActive}>Last interview: {lastActive}</Text>
+        )}
+      </View>
 
       {/* Primary CTA card */}
       <TouchableOpacity
@@ -245,11 +268,19 @@ const makeStyles = (colors: any, isDark: boolean) =>
     ...typography.headingMedium,
     color: isDark ? '#fff' : colors.textDark,
   },
+  greetingRow: {
+    marginBottom: 16,
+  },
   subGreeting: {
     ...typography.bodyMedium,
     color: isDark ? '#aaa' : colors.textMuted,
     marginTop: 4,
-    marginBottom: 16,
+    marginBottom: 6,
+  },
+  lastActive: {
+    ...typography.bodySmall,
+    color: colors.primaryBlue,
+    fontWeight: '600',
   },
   card: {
     backgroundColor: isDark ? '#222' : '#FFFFFF',

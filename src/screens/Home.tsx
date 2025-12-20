@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -368,6 +369,7 @@ const Home: React.FC = () => {
         <Text style={styles.cardBody}>
           Read how other learners went from nervous to hired after practicing with Aya.
         </Text>
+        <Text style={styles.tapToViewMore}>Tap to view success stories →</Text>
       </TouchableOpacity>
     </ScrollView>
 
@@ -406,8 +408,9 @@ const makeStyles = (colors: any, isDark: boolean) =>
     paddingBottom: 28,
   },
   logoText: {
-    ...typography.heading,
-    fontWeight: '800',
+    fontSize: 34,
+    fontFamily: 'Poppins_600SemiBold',
+    letterSpacing: 0.5,
     color: colors.primaryBlue,
     alignSelf: 'center',
     marginBottom: 28,

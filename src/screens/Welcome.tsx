@@ -9,8 +9,8 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
-import * as Speech from "expo-speech";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { speakText, stopSpeaking } from "../services/aiService";
 import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -19,13 +19,30 @@ import { useTheme } from "../theme/ThemeContext";
 type Nav = NativeStackNavigationProp<RootStackParamList, "Welcome">;
 
 const JOB_TYPES = [
-  "Cyber Security",
+  "Software Engineer",
   "Data Analyst",
+  "Cyber Security",
   "IT Support",
+  "Project Manager",
   "Sales",
   "Customer Service",
-  "Software Engineer",
-  "Project Manager",
+  "Marketing",
+  "Accounting",
+  "Finance",
+  "Human Resources",
+  "Healthcare",
+  "Nursing",
+  "Teaching",
+  "Engineering",
+  "Business Analyst",
+  "Product Manager",
+  "UX/UI Designer",
+  "Graphic Designer",
+  "Operations Manager",
+  "Supply Chain",
+  "Legal",
+  "Architecture",
+  "Consulting",
 ];
 
 export default function Welcome() {
@@ -68,39 +85,38 @@ export default function Welcome() {
     hasSpokenRef.current = true;
 
     const displayName = name || "friend";
-    const introText = `
-      Hello there.
-      My name is Aya.
-      Nice to meet you ${displayName}.
-      Welcome to your very own mock interview experience.
-      Shall we get started?
-    `;
+    const introText = `Hello there. My name is Aya. Nice to meet you ${displayName}. Welcome to your very own mock interview experience. Shall we get started?`;
 
-    Speech.stop();
+    const speakIntro = async () => {
+      await stopSpeaking();
+      await speakText(introText);
+      
+      // Calculate approximate speech duration (average speaking rate is ~150 words per minute)
+      const wordCount = introText.split(' ').length;
+      const estimatedDuration = (wordCount / 150) * 60 * 1000; // Convert to milliseconds
+      const waitTime = estimatedDuration + 2000; // Add 2 seconds buffer
+      
+      console.log(`Waiting ${waitTime}ms for speech to complete...`);
+      
+      // Wait for speech to finish before scrolling
+      setTimeout(async () => {
+        // Scroll to Page 2
+        scrollRef.current?.scrollTo({ x: width, animated: true });
 
-    Speech.speak(introText, {
-      rate: 0.88,
-      pitch: 1.1,
-      onDone: () => {
-        // ⭐ Wait 1.5 seconds AFTER finishing speech
-        setTimeout(() => {
-          // Scroll to Page 2
-          scrollRef.current?.scrollTo({ x: width, animated: true });
+        Animated.timing(page2Anim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
 
-          Animated.timing(page2Anim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }).start();
-
-          // Speak the Page 2 question
-          Speech.speak("What job role are you applying for?", {
-            rate: 0.88,
-            pitch: 1.1,
-          });
-        }, 1500); // ⭐ Delay added here
-      },
-    });
+        // Wait for scroll animation to complete, then speak
+        setTimeout(async () => {
+          await speakText("What job role are you applying for?");
+        }, 800);
+      }, waitTime);
+    };
+    
+    speakIntro();
   }, [dataLoaded, name, width]);
 
   // ---------------------------------------------------
@@ -109,26 +125,23 @@ export default function Welcome() {
   useEffect(() => {
     if (!job) return;
 
-    Speech.stop();
+    const speakMotivation = async () => {
+      await stopSpeaking();
+      
+      const genderWord = gender === "M" ? "boy" : "girl";
+      const motivationalSpeech = `Soon to be part of the ${job} team. You go ${genderWord}!`;
 
-    const genderWord = gender === "M" ? "boy" : "girl";
-
-    const motivationalSpeech = `
-      Soon to be part of the ${job} team.
-      You go ${genderWord}!
-    `;
-
-    Speech.speak(motivationalSpeech, {
-      rate: 0.88,
-      pitch: 1.1,
-    });
+      await speakText(motivationalSpeech);
+    };
+    
+    speakMotivation();
   }, [job]);
 
   // ---------------------------------------------------
   // CONTINUE BUTTON → SAVE JOB + NAVIGATE
   // ---------------------------------------------------
   const handleSkip = () => {
-    Speech.stop();
+    stopSpeaking();
     scrollRef.current?.scrollTo({ x: width, animated: true });
     Animated.timing(page2Anim, {
       toValue: 1,
@@ -138,8 +151,10 @@ export default function Welcome() {
   };
 
   const handleContinue = async () => {
+    await stopSpeaking();
     if (!job) return;
     await AsyncStorage.setItem("jobRole", job);
+    await AsyncStorage.setItem("hasCompletedOnboarding", "true");
     navigation.navigate("MainTabs");
   };
 

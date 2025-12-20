@@ -11,6 +11,7 @@ import {
     View,
     TouchableWithoutFeedback,
     Keyboard,
+    Alert,
 } from 'react-native';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
@@ -44,6 +45,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const [jobRole, setJobRole] = useState('');
 
   React.useEffect(() => {
+    checkInterviewLimit();
     loadUserData();
     
     // Update elapsed time every second
@@ -52,13 +54,83 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       setElapsedTime(elapsed);
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      // Stop any audio when leaving screen
+      stopSpeaking();
+    };
   }, []);
+
+  const checkInterviewLimit = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) return;
+
+      // Get user preferences
+      const { data: prefs } = await supabase
+        .from('user_preferences')
+        .select('subscription_tier, interviews_this_month, last_interview_date')
+        .eq('user_id', userId)
+        .single();
+
+      if (!prefs) return;
+
+      // If premium, no limit
+      if (prefs.subscription_tier === 'monthly' || prefs.subscription_tier === 'annual') {
+        return;
+      }
+
+      // Check if we need to reset monthly count
+      const lastInterview = prefs.last_interview_date ? new Date(prefs.last_interview_date) : null;
+      const now = new Date();
+      const shouldReset = !lastInterview || 
+        (lastInterview.getMonth() !== now.getMonth() || lastInterview.getFullYear() !== now.getFullYear());
+
+      const currentCount = shouldReset ? 0 : (prefs.interviews_this_month || 0);
+
+      // Free tier: 5 interviews per month
+      if (currentCount >= 5) {
+        Alert.alert(
+          '🔒 Interview Limit Reached',
+          'You\'ve used all 5 free interviews this month.\n\nUpgrade to Premium for unlimited practice!',
+          [
+            {
+              text: 'Maybe Later',
+              onPress: () => navigation.goBack(),
+              style: 'cancel',
+            },
+            {
+              text: 'Upgrade Now',
+              onPress: () => {
+                navigation.goBack();
+                setTimeout(() => navigation.navigate('Subscription'), 100);
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // Increment count
+      await supabase
+        .from('user_preferences')
+        .update({
+          interviews_this_month: currentCount + 1,
+          last_interview_date: now.toISOString(),
+        })
+        .eq('user_id', userId);
+
+    } catch (error) {
+      console.error('Error checking interview limit:', error);
+    }
+  };
 
   const loadUserData = async () => {
     try {
       const storedRole = await AsyncStorage.getItem('jobRole');
       const userName = await AsyncStorage.getItem('userName');
+      
+      let greetingText = '';
       
       if (storedRole) {
         setJobRole(storedRole);
@@ -66,35 +138,26 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         // Initialize AI with user context
         initializeInterviewChat(storedRole, userName || undefined);
         
-        const greeting: Message = {
-          id: '1',
-          from: 'ai',
-          text: `Hello${userName ? ' ' + userName : ''}! I'm Aya, your interview coach. I see you're preparing for a ${storedRole} position. Let's practice together! Tell me about yourself and why you're interested in this role.`,
-        };
-        setMessages([greeting]);
-        
-        // Speak the greeting in voice mode
-        if (mode === 'voice') {
-          setIsSpeaking(true);
-          await speakText(greeting.text);
-          setIsSpeaking(false);
-        }
+        greetingText = `Hello${userName ? ' ' + userName : ''}! I'm Aya, your interview coach. I see you're preparing for a ${storedRole} position. Let's practice together! Tell me about yourself and why you're interested in this role.`;
       } else {
         // Fallback if no role is set
         initializeInterviewChat('your desired position');
-        const greeting: Message = {
-          id: '1',
-          from: 'ai',
-          text: 'Hello! I\'m Aya, your interview coach. Let\'s practice together. Tell me about yourself.',
-        };
-        setMessages([greeting]);
-        
-        // Speak the greeting in voice mode
-        if (mode === 'voice') {
-          setIsSpeaking(true);
-          await speakText(greeting.text);
-          setIsSpeaking(false);
-        }
+        greetingText = 'Hello! I\'m Aya, your interview coach. Let\'s practice together. Tell me about yourself.';
+      }
+      
+      const greeting: Message = {
+        id: '1',
+        from: 'ai',
+        text: greetingText,
+      };
+      setMessages([greeting]);
+      
+      // Speak the greeting in voice mode
+      if (mode === 'voice') {
+        console.log('Speaking initial greeting in voice mode...');
+        setIsSpeaking(true);
+        await speakText(greetingText);
+        setIsSpeaking(false);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -141,13 +204,15 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
 
-      // In voice mode: speak the AI response and wait for it to finish before user can respond
+      // Speak the AI response if in voice mode
       if (mode === 'voice') {
-        setIsAiTyping(true); // Keep "thinking" state while speaking
+        console.log('Speaking AI response:', aiResponse);
         setIsSpeaking(true);
-        await speakText(aiResponse);
+        const success = await speakText(aiResponse);
+        if (!success) {
+          console.error('Failed to speak text');
+        }
         setIsSpeaking(false);
-        setIsAiTyping(false); // Now ready for user response
       }
     } catch (error) {
       console.error('Error getting AI response:', error);
@@ -250,20 +315,22 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        renderItem={({ item }) => (
-          <View style={styles.messageContainer}>
-            {item.from === 'ai' && (
-              <Text style={styles.senderLabel}>Aya</Text>
-            )}
-            <View
-              style={[
+      {/* Only show message list in text mode */}
+      {mode === 'text' && (
+        <FlatList
+          ref={flatListRef}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          renderItem={({ item }) => (
+            <View style={styles.messageContainer}>
+              {item.from === 'ai' && (
+                <Text style={styles.senderLabel}>Aya</Text>
+              )}
+              <View
+                style={[
                 styles.bubble,
                 item.from === 'user' ? styles.userBubble : styles.aiBubble,
               ]}
@@ -280,9 +347,10 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
           </View>
         )}
       />
+      )}
 
-      {/* Typing indicator */}
-      {isAiTyping && (
+      {/* Typing indicator - only in text mode */}
+      {mode === 'text' && isAiTyping && (
         <View style={styles.typingContainer}>
           <Text style={styles.senderLabel}>Aya</Text>
           <View style={styles.typingBubble}>
@@ -336,7 +404,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
           
           {/* Status text */}
           <Text style={styles.voiceStatusText}>
-            {isSpeaking ? 'Aya is speaking...' : 'Listening...'}
+            {isSpeaking ? 'Aya is speaking...' : isAiTyping ? 'Aya is thinking...' : 'Listening...'}
           </Text>
           
           {/* Text input below */}

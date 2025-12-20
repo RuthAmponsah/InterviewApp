@@ -29,20 +29,24 @@ type SettingsRoute =
   | "JobPreferences"
   | "PrivacySecurity"
   | "Support"
-  | "AboutUs";
+  | "AboutUs"
+  | "Subscription"
+  | "SectorPacks";
 
-const SECTIONS: { label: string; route: SettingsRoute }[] = [
-  { label: "Account", route: "MyProfile" },
-  { label: "Interview history", route: "InterviewHistory" },
-  { label: "Progress dashboard", route: "ProgressDashboard" },
-  { label: "Question bank", route: "QuestionBank" },
-  { label: "Interview tips", route: "InterviewTips" },
-  { label: "Interview experience", route: "InterviewExperience" },
-  { label: "App customisation", route: "AppCustomisation" },
-  { label: "Job preferences", route: "JobPreferences" },
-  { label: "Privacy and security", route: "PrivacySecurity" },
-  { label: "Support", route: "Support" },
-  { label: "About us", route: "AboutUs" },
+const SECTIONS: { emoji: string; label: string; route: SettingsRoute; badge?: string; comingSoon?: boolean }[] = [
+  { emoji: "👤", label: "Account", route: "MyProfile" },
+  { emoji: "⭐", label: "Subscription", route: "Subscription", badge: "FREE" },
+  { emoji: "📋", label: "Interview history", route: "InterviewHistory" },
+  { emoji: "📊", label: "Progress dashboard", route: "ProgressDashboard" },
+  { emoji: "💬", label: "Question bank", route: "QuestionBank" },
+  { emoji: "💡", label: "Interview tips", route: "InterviewTips" },
+  { emoji: "🎨", label: "App customisation", route: "AppCustomisation" },
+  { emoji: "🎯", label: "Interview experience", route: "InterviewExperience", badge: "COMING SOON", comingSoon: true },
+  { emoji: "💼", label: "Job preferences", route: "JobPreferences" },
+  { emoji: "📚", label: "Sector Packs", route: "SectorPacks", badge: "COMING SOON", comingSoon: true },
+  { emoji: "🔒", label: "Privacy and security", route: "PrivacySecurity" },
+  { emoji: "💬", label: "Support", route: "Support" },
+  { emoji: "ℹ️", label: "About us", route: "AboutUs" },
 ];
 
 const Settings = () => {
@@ -59,18 +63,38 @@ const Settings = () => {
       <Text style={styles.subtitle}>Manage your preferences</Text>
 
       <View style={styles.card}>
-        {SECTIONS.map(({ label, route }) => (
+        {SECTIONS.map(({ emoji, label, route, badge, comingSoon }) => (
           <TouchableOpacity
             key={label}
-            style={styles.row}
-            onPress={() => navigation.navigate(route)}
+            style={[styles.row, comingSoon && { opacity: 0.6 }]}
+            onPress={() => !comingSoon && navigation.navigate(route)}
+            disabled={comingSoon}
           >
-            <View>
-              <Text style={styles.rowText}>{label}</Text>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.rowEmoji}>{emoji}</Text>
+                <View style={styles.separator} />
+                <Text style={styles.rowText}>{label}</Text>
+                {badge && (
+                  <View style={[styles.badge, { backgroundColor: comingSoon ? '#999' : colors.primaryBlue }]}>
+                    <Text style={styles.badgeText}>{badge}</Text>
+                  </View>
+                )}
+              </View>
 
               {label === "Interview experience" && (
-                <Text style={styles.rowHelper}>
+                <Text style={[styles.rowHelper, { marginLeft: 30 }]}>
                   AI voice, avatar, difficulty, and more.
+                </Text>
+              )}
+              {label === "Subscription" && (
+                <Text style={[styles.rowHelper, { marginLeft: 30 }]}>
+                  5 interviews per month • Upgrade for unlimited
+                </Text>
+              )}
+              {label === "Sector Packs" && (
+                <Text style={[styles.rowHelper, { marginLeft: 30 }]}>
+                  NHS, Graduate, Retail & more
                 </Text>
               )}
             </View>
@@ -138,6 +162,16 @@ const makeStyles = (colors: any, isDark: boolean) =>
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
+    rowEmoji: {
+      fontSize: 18,
+      marginRight: 8,
+    },
+    separator: {
+      width: 1,
+      height: 18,
+      backgroundColor: colors.border,
+      marginRight: 12,
+    },
     rowText: { ...typography.label, color: isDark ? '#fff' : colors.textDark },
     rowHelper: { ...typography.caption, color: isDark ? '#aaa' : colors.textMuted },
     chevron: { fontSize: 20, color: isDark ? '#666' : colors.textMuted },
@@ -157,6 +191,18 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodyMedium,
       color: '#FF3B30',
       fontWeight: '600',
+    },
+    badge: {
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 8,
+      marginLeft: 8,
+    },
+    badgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: '#fff',
+      letterSpacing: 0.5,
     },
     footer: { marginTop: 20, alignItems: "center" },
     footerText: { ...typography.caption, color: isDark ? '#aaa' : colors.textMuted },

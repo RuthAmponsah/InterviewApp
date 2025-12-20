@@ -14,13 +14,30 @@ import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 
 const JOB_TYPES = [
-  "Cyber Security",
+  "Software Engineer",
   "Data Analyst",
+  "Cyber Security",
   "IT Support",
+  "Project Manager",
   "Sales",
   "Customer Service",
-  "Software Engineer",
-  "Project Manager",
+  "Marketing",
+  "Accounting",
+  "Finance",
+  "Human Resources",
+  "Healthcare",
+  "Nursing",
+  "Teaching",
+  "Engineering",
+  "Business Analyst",
+  "Product Manager",
+  "UX/UI Designer",
+  "Graphic Designer",
+  "Operations Manager",
+  "Supply Chain",
+  "Legal",
+  "Architecture",
+  "Consulting",
 ];
 
 const JobPreferences: React.FC = () => {

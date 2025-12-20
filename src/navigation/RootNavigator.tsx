@@ -37,6 +37,9 @@ import InterviewTips from "../screens/InterviewTips";
 import SuccessStories from "../screens/SuccessStories";
 import AddStory from "../screens/AddStory";
 import AllFeedback from "../screens/AllFeedback";
+import Subscription from "../screens/Subscription";
+import SectorPacks from "../screens/SectorPacks";
+import ViewCV from "../screens/ViewCV";
 
 // -----------------------------
 // STACK NAV TYPES
@@ -70,6 +73,9 @@ export type RootStackParamList = {
   AddStory: undefined;
   AllFeedback: undefined;
   Settings: undefined;
+  Subscription: { showClose?: boolean } | undefined;
+  SectorPacks: undefined;
+  ViewCV: undefined;
 };
 
 // -----------------------------
@@ -111,6 +117,11 @@ function MainTabs() {
     // Check every time tabs gain focus
     const interval = setInterval(checkProfileCompletion, 5000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Mark onboarding as complete when user reaches main tabs
+  useEffect(() => {
+    AsyncStorage.setItem("hasCompletedOnboarding", "true");
   }, []);
 
   return (
@@ -184,11 +195,41 @@ function MainTabs() {
 // -----------------------------
 const RootNavigator = () => {
   const { colors } = useTheme();
+  const [initialRoute, setInitialRoute] = useState<string | null>(null);
+
+  useEffect(() => {
+    const determineInitialRoute = async () => {
+      const hasCompletedOnboarding = await AsyncStorage.getItem("hasCompletedOnboarding");
+      const userId = await AsyncStorage.getItem("userId");
+      
+      if (hasCompletedOnboarding === "true") {
+        // User has seen onboarding before
+        if (userId) {
+          // User is logged in, go to main app
+          setInitialRoute("MainTabs");
+        } else {
+          // User logged out, go to sign in
+          setInitialRoute("SignIn");
+        }
+      } else {
+        // First time user, show welcome
+        setInitialRoute("Welcome");
+      }
+    };
+
+    determineInitialRoute();
+  }, []);
+
+  // Show loading state while determining route
+  if (initialRoute === null) {
+    return null;
+  }
 
   return (
     <>
       <Stack.Navigator
         id="RootStack"
+        initialRouteName={initialRoute as any}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
@@ -214,6 +255,7 @@ const RootNavigator = () => {
       {/* Profile */}
       <Stack.Screen name="MyProfile" component={MyProfile} />
       <Stack.Screen name="EditProfile" component={EditProfile} />
+      <Stack.Screen name="ViewCV" component={ViewCV} />
       <Stack.Screen name="ChangePassword" component={ChangePassword} />
       <Stack.Screen name="Notifications" component={Notifications} />
 
@@ -233,6 +275,10 @@ const RootNavigator = () => {
       <Stack.Screen name="SuccessStories" component={SuccessStories} />
       <Stack.Screen name="AddStory" component={AddStory} />
       <Stack.Screen name="AllFeedback" component={AllFeedback} />
+      
+      {/* Subscription & Monetization */}
+      <Stack.Screen name="Subscription" component={Subscription} />
+      <Stack.Screen name="SectorPacks" component={SectorPacks} />
     </Stack.Navigator>
     <OfflineBanner />
     </>

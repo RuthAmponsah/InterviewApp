@@ -1,9 +1,14 @@
 import Groq from "groq-sdk";
 import { Audio } from 'expo-av';
+import Constants from 'expo-constants';
 
 // Initialize Groq client
 // Get your free API key from: https://console.groq.com/keys
-const GROQ_API_KEY = "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"; // Replace with your actual key
+const GROQ_API_KEY = Constants.expoConfig?.extra?.groqApiKey || process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
+
+if (!GROQ_API_KEY) {
+  console.error('⚠️ Groq API key not found. Please check your .env file.');
+}
 
 const groq = new Groq({
   apiKey: GROQ_API_KEY,
@@ -18,6 +23,36 @@ interface ChatMessage {
 let conversationHistory: ChatMessage[] = [];
 
 export const initializeInterviewChat = (jobRole: string, userName?: string) => {
+  // Role-specific guidance
+  const roleGuidance: { [key: string]: string } = {
+    'Software Engineer': 'Focus on coding skills, algorithms, system design, debugging, and problem-solving approaches.',
+    'Data Analyst': 'Focus on SQL, data visualization, statistical analysis, Excel/Python, and business insights.',
+    'Cyber Security': 'Focus on security protocols, threat analysis, risk management, compliance, and incident response.',
+    'IT Support': 'Focus on troubleshooting, customer service, technical knowledge, and problem resolution.',
+    'Project Manager': 'Focus on leadership, planning, stakeholder management, risk mitigation, and delivery.',
+    'Sales': 'Focus on persuasion, customer relationships, targets, negotiation, and closing techniques.',
+    'Customer Service': 'Focus on communication, empathy, problem-solving, patience, and customer satisfaction.',
+    'Marketing': 'Focus on campaigns, analytics, creativity, brand strategy, and digital marketing.',
+    'Accounting': 'Focus on financial reporting, compliance, attention to detail, and accounting software.',
+    'Finance': 'Focus on analysis, forecasting, budgeting, risk assessment, and financial modeling.',
+    'Human Resources': 'Focus on recruitment, employee relations, policies, conflict resolution, and HR systems.',
+    'Healthcare': 'Focus on patient care, medical knowledge, empathy, teamwork, and clinical skills.',
+    'Nursing': 'Focus on patient assessment, medication administration, care planning, and communication.',
+    'Teaching': 'Focus on lesson planning, classroom management, student engagement, and assessment.',
+    'Engineering': 'Focus on technical design, problem-solving, project execution, and safety compliance.',
+    'Business Analyst': 'Focus on requirements gathering, process improvement, stakeholder communication, and data analysis.',
+    'Product Manager': 'Focus on product strategy, user research, roadmapping, cross-functional leadership, and metrics.',
+    'UX/UI Designer': 'Focus on user research, wireframing, prototyping, usability, and design tools.',
+    'Graphic Designer': 'Focus on creativity, design software, brand consistency, and visual communication.',
+    'Operations Manager': 'Focus on efficiency, process optimization, team management, and performance metrics.',
+    'Supply Chain': 'Focus on logistics, inventory management, vendor relations, and cost optimization.',
+    'Legal': 'Focus on legal research, contracts, compliance, analytical skills, and attention to detail.',
+    'Architecture': 'Focus on design principles, technical drawings, building codes, and client communication.',
+    'Consulting': 'Focus on problem-solving, client management, analytical thinking, and communication.',
+  };
+
+  const specificGuidance = roleGuidance[jobRole] || 'Focus on relevant skills, experience, and problem-solving ability.';
+
   // Reset conversation history
   conversationHistory = [
     {
@@ -26,12 +61,13 @@ export const initializeInterviewChat = (jobRole: string, userName?: string) => {
 
 Your responsibilities:
 - Ask relevant interview questions for the ${jobRole} role
+- ${specificGuidance}
 - Provide constructive feedback on their answers
 - Encourage them with positive reinforcement
 - Ask follow-up questions to help them elaborate
 - Keep responses concise (2-3 sentences max)
 - Be friendly and supportive, not intimidating
-- Focus on behavioral, technical, and situational questions relevant to ${jobRole}
+- Mix behavioral (STAR method), technical, and situational questions
 
 Start by asking them to tell you about themselves and their interest in the ${jobRole} role.`
     }
@@ -144,14 +180,18 @@ let currentSound: Audio.Sound | null = null;
 
 export const speakText = async (text: string): Promise<boolean> => {
   try {
+    console.log('🔊 Starting TTS for text:', text.substring(0, 50) + '...');
+    
     // Stop any currently playing audio
     if (currentSound) {
+      console.log('Stopping previous audio...');
       await currentSound.stopAsync();
       await currentSound.unloadAsync();
       currentSound = null;
     }
 
     // Configure audio mode for playback
+    console.log('Configuring audio mode...');
     await Audio.setAudioModeAsync({
       allowsRecordingIOS: false,
       playsInSilentModeIOS: true,
@@ -159,20 +199,40 @@ export const speakText = async (text: string): Promise<boolean> => {
       shouldDuckAndroid: true,
     });
 
-    // Use free StreamElements TTS API (no API key needed!)
-    const ttsUrl = `https://api.streamelements.com/kappa/v2/speech?voice=Brian&text=${encodeURIComponent(text)}`;
+    // Truncate text if too long (max 200 characters for better compatibility)
+    const maxLength = 200;
+    let textToSpeak = text;
+    if (text.length > maxLength) {
+      const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+      textToSpeak = '';
+      for (const sentence of sentences) {
+        if ((textToSpeak + sentence).length <= maxLength) {
+          textToSpeak += sentence;
+        } else {
+          break;
+        }
+      }
+      if (!textToSpeak) {
+        textToSpeak = text.substring(0, maxLength);
+      }
+      console.log('Text truncated to:', textToSpeak);
+    }
+
+    // Use Google Translate TTS (most reliable)
+    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(textToSpeak)}`;
+    console.log('Using Google TTS...');
     
-    // Load and play the audio
     const { sound } = await Audio.Sound.createAsync(
       { uri: ttsUrl },
       { shouldPlay: true }
     );
-      
+    
     currentSound = sound;
-      
-    // Clean up when finished
+    console.log('✅ Audio playing!');
+    
     sound.setOnPlaybackStatusUpdate((status) => {
       if (status.isLoaded && status.didJustFinish) {
+        console.log('Audio finished playing');
         sound.unloadAsync();
         currentSound = null;
       }
@@ -180,7 +240,7 @@ export const speakText = async (text: string): Promise<boolean> => {
 
     return true;
   } catch (error) {
-    console.error('Error with text-to-speech:', error);
+    console.error('❌ Error with text-to-speech:', error);
     return false;
   }
 };
@@ -194,5 +254,161 @@ export const stopSpeaking = async () => {
     } catch (error) {
       console.error('Error stopping audio:', error);
     }
+  }
+};
+
+// CV Analysis Function
+export const analyzeCVWithAI = async (cvContent: string, jobRole: string) => {
+  try {
+    const prompt = `You are Aya, an expert CV/resume consultant. I will provide you with someone's CV content and their target job role. Analyze their ACTUAL CV and provide 6-8 SPECIFIC suggestions based on what you see in their CV.
+
+Target Job Role: ${jobRole}
+
+CV Content:
+${cvContent}
+
+You MUST respond with ONLY valid JSON in this EXACT format (no other text):
+{
+  "suggestions": [
+    {"category": "Content", "suggestion": "Your SPECIFIC observation about their CV and actionable suggestion"},
+    {"category": "Skills", "suggestion": "Your SPECIFIC observation about their CV and actionable suggestion"},
+    {"category": "Experience", "suggestion": "Your SPECIFIC observation about their CV and actionable suggestion"},
+    {"category": "Keywords", "suggestion": "Your SPECIFIC observation about their CV and actionable suggestion"},
+    {"category": "Achievements", "suggestion": "Your SPECIFIC observation about their CV and actionable suggestion"},
+    {"category": "Formatting", "suggestion": "Your SPECIFIC observation about their CV and actionable suggestion"}
+  ]
+}
+
+IMPORTANT: 
+- Base ALL suggestions on the ACTUAL CV content provided above
+- Reference specific parts of their CV in your suggestions
+- Give personalized, actionable advice, NOT generic tips
+- Focus on what's missing, what's weak, and what could be stronger for ${jobRole} roles
+- Suggest specific keywords, skills, or improvements based on their content
+
+Respond with ONLY the JSON object, no markdown, no code blocks, no explanations.`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are Aya, a professional CV advisor. Analyze the provided CV content and give SPECIFIC feedback. Respond with ONLY valid JSON.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.7,
+      max_tokens: 1500,
+      response_format: { type: 'json_object' },
+    });
+
+    const responseText = completion.choices[0]?.message?.content || '{}';
+    
+    // Clean up response - remove markdown code blocks if present
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/```\n?/g, '');
+    }
+    
+    // Parse JSON response
+    try {
+      const analysis = JSON.parse(cleanedResponse);
+      
+      // Validate that suggestions exist and is an array
+      if (!analysis.suggestions || !Array.isArray(analysis.suggestions) || analysis.suggestions.length === 0) {
+        throw new Error('Invalid suggestions format');
+      }
+      
+      return analysis;
+    } catch (parseError) {
+      console.error('Error parsing AI response:', parseError);
+      // Return fallback suggestions if parsing fails
+      return {
+        suggestions: [
+          {
+            category: "Skills",
+            suggestion: `Add specific ${jobRole}-related technical skills and certifications`
+          },
+          {
+            category: "Experience",
+            suggestion: "Quantify your achievements with numbers and metrics"
+          },
+          {
+            category: "Keywords",
+            suggestion: `Include industry keywords for ${jobRole} roles to pass ATS systems`
+          },
+          {
+            category: "Action Verbs",
+            suggestion: "Use strong action verbs like 'Led', 'Implemented', 'Achieved'"
+          }
+        ]
+      };
+    }
+  } catch (error) {
+    console.error('Error analyzing CV with AI:', error);
+    throw error;
+  }
+};
+
+// Improve CV Function - Generates a rewritten, enhanced version
+export const improveCV = async (cvContent: string, jobRole: string): Promise<string> => {
+  try {
+    const prompt = `You are Aya, an expert CV/resume writer. I will provide you with someone's CV content and their target job role. Your task is to REWRITE and IMPROVE their CV to make it more professional, impactful, and optimized for ${jobRole} positions.
+
+Target Job Role: ${jobRole}
+
+Current CV Content:
+${cvContent}
+
+Please REWRITE this CV with the following improvements:
+1. Enhanced readability with clear sections and bullet points
+2. Stronger action verbs and quantifiable achievements
+3. Better formatting and structure
+4. Optimized keywords for ${jobRole} roles (ATS-friendly)
+5. More impactful language and professional tone
+6. Highlight relevant skills and experience for ${jobRole}
+7. Remove redundancies and improve conciseness
+
+IMPORTANT INSTRUCTIONS:
+- Keep all factual information (names, dates, companies, education) from the original
+- Only improve the writing, formatting, and presentation
+- Make it ready to copy-paste into a document
+- Use professional formatting with clear section headers
+- Keep the same general structure but make it more impactful
+- Output plain text with line breaks for readability (no markdown)
+
+Return the COMPLETE improved CV text.`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are Aya, a professional CV writer. Rewrite the provided CV to be more professional and impactful. Output plain text only.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.7,
+      max_tokens: 3000,
+    });
+
+    const improvedCVText = completion.choices[0]?.message?.content || '';
+    
+    if (!improvedCVText) {
+      throw new Error('No improved CV returned from AI');
+    }
+    
+    return improvedCVText;
+  } catch (error) {
+    console.error('Error improving CV with AI:', error);
+    throw error;
   }
 };

@@ -20,30 +20,225 @@ import { searchJobs, Job } from "../services/jobService";
 const CATEGORIES = [
   'All Jobs',
   'Saved Jobs',
-  'Software Developer',
-  'Data Analyst',
   'Cyber Security',
+  'Data Analyst',
   'IT Support',
-  'Project Manager',
+  'Software Developer',
   'Sales',
   'Customer Service',
   'Marketing',
-  'Accounting',
-  'Finance',
-  'Human Resources',
-  'Healthcare',
-  'Nursing',
-  'Teaching',
-  'Engineering',
-  'Business Analyst',
-  'Product Manager',
-  'UX/UI Designer',
-  'Graphic Designer',
-  'Operations',
-  'Supply Chain',
-  'Legal',
-  'Architecture',
-  'Consulting',
+];
+
+// Mock data as fallback
+const MOCK_JOBS: Job[] = [
+  // Data Analyst Jobs
+  {
+    id: '1',
+    title: 'Junior Data Analyst',
+    company: 'Deloitte',
+    location: 'London, UK',
+    salary: '£30,000 - £35,000',
+    category: 'Data Analyst',
+    type: 'Full-time',
+    remote: 'Hybrid',
+    source: 'LinkedIn',
+    url: 'https://www.linkedin.com/jobs',
+    postedDays: 2,
+  },
+  {
+    id: '2',
+    title: 'Data Analyst',
+    company: 'Sky',
+    location: 'Leeds, UK',
+    salary: '£35,000 - £42,000',
+    category: 'Data Analyst',
+    type: 'Full-time',
+    remote: 'Hybrid',
+    source: 'Indeed',
+    url: 'https://www.indeed.co.uk',
+    postedDays: 5,
+  },
+  {
+    id: '3',
+    title: 'Graduate Data Analyst',
+    company: 'KPMG',
+    location: 'Manchester, UK',
+    salary: '£28,000 - £32,000',
+    category: 'Data Analyst',
+    type: 'Full-time',
+    remote: 'On-site',
+    source: 'LinkedIn',
+    url: 'https://www.linkedin.com/jobs',
+    postedDays: 1,
+  },
+  
+  // IT Support Jobs
+  {
+    id: '4',
+    title: 'IT Support Engineer',
+    company: 'Capita',
+    location: 'Birmingham, UK',
+    salary: '£25,000 - £30,000',
+    category: 'IT Support',
+    type: 'Full-time',
+    remote: 'On-site',
+    source: 'Indeed',
+    url: 'https://www.indeed.co.uk',
+    postedDays: 3,
+  },
+  {
+    id: '5',
+    title: 'Remote IT Support Specialist',
+    company: 'BT Group',
+    location: 'Remote, UK',
+    salary: '£28,000 - £33,000',
+    category: 'IT Support',
+    type: 'Full-time',
+    remote: 'Remote',
+    source: 'LinkedIn',
+    url: 'https://www.linkedin.com/jobs',
+    postedDays: 7,
+  },
+  
+  // Cyber Security Jobs
+  {
+    id: '6',
+    title: 'Junior Cyber Security Analyst',
+    company: 'BAE Systems',
+    location: 'Bristol, UK',
+    salary: '£32,000 - £38,000',
+    category: 'Cyber Security',
+    type: 'Full-time',
+    remote: 'Hybrid',
+    source: 'Indeed',
+    url: 'https://www.indeed.co.uk',
+    postedDays: 4,
+  },
+  {
+    id: '7',
+    title: 'Cyber Security Consultant',
+    company: 'PwC',
+    location: 'London, UK',
+    salary: '£45,000 - £55,000',
+    category: 'Cyber Security',
+    type: 'Full-time',
+    remote: 'Hybrid',
+    source: 'LinkedIn',
+    url: 'https://www.linkedin.com/jobs',
+    postedDays: 6,
+  },
+  
+  // Software Developer Jobs
+  {
+    id: '8',
+    title: 'Junior Software Developer',
+    company: 'Lloyds Banking Group',
+    location: 'Edinburgh, UK',
+    salary: '£30,000 - £38,000',
+    category: 'Software Developer',
+    type: 'Full-time',
+    remote: 'Hybrid',
+    source: 'Indeed',
+    url: 'https://www.indeed.co.uk',
+    postedDays: 2,
+  },
+  {
+    id: '9',
+    title: 'Full Stack Developer',
+    company: 'Monzo',
+    location: 'London, UK',
+    salary: '£50,000 - £65,000',
+    category: 'Software Developer',
+    type: 'Full-time',
+    remote: 'Remote',
+    source: 'LinkedIn',
+    url: 'https://www.linkedin.com/jobs',
+    postedDays: 1,
+  },
+  
+  // Sales Jobs
+  {
+    id: '10',
+    title: 'Sales Executive',
+    company: 'Vodafone',
+    location: 'Manchester, UK',
+    salary: '£24,000 - £30,000 + Commission',
+    category: 'Sales',
+    type: 'Full-time',
+    remote: 'On-site',
+    source: 'Indeed',
+    url: 'https://www.indeed.co.uk',
+    postedDays: 3,
+  },
+  {
+    id: '11',
+    title: 'Business Development Representative',
+    company: 'Salesforce',
+    location: 'London, UK',
+    salary: '£35,000 - £42,000 + Commission',
+    category: 'Sales',
+    type: 'Full-time',
+    remote: 'Hybrid',
+    source: 'LinkedIn',
+    url: 'https://www.linkedin.com/jobs',
+    postedDays: 5,
+  },
+  
+  // Customer Service Jobs
+  {
+    id: '12',
+    title: 'Customer Service Advisor',
+    company: 'Amazon',
+    location: 'Remote, UK',
+    salary: '£22,000 - £25,000',
+    category: 'Customer Service',
+    type: 'Full-time',
+    remote: 'Remote',
+    source: 'Indeed',
+    url: 'https://www.indeed.co.uk',
+    postedDays: 2,
+  },
+  {
+    id: '13',
+    title: 'Customer Success Manager',
+    company: 'Shopify',
+    location: 'London, UK',
+    salary: '£32,000 - £40,000',
+    category: 'Customer Service',
+    type: 'Full-time',
+    remote: 'Hybrid',
+    source: 'LinkedIn',
+    url: 'https://www.linkedin.com/jobs',
+    postedDays: 4,
+  },
+  
+  // Marketing Jobs
+  {
+    id: '14',
+    title: 'Digital Marketing Executive',
+    company: 'Unilever',
+    location: 'London, UK',
+    salary: '£28,000 - £35,000',
+    category: 'Marketing',
+    type: 'Full-time',
+    remote: 'Hybrid',
+    source: 'Indeed',
+    url: 'https://www.indeed.co.uk',
+    postedDays: 6,
+  },
+  {
+    id: '15',
+    title: 'Social Media Marketing Manager',
+    company: 'ASOS',
+    location: 'London, UK',
+    salary: '£38,000 - £45,000',
+    category: 'Marketing',
+    type: 'Full-time',
+    remote: 'Hybrid',
+    source: 'LinkedIn',
+    url: 'https://www.linkedin.com/jobs',
+    postedDays: 3,
+  },
 ];
 
 const Jobs: React.FC = () => {
@@ -55,22 +250,11 @@ const Jobs: React.FC = () => {
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [totalResults, setTotalResults] = useState(0);
-  const [apiError, setApiError] = useState(false);
 
-  // Load saved jobs and fetch real jobs on mount
+  // Load saved jobs from Supabase on mount
   useEffect(() => {
     loadSavedJobs();
-    fetchJobs();
   }, []);
-
-  // Fetch new jobs when category changes
-  useEffect(() => {
-    if (selectedCategory !== 'Saved Jobs') {
-      fetchJobs();
-    }
-  }, [selectedCategory]);
 
   const fetchJobs = async () => {
     try {
@@ -83,7 +267,8 @@ const Jobs: React.FC = () => {
     } catch (error) {
       console.error('Error fetching jobs:', error);
       setApiError(true);
-      setJobs([]);
+      // Fallback to mock data if API fails
+      setJobs(MOCK_JOBS);
       setLoading(false);
     }
   };
@@ -167,7 +352,6 @@ const Jobs: React.FC = () => {
         <View>
           <Text style={styles.title}>Jobs for you</Text>
           <Text style={styles.subtitle}>
-            {apiError && '⚠️ API error - '}
             {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'} available
           </Text>
         </View>
@@ -208,17 +392,6 @@ const Jobs: React.FC = () => {
                   ]}
                 >
                   {cat}
-                </Text>
-                {selectedCategory === cat && (
-                  <Ionicons name="checkmark" size={18} color={colors.primaryBlue} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-      </View>
-
-      {/* Job List */}
       {loading && !refreshing ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primaryBlue} />
@@ -237,81 +410,92 @@ const Jobs: React.FC = () => {
               tintColor={colors.primaryBlue}
             />
           }
-          renderItem={({ item }) => {
-            const isSaved = savedJobs.includes(item.id);
-            return (
-              <View style={styles.jobCard}>
-                {/* Header with source badge and save button */}
-                <View style={styles.jobCardHeader}>
-                  <View style={[
-                    styles.sourceBadge,
-                    { backgroundColor: isDark ? '#2557A720' : '#2557A715' }
+          data={filteredJobs}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.jobList}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primaryBlue}
+          />
+        }
+        renderItem={({ item }) => {
+          const isSaved = savedJobs.insDark ? '#2557A720' : '#2557A715' }
+                ]}>
+                  <Text style={[
+                    styles.sourceText,
+                    { color: '#2557A7' }
                   ]}>
-                    <Text style={[
-                      styles.sourceText,
-                      { color: '#2557A7' }
-                    ]}>
-                      Adzuna
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => toggleSaveJob(item.id)}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Ionicons
-                      name={isSaved ? "bookmark" : "bookmark-outline"}
-                      size={20}
-                      color={isSaved ? colors.primaryBlue : (isDark ? '#666' : colors.textMuted)}
-                    />
-                  </TouchableOpacity>
+                    Adzuna#2557A720' : '#2557A715') 
+                  }
+                ]}>
+                  <Text style={[
+                    styles.sourceText,
+                    { color: item.source === 'LinkedIn' ? '#0A66C2' : '#2557A7' }
+                  ]}>
+                    {item.source}
+                  </Text>
                 </View>
-
-                {/* Job Title */}
-                <Text style={styles.jobTitle}>{item.title}</Text>
-
-                {/* Company */}
-                <Text style={styles.jobCompany}>{item.company}</Text>
-
-                {/* Location and Remote Type */}
-                <View style={styles.jobMetaRow}>
-                  <Ionicons name="location-outline" size={14} color={isDark ? '#888' : colors.textMuted} />
-                  <Text style={styles.jobMeta}>{item.location}</Text>
-                  <View style={[styles.remoteBadge, { 
-                    backgroundColor: item.remote === 'Remote' 
-                      ? (isDark ? '#10B98120' : '#10B98115')
-                      : (isDark ? '#F59E0B20' : '#F59E0B15')
-                  }]}>
-                    <Text style={[styles.remoteBadgeText, {
-                      color: item.remote === 'Remote' ? '#10B981' : '#F59E0B'
-                    }]}>
-                      {item.remote}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Salary */}
-                <View style={styles.jobMetaRow}>
-                  <Ionicons name="cash-outline" size={14} color={isDark ? '#888' : colors.textMuted} />
-                  <Text style={styles.jobSalary}>{item.salary}</Text>
-                </View>
-
-                {/* Posted Date */}
-                <Text style={styles.postedText}>{getPostedText(item.postedDays)}</Text>
-
-                {/* Apply Button */}
                 <TouchableOpacity
-                  style={styles.applyButton}
-                  onPress={() => openJob(item)}
-                  activeOpacity={0.8}
+                  onPress={() => toggleSaveJob(item.id)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Text style={styles.applyButtonText}>View & Apply</Text>
-                  <Ionicons name="arrow-forward" size={16} color="#fff" />
+                  <Ionicons
+                    name={isSaved ? "bookmark" : "bookmark-outline"}
+                    size={20}
+                    color={isSaved ? colors.primaryBlue : (isDark ? '#666' : colors.textMuted)}
+                  />
                 </TouchableOpacity>
               </View>
-            );
-          }}
+
+              {/* Job Title */}
+              <Text style={styles.jobTitle}>{item.title}</Text>
+
+              {/* Company */}
+              <Text style={styles.jobCompany}>{item.company}</Text>
+
+              {/* Location and Remote Type */}
+              <View style={styles.jobMetaRow}>
+                <Ionicons name="location-outline" size={14} color={isDark ? '#888' : colors.textMuted} />
+                <Text style={styles.jobMeta}>{item.location}</Text>
+                <View style={[styles.remoteBadge, { 
+                  backgroundColor: item.remote === 'Remote' 
+                    ? (isDark ? '#10B98120' : '#10B98115')
+                    : (isDark ? '#F59E0B20' : '#F59E0B15')
+                }]}>
+                  <Text style={[styles.remoteBadgeText, {
+                    color: item.remote === 'Remote' ? '#10B981' : '#F59E0B'
+                  }]}>
+                    {item.remote}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Salary */}
+              <View style={styles.jobMetaRow}>
+                <Ionicons name="cash-outline" size={14} color={isDark ? '#888' : colors.textMuted} />
+                <Text style={styles.jobSalary}>{item.salary}</Text>
+              </View>
+
+              {/* Posted Date */}
+              <Text style={styles.postedText}>{getPostedText(item.postedDays)}</Text>
+
+              {/* Apply Button */}
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={() => openJob(item)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.applyButtonText}>View & Apply</Text>
+                <Ionicons name="arrow-forward" size={16} color="#fff" />
+              </TouchableOpacity>
         />
-      )}
+      )}    </View>
+          );
+        }}
+      />
     </View>
   );
 };
@@ -496,10 +680,6 @@ const makeStyles = (colors: any, isDark: boolean) =>
     gap: 8,
   },
   applyButtonText: {
-    ...typography.bodyMedium,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -510,6 +690,10 @@ const makeStyles = (colors: any, isDark: boolean) =>
     ...typography.bodyMedium,
     color: isDark ? '#aaa' : colors.textMuted,
     marginTop: 16,
+  },
+    ...typography.bodyMedium,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
 

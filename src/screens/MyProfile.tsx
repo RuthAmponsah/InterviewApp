@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, RefreshControl, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from 'expo-document-picker';
 import PrimaryButton from "../components/PrimaryButton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -24,6 +25,8 @@ export default function MyProfile() {
   const [name, setName] = useState("User");
   const [email, setEmail] = useState("ruthrocwel@example.com");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [cvUploaded, setCvUploaded] = useState(false);
+  const [cvFileName, setCvFileName] = useState<string | null>(null);
   const [achievements, setAchievements] = useState({
     streak7: false,
     interviews10: false,
@@ -58,6 +61,14 @@ export default function MyProfile() {
   const loadProfile = async () => {
     try {
       const userId = await AsyncStorage.getItem("userId");
+      
+      // Check if CV is uploaded
+      const cvUri = await AsyncStorage.getItem("cvUri");
+      const cvName = await AsyncStorage.getItem("cvFileName");
+      if (cvUri && cvName) {
+        setCvUploaded(true);
+        setCvFileName(cvName);
+      }
       
       // Check if profile was already marked as complete
       const isComplete = await AsyncStorage.getItem('profileComplete');
@@ -232,6 +243,57 @@ export default function MyProfile() {
         >
           <Text style={styles.rowText}>Edit Profile</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.row}
+          onPress={async () => {
+            try {
+              const result = await DocumentPicker.getDocumentAsync({
+                type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+                copyToCacheDirectory: true,
+              });
+
+              if (!result.canceled && result.assets && result.assets.length > 0) {
+                const file = result.assets[0];
+                await AsyncStorage.setItem("cvUri", file.uri);
+                await AsyncStorage.setItem("cvFileName", file.name);
+                await AsyncStorage.setItem("cvMimeType", file.mimeType || 'application/pdf');
+                setCvUploaded(true);
+                setCvFileName(file.name);
+                Alert.alert("Success", "CV uploaded successfully! Click 'View CV' to analyze it.");
+              }
+            } catch (error) {
+              console.error('Error uploading CV:', error);
+              Alert.alert("Error", "Failed to upload CV. Please try again.");
+            }
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+            <Text style={styles.rowText}>
+              {cvUploaded ? 'Replace CV' : 'Upload CV'}
+            </Text>
+            {cvUploaded && <Ionicons name="checkmark-circle" size={20} color={colors.primaryBlue} />}
+          </View>
+        </TouchableOpacity>
+
+        {cvUploaded && (
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => navigation.navigate("ViewCV")}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+              <View>
+                <Text style={styles.rowText}>View CV</Text>
+                {cvFileName && (
+                  <Text style={[styles.rowSubtext, { fontSize: 12, marginTop: 2 }]}>
+                    {cvFileName}
+                  </Text>
+                )}
+              </View>
+              <Ionicons name="document-text" size={20} color={colors.textMuted} />
+            </View>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           style={styles.row}
@@ -458,6 +520,10 @@ const makeStyles = (colors: any, isDark: boolean) =>
     rowText: {
       ...typography.bodyMedium,
       color: isDark ? "#fff" : "#111",
+    },
+    rowSubtext: {
+      ...typography.bodySmall,
+      color: isDark ? "#9CA3AF" : "#6B7280",
     },
     logoutButton: {
       flexDirection: 'row',

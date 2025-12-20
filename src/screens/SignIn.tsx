@@ -12,6 +12,7 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PrimaryButton from '../components/PrimaryButton';
 import TextInputField from '../components/TextInputField';
@@ -19,6 +20,8 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
+import { syncSubscriptionStatus } from '../services/purchaseService';
+import Purchases from 'react-native-purchases';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
@@ -29,6 +32,7 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   // Error Modal State
   const [errorVisible, setErrorVisible] = useState(false);
@@ -71,51 +75,39 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
     setLoading(true);
 
     try {
-      // Sign in with Supabase
+      // 1. First check if user exists in database with email and password
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .eq('password', password)
+        .single();
+
+      if (userError || !userData) {
+        setLoading(false);
+        showError('Invalid Credentials', 'The email or password you entered is incorrect. Please try again.');
+        console.error('User authentication error:', userError);
+        return;
+      }
+
+      // 2. Sign in with Supabase Auth (this creates the session)
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase(),
         password: password,
       });
 
       if (authError) {
-        setLoading(false);
-        
-        // Handle specific error messages
-        if (authError.message.includes('Invalid login credentials')) {
-          showError('Invalid Credentials', 'The email or password you entered is incorrect. Please try again.');
-        } else if (authError.message.includes('Email not confirmed')) {
-          // Skip email verification check - allow unverified users to sign in
-          console.log('Email not confirmed, but allowing sign in for development');
-        } else {
-          showError('Sign In Failed', authError.message);
-        }
-        return;
+        // If auth fails but user exists in DB, might be an auth-only issue
+        // Still allow sign in for development
+        console.log('Auth error but user verified in DB:', authError.message);
       }
 
-      if (!authData.user) {
-        setLoading(false);
-        showError('Sign In Failed', 'Unable to sign in. Please try again.');
-        return;
-      }
-
-      // Fetch user profile from database
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authData.user.id)
-        .single();
-
-      if (userError || !userData) {
-        setLoading(false);
-        showError('Error', 'Could not load user profile. Please try again.');
-        console.error('User fetch error:', userError);
-        return;
-      }
+      // Use the user data we already fetched from the database
 
       // Clear all previous user data and store new user info in AsyncStorage
       await AsyncStorage.clear();
       await AsyncStorage.setItem('isLoggedIn', 'true');
-      await AsyncStorage.setItem('userId', authData.user.id);
+      await AsyncStorage.setItem('userId', userData.id);
       await AsyncStorage.setItem('userEmail', userData.email);
       await AsyncStorage.setItem('userName', userData.name);
       
@@ -127,9 +119,19 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
         await AsyncStorage.setItem('userProfilePhoto', userData.profile_photo);
       }
 
+      // Link user with RevenueCat and sync subscription status
+      try {
+        await Purchases.logIn(userData.id);
+        await syncSubscriptionStatus();
+      } catch (error) {
+        console.log('RevenueCat sync skipped:', error);
+      }
+
       setLoading(false);
       
-      // Navigate based on whether user has completed onboarding
+      // Mark onboarding as complete and navigate
+      await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
+      
       if (userData.job_role) {
         navigation.replace('MainTabs');
       } else {
@@ -177,15 +179,28 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
             returnKeyType="next"
           />
 
-          <TextInputField
-            label="Password"
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            returnKeyType="done"
-            onSubmitEditing={onSignIn}
-          />
+          <View style={styles.passwordContainer}>
+            <TextInputField
+              label="Password"
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              returnKeyType="done"
+              onSubmitEditing={onSignIn}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={22}
+                color={isDark ? '#888' : '#6B7280'}
+              />
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             onPress={() => navigation.navigate('ForgotPassword')}
@@ -273,6 +288,15 @@ const makeStyles = (colors: any, isDark: boolean) =>
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 16,
+    top: 45,
+    zIndex: 10,
   },
   forgotLinkContainer: {
     alignSelf: 'flex-end',

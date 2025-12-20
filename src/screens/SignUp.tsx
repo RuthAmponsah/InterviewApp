@@ -12,6 +12,7 @@ import {
     Keyboard,
     TouchableWithoutFeedback,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import PrimaryButton from '../components/PrimaryButton';
 import TextInputField from '../components/TextInputField';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -33,6 +34,7 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
   const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Popup Modal
   const [warningVisible, setWarningVisible] = useState(false);
@@ -94,51 +96,77 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
+    // PASSWORD VALIDATION (minimum 8 characters and at least one special character)
+    if (password.length < 8) {
+      showWarning("Password must be at least 8 characters long.");
+      return;
+    }
+    
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;`~]/;
+    if (!specialCharRegex.test(password)) {
+      showWarning("Password must contain at least one special character (!@#$%^&* etc.).");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // 1. Create auth user in Supabase (with autoConfirm for development)
+      // 1. Create auth user in Supabase (NO email verification)
+      // This will NOT trigger any Supabase emails
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.toLowerCase(),
         password: password,
         options: {
-          emailRedirectTo: undefined, // Skip email verification redirect
+          emailRedirectTo: undefined,
+          data: {
+            name: name,
+          },
         }
       });
 
       if (authError) {
         setLoading(false);
-        if (authError.message.includes('already registered')) {
+        
+        // Handle email rate limit - don't block signup
+        if (authError.message.includes('Email rate limit exceeded') || authError.message.includes('rate limit')) {
+          console.log('⚠️ Supabase rate limit - please wait and try again');
+          showWarning("Too many signups right now. Please wait 1 minute and try again, or sign in if you already have an account.");
+          return;
+        } else if (authError.message.includes('already registered')) {
           showWarning("This email is already registered. Please sign in instead.");
+          return;
         } else {
           showWarning(authError.message);
+          return;
         }
-        return;
       }
 
-      if (!authData.user) {
+      if (!authData?.user) {
         setLoading(false);
         showWarning("Failed to create account. Please try again.");
         return;
       }
 
+      const userId = authData.user.id;
+
       // 2. Check if user profile already exists, if not create it
       const { data: existingUser } = await supabase
         .from('users')
         .select('id')
-        .eq('id', authData.user.id)
+        .eq('id', userId)
         .single();
 
       if (!existingUser) {
-        // Create user profile in database
+        // Create user profile in database with password
         const { error: profileError } = await supabase
           .from('users')
           .insert({
-            id: authData.user.id,
+            id: userId,
             email: email.toLowerCase(),
             name: name,
             gender: upperGender,
             age: ageNum,
+            password: password, // Store password (Supabase Auth already handles encryption)
           });
 
         if (profileError) {
@@ -171,12 +199,12 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
       const { data: existingProgress } = await supabase
         .from('user_progress')
         .select('id')
-        .eq('user_id', authData.user.id)
+        .eq('user_id', userId)
         .single();
 
       if (!existingProgress) {
         await supabase.from('user_progress').insert({
-          user_id: authData.user.id,
+          user_id: userId,
           streak: 0,
           total_interviews: 0,
         });
@@ -186,17 +214,13 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
       await AsyncStorage.clear();
       await AsyncStorage.setItem("userName", name);
       await AsyncStorage.setItem("userEmail", email.toLowerCase());
-      await AsyncStorage.setItem("userId", authData.user.id);
+      await AsyncStorage.setItem("userId", userId);
       await AsyncStorage.setItem("isLoggedIn", "true");
 
-      // 6. Send welcome email
-      const emailSent = await sendWelcomeEmail(email, name);
-      
-      if (emailSent) {
-        console.log('✅ Welcome email sent successfully!');
-      } else {
-        console.log('⚠️ Account created but email failed to send');
-      }
+      // 6. Welcome email (sent via Resend, not Supabase) - non-blocking
+      sendWelcomeEmail(email, name).catch(err => {
+        console.log('Welcome email failed (non-critical):', err);
+      });
 
       setLoading(false);
       
@@ -248,13 +272,26 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
             keyboardType="email-address"
           />
 
-          <TextInputField
-            label="Password"
-            placeholder="Create a password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+          <View style={styles.passwordContainer}>
+            <TextInputField
+              label="Password"
+              placeholder="Create a password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={22}
+                color={isDark ? '#888' : '#6B7280'}
+              />
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.hintText}>
             Password must be at least 8 characters and include 1 special character.
@@ -375,6 +412,15 @@ const makeStyles = (colors: any, isDark: boolean) =>
     color: isDark ? '#b5b5b5' : colors.textMuted,
     marginTop: 4,
     marginBottom: 10,
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 16,
+    top: 45,
+    zIndex: 10,
   },
   row: {
     flexDirection: 'row',

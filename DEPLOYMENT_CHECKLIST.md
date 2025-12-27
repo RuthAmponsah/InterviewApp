@@ -22,6 +22,7 @@
 - ✅ Offline Detection
 - ✅ Onboarding Flow (skips for returning users)
 
+⚠️ Download My Data (Marked as "Coming Soon")
 ### 2. Monetization
 - ✅ RevenueCat Integration (Test API key configured)
 - ✅ Subscription Screen (Monthly/Annual plans)
@@ -99,6 +100,7 @@
 
 ### 6. **Features to Complete** 🟠
 - [ ] CV DOCX Export (currently "Coming Soon" - add document generation library)
+- [ ] Download My Data (currently "Coming Soon" - add data export/download feature)
 - [ ] Interview Experience customization (currently "Coming Soon")
 - [ ] Sector Packs implementation (currently "Coming Soon")
 - [ ] Implement actual interview limit enforcement
@@ -134,9 +136,9 @@
 - [ ] Add loading states where missing
 
 ### 10. **Documentation** 🟢
-- [ ] Update README with setup instructions
+- [x] Update README with setup instructions
 - [ ] Document API endpoints
-- [ ] Document database schema
+- [x] Document database schema
 - [ ] Create user guide
 - [ ] Document deployment process
 
@@ -167,26 +169,27 @@
 ### 🟢 QUICK WINS (30 mins - 2 hours each)
 Do these first for immediate progress:
 
-1. **Add age rating to store listings** ⭐ EASIEST
+1. ✅ **Add age rating to store listings** ⭐ EASIEST
    - Set to 16+ in App Store Connect & Google Play Console
    - Already documented in Privacy Policy
+   - **NOTE**: Will be set during store listing creation (tasks #17 & #18)
 
-2. **Update README with setup instructions** ⭐ EASIEST
+2. ✅ **Update README with setup instructions** ⭐ EASIEST
    - Document npm install steps
    - List all required API keys
    - Add development setup guide
 
-3. **Add proper splash screen** 
+3. ✅ **Add proper splash screen** 
    - Design simple branded splash in Figma/Canva
    - Update `app.json` splash config
    - Test on device
 
-4. **Document database schema**
+4. ✅ **Document database schema**
    - List all tables and columns
    - Document relationships
    - Include SQL files in documentation
 
-5. **Add loading states where missing**
+5. ✅ **Add loading states where missing**
    - Review screens for missing ActivityIndicators
    - Add skeleton loaders to slow operations
    - Improves user experience

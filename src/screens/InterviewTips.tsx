@@ -52,6 +52,20 @@ const TIPS: Tip[] = [
     description: 'Have 3-5 thoughtful questions ready to ask the interviewer. This shows engagement and helps you evaluate if the role is right for you.',
     icon: '❓',
   },
+  {
+    id: '21',
+    category: 'Before',
+    title: 'Test Your Tech',
+    description: 'If your interview is virtual, test your internet, camera, and microphone in advance. Make sure your environment is quiet and well-lit.',
+    icon: '💻',
+  },
+  {
+    id: '22',
+    category: 'Before',
+    title: 'Plan Your Route',
+    description: 'If in-person, plan your route and allow extra time for travel. Arriving late can create a bad first impression.',
+    icon: '🗺️',
+  },
 
   // During Interview
   {
@@ -89,6 +103,20 @@ const TIPS: Tip[] = [
     description: 'Sit up straight, lean slightly forward to show engagement, avoid fidgeting, and maintain appropriate eye contact.',
     icon: '🤝',
   },
+  {
+    id: '23',
+    category: 'During',
+    title: 'Take Notes',
+    description: 'Bring a notebook and jot down key points or questions. It shows you are engaged and helps you remember details.',
+    icon: '📝',
+  },
+  {
+    id: '24',
+    category: 'During',
+    title: 'Pause Before Answering',
+    description: 'It’s okay to take a moment to think before you answer. This helps you give more thoughtful responses.',
+    icon: '⏸️',
+  },
 
   // After Interview
   {
@@ -111,6 +139,13 @@ const TIPS: Tip[] = [
     title: 'Follow Up Appropriately',
     description: 'If you haven\'t heard back in the expected timeframe, it\'s appropriate to send a polite follow-up email.',
     icon: '📅',
+  },
+  {
+    id: '25',
+    category: 'After',
+    title: 'Connect on LinkedIn',
+    description: 'If appropriate, connect with your interviewer on LinkedIn with a short, polite message. It helps you stay on their radar.',
+    icon: '🔗',
   },
 
   // STAR Method
@@ -142,6 +177,13 @@ const TIPS: Tip[] = [
     description: 'Share the outcome. Quantify results when possible. What was the impact? What did you learn?',
     icon: '🏆',
   },
+  {
+    id: '26',
+    category: 'STAR',
+    title: 'Keep STAR Concise',
+    description: 'Keep each STAR story to 1-2 minutes. Focus on the most relevant details for the job you want.',
+    icon: '⏱️',
+  },
 
   // Common Questions
   {
@@ -171,6 +213,13 @@ const TIPS: Tip[] = [
     title: 'Why Should We Hire You?',
     description: 'Highlight 2-3 key strengths that match the job requirements. Use specific examples. Show confidence but not arrogance.',
     icon: '✨',
+  },
+  {
+    id: '27',
+    category: 'Questions',
+    title: 'Ask About Next Steps',
+    description: 'At the end, ask about the next steps in the process. It shows you are interested and helps you plan.',
+    icon: '➡️',
   },
 ];
 

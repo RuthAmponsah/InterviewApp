@@ -9,6 +9,7 @@ import {
     View,
     TouchableWithoutFeedback,
     Keyboard,
+    Alert,
 } from 'react-native';
 import PrimaryButton from '../components/PrimaryButton';
 import TextInputField from '../components/TextInputField';
@@ -16,7 +17,6 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
-import { Alert } from 'react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 

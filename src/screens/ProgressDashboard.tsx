@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Dimensions, RefreshControl, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BackButton from "../components/BackButton";
@@ -131,6 +131,13 @@ export default function ProgressDashboard() {
         Track your journey to interview success
       </Text>
 
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primaryBlue} />
+          <Text style={styles.loadingText}>Loading your progress...</Text>
+        </View>
+      ) : (
+        <>
       {/* Level Card */}
       <View style={styles.levelCard}>
         <View style={styles.levelBadge}>
@@ -224,6 +231,8 @@ export default function ProgressDashboard() {
             );
           })}
       </View>
+      </>
+      )}
     </ScrollView>
   );
 }
@@ -406,5 +415,16 @@ const makeStyles = (colors: any, isDark: boolean) =>
     milestoneProgress: {
       ...typography.caption,
       color: isDark ? '#b5b5b5' : colors.textMuted,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 60,
+    },
+    loadingText: {
+      ...typography.bodyMedium,
+      color: isDark ? '#b5b5b5' : colors.textMuted,
+      marginTop: 12,
     },
   });

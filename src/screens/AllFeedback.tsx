@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -36,6 +37,12 @@ const AllFeedback: React.FC = () => {
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState({
+    totalFeedback: 0,
+    averageScore: 0,
+    totalMinutes: 0,
+    bestScore: 0,
+  });
 
   useEffect(() => {
     loadAllFeedback();
@@ -60,6 +67,28 @@ const AllFeedback: React.FC = () => {
         console.error('Error loading feedback:', error);
       } else if (data) {
         setFeedbackList(data);
+        
+        // Calculate stats
+        const scores = data
+          .map(item => {
+            const scoreMatch = item.feedback.match(/Score:\s*(\d+)\/100/);
+            return scoreMatch ? parseInt(scoreMatch[1]) : 0;
+          })
+          .filter(score => score > 0);
+        
+        const avgScore = scores.length > 0 
+          ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
+          : 0;
+        
+        const bestScore = scores.length > 0 ? Math.max(...scores) : 0;
+        const totalMinutes = data.reduce((sum, item) => sum + item.duration_minutes, 0);
+        
+        setStats({
+          totalFeedback: data.length,
+          averageScore: avgScore,
+          totalMinutes,
+          bestScore,
+        });
       }
     } catch (error) {
       console.error('Error loading feedback:', error);
@@ -104,6 +133,34 @@ const AllFeedback: React.FC = () => {
         <Text style={styles.subtitle}>
           Review your feedback history from past interviews
         </Text>
+
+        {!loading && feedbackList.length > 0 && (
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <Ionicons name="document-text" size={20} color={colors.primaryBlue} />
+              <Text style={styles.statNumber}>{stats.totalFeedback}</Text>
+              <Text style={styles.statLabel}>Total Feedback</Text>
+            </View>
+
+            <View style={styles.statCard}>
+              <Ionicons name="star" size={20} color="#F59E0B" />
+              <Text style={styles.statNumber}>{stats.averageScore}</Text>
+              <Text style={styles.statLabel}>Avg Score</Text>
+            </View>
+
+            <View style={styles.statCard}>
+              <Ionicons name="time" size={20} color="#10B981" />
+              <Text style={styles.statNumber}>{stats.totalMinutes}</Text>
+              <Text style={styles.statLabel}>Total Minutes</Text>
+            </View>
+
+            <View style={styles.statCard}>
+              <Ionicons name="trophy" size={20} color="#8B5CF6" />
+              <Text style={styles.statNumber}>{stats.bestScore}</Text>
+              <Text style={styles.statLabel}>Best Score</Text>
+            </View>
+          </View>
+        )}
 
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -210,6 +267,41 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: colors.textMuted,
       marginBottom: 24,
       lineHeight: 22,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginBottom: 24,
+    },
+    statCard: {
+      backgroundColor: isDark ? '#2a2a2a' : '#fff',
+      borderRadius: 12,
+      padding: 16,
+      width: '48%',
+      marginBottom: 12,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: isDark ? '#444' : colors.border,
+    },
+    statNumber: {
+      ...typography.headingMedium,
+      color: isDark ? '#fff' : colors.textDark,
+      marginTop: 8,
+      marginBottom: 4,
+      fontSize: 24,
+      fontWeight: '700',
+    },
+    statLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+      textAlign: 'center',
+      fontSize: 12,
     },
     loadingContainer: {
       alignItems: 'center',

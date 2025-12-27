@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/colors';
 import BackButton from '../components/BackButton';
+import { supabase } from '../config/supabase';
 
 interface Story {
   id: string;
@@ -19,23 +21,11 @@ interface Story {
   role: string;
   company: string;
   story: string;
-  interviewCount: number;
+  interview_count: number;
   timeframe: string;
-  avatar: string;
+  created_at: string;
+  gender?: string;
 }
-
-const successStories: Story[] = [
-  {
-    id: '1',
-    name: 'Sarah Thompson',
-    role: 'Marketing Assistant',
-    company: 'Local Marketing Agency',
-    story: "I was really nervous about my first proper job interview after graduating. I practiced with the app for about 2 weeks, going through common questions like 'Why do you want this role?' and 'What are your strengths?'. It helped me feel more confident and less anxious. When the actual interview came, I felt prepared and managed to stay calm. I got the job offer a week later!",
-    interviewCount: 12,
-    timeframe: '2 weeks',
-    avatar: '👩‍💼',
-  },
-];
 
 const SuccessStories: React.FC = () => {
   const navigation = useNavigation();
@@ -44,6 +34,32 @@ const SuccessStories: React.FC = () => {
   const styles = makeStyles(colors, isDark);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [stories, setStories] = useState<Story[]>([]);
+
+  useEffect(() => {
+    loadStories();
+  }, []);
+
+  const loadStories = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('success_stories')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading stories:', error);
+      } else if (data) {
+        setStories(data);
+      }
+    } catch (error) {
+      console.error('Error loading stories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
@@ -51,8 +67,7 @@ const SuccessStories: React.FC = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate data refresh
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await loadStories();
     setRefreshing(false);
   };
 
@@ -78,6 +93,21 @@ const SuccessStories: React.FC = () => {
           Real people who practiced with Aya and landed their dream jobs
         </Text>
 
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primaryBlue} />
+            <Text style={styles.loadingText}>Loading stories...</Text>
+          </View>
+        ) : stories.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>📝</Text>
+            <Text style={styles.emptyTitle}>No stories yet</Text>
+            <Text style={styles.emptyText}>
+              Be the first to share your success story and inspire others!
+            </Text>
+          </View>
+        ) : (
+          <>
         <TouchableOpacity
           style={styles.addStoryButton}
           activeOpacity={0.8}
@@ -87,9 +117,24 @@ const SuccessStories: React.FC = () => {
           <Text style={styles.addStoryButtonText}>Add Your Story Now</Text>
         </TouchableOpacity>
 
-        {successStories.map((story) => {
+        {stories.map((story, index) => {
           const isExpanded = expandedId === story.id;
           const previewText = story.story.slice(0, 120) + '...';
+          
+          // Generate avatar based on gender
+          const getAvatar = (gender?: string) => {
+            if (gender === 'male') {
+              const maleAvatars = ['👨‍💼', '👨‍💻', '👨‍🔬', '👨‍🎓'];
+              return maleAvatars[index % maleAvatars.length];
+            } else if (gender === 'female') {
+              const femaleAvatars = ['👩‍💼', '👩‍💻', '👩‍🔬', '👩‍🎓'];
+              return femaleAvatars[index % femaleAvatars.length];
+            } else {
+              return '👤';
+            }
+          };
+          
+          const avatar = getAvatar(story.gender);
 
           return (
             <TouchableOpacity
@@ -99,7 +144,9 @@ const SuccessStories: React.FC = () => {
               onPress={() => toggleExpand(story.id)}
             >
               <View style={styles.header}>
-                <Text style={styles.avatar}>{story.avatar}</Text>
+                <View style={styles.avatarContainer}>
+                  <Text style={styles.avatar}>{avatar}</Text>
+                </View>
                 <View style={styles.headerInfo}>
                   <Text style={styles.name}>{story.name}</Text>
                   <Text style={styles.role}>{story.role} at {story.company}</Text>
@@ -114,7 +161,7 @@ const SuccessStories: React.FC = () => {
                 <View style={styles.stats}>
                   <View style={styles.stat}>
                     <Ionicons name="chatbox-outline" size={16} color={colors.primaryBlue} />
-                    <Text style={styles.statText}>{story.interviewCount} interviews</Text>
+                    <Text style={styles.statText}>{story.interview_count} interviews</Text>
                   </View>
                   <View style={styles.stat}>
                     <Ionicons name="time-outline" size={16} color={colors.primaryBlue} />
@@ -135,6 +182,8 @@ const SuccessStories: React.FC = () => {
             Every expert was once a beginner. Start practicing now and you could be our next success story!
           </Text>
         </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -172,6 +221,28 @@ const makeStyles = (colors: any, isDark: boolean) =>
       marginBottom: 16,
       lineHeight: 22,
     },
+    emptyContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 60,
+      paddingHorizontal: 30,
+    },
+    emptyIcon: {
+      fontSize: 64,
+      marginBottom: 16,
+    },
+    emptyTitle: {
+      ...typography.headingMedium,
+      color: isDark ? '#fff' : colors.textDark,
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    emptyText: {
+      ...typography.bodyMedium,
+      color: colors.textMuted,
+      textAlign: 'center',
+      lineHeight: 24,
+    },
     addStoryButton: {
       backgroundColor: colors.primaryBlue,
       borderRadius: 12,
@@ -203,9 +274,11 @@ const makeStyles = (colors: any, isDark: boolean) =>
       alignItems: 'center',
       marginBottom: 16,
     },
+    avatarContainer: {
+      marginRight: 16,
+    },
     avatar: {
       fontSize: 48,
-      marginRight: 16,
     },
     headerInfo: {
       flex: 1,
@@ -270,6 +343,17 @@ const makeStyles = (colors: any, isDark: boolean) =>
       textAlign: 'center',
       lineHeight: 22,
       opacity: 0.95,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 60,
+    },
+    loadingText: {
+      ...typography.bodyMedium,
+      color: isDark ? '#b5b5b5' : colors.textMuted,
+      marginTop: 12,
     },
   });
 

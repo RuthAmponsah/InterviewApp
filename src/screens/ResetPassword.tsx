@@ -1,14 +1,14 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    View,
-    TouchableWithoutFeedback,
-    Keyboard,
-    Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Alert,
 } from 'react-native';
 import PrimaryButton from '../components/PrimaryButton';
 import TextInputField from '../components/TextInputField';
@@ -70,7 +70,6 @@ const ResetPassword: React.FC<Props> = ({ navigation }) => {
     } catch (error) {
       setLoading(false);
       Alert.alert('Error', 'Failed to reset password. Please try again.');
-      console.error('Password reset error:', error);
     }
   };
 

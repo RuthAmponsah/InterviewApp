@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, RefreshControl, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, RefreshControl, Alert, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from 'expo-document-picker';
 import PrimaryButton from "../components/PrimaryButton";
@@ -34,6 +34,7 @@ export default function MyProfile() {
   });
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Calculate profile completion percentage
   const calculateCompletion = async () => {
@@ -123,6 +124,8 @@ export default function MyProfile() {
       if (!profilePhoto && storedPhoto) setProfilePhoto(storedPhoto);
     } catch (error) {
       console.error('Error loading profile:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -150,6 +153,12 @@ export default function MyProfile() {
       
       <Text style={styles.logoText}>MY INTERVIEW</Text>
 
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primaryBlue} />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      ) : (
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -325,6 +334,7 @@ export default function MyProfile() {
         <Text style={styles.logoutText}>Log out</Text>
       </TouchableOpacity>
       </ScrollView>
+      )}
     </View>
   );
 }
@@ -540,5 +550,16 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodyMedium,
       color: '#FF3B30',
       fontWeight: '600',
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 60,
+    },
+    loadingText: {
+      ...typography.bodyMedium,
+      color: isDark ? '#b5b5b5' : colors.textMuted,
+      marginTop: 12,
     },
   });

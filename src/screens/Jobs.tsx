@@ -9,6 +9,7 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -58,6 +59,8 @@ const Jobs: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [apiError, setApiError] = useState(false);
+  const [remoteFilter, setRemoteFilter] = useState<string>('All');
+  const [locationFilter, setLocationFilter] = useState<string>('');
 
   // Load saved jobs and fetch real jobs on mount
   useEffect(() => {
@@ -113,11 +116,23 @@ const Jobs: React.FC = () => {
     setRefreshing(false);
   };
 
-  // Filter jobs based on category
-  const filteredJobs =
+  // Filter jobs based on category, remote type, and location
+  let filteredJobs =
     selectedCategory === 'Saved Jobs'
       ? jobs.filter((j) => savedJobs.includes(j.id))
       : jobs;
+
+  // Apply remote filter
+  if (remoteFilter !== 'All') {
+    filteredJobs = filteredJobs.filter(job => job.remote === remoteFilter);
+  }
+
+  // Apply location filter
+  if (locationFilter.trim()) {
+    filteredJobs = filteredJobs.filter(job => 
+      job.location.toLowerCase().includes(locationFilter.toLowerCase())
+    );
+  }
 
   const openJob = (job: Job) => {
     Linking.openURL(job.url);
@@ -168,7 +183,10 @@ const Jobs: React.FC = () => {
           <Text style={styles.title}>Jobs for you</Text>
           <Text style={styles.subtitle}>
             {apiError && '⚠️ API error - '}
-            {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'} available
+            {selectedCategory === 'Saved Jobs' 
+              ? `${filteredJobs.length} saved ${filteredJobs.length === 1 ? 'job' : 'jobs'}`
+              : `${totalResults || filteredJobs.length} ${totalResults === 1 ? 'job' : 'jobs'} available`
+            }
           </Text>
         </View>
       </View>
@@ -216,6 +234,60 @@ const Jobs: React.FC = () => {
             ))}
           </ScrollView>
         )}
+      </View>
+
+      {/* Filter Buttons */}
+      <View style={styles.filtersContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersScroll}
+        >
+          {/* Remote Type Filters */}
+          {['All', 'Remote', 'Hybrid', 'On-site'].map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={[
+                styles.filterChip,
+                remoteFilter === type && styles.filterChipActive,
+              ]}
+              onPress={() => setRemoteFilter(type)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  remoteFilter === type && styles.filterChipTextActive,
+                ]}
+              >
+                {type}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          
+          {/* Location Filter */}
+          <View style={styles.locationFilterContainer}>
+            <Ionicons 
+              name="location-outline" 
+              size={16} 
+              color={locationFilter ? colors.primaryBlue : (isDark ? '#666' : colors.textMuted)} 
+            />
+            <TextInput
+              style={[
+                styles.locationFilterInput,
+                locationFilter && styles.locationFilterActive,
+              ]}
+              placeholder="Location"
+              placeholderTextColor={isDark ? '#666' : colors.textMuted}
+              value={locationFilter}
+              onChangeText={setLocationFilter}
+            />
+            {locationFilter ? (
+              <TouchableOpacity onPress={() => setLocationFilter('')}>
+                <Ionicons name="close-circle" size={16} color={colors.primaryBlue} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </ScrollView>
       </View>
 
       {/* Job List */}
@@ -406,6 +478,67 @@ const makeStyles = (colors: any, isDark: boolean) =>
     color: isDark ? '#fff' : colors.textDark,
   },
   selectedDropdownItem: {
+    color: colors.primaryBlue,
+    fontWeight: '600',
+  },
+
+  /* Filters */
+  filtersContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  filtersScroll: {
+    gap: 8,
+    paddingRight: 20,
+  },
+  filterChip: {
+    backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginRight: 8,
+  },
+  filterChipActive: {
+    backgroundColor: colors.primaryBlue,
+    borderColor: colors.primaryBlue,
+  },
+  filterChipText: {
+    ...typography.bodySmall,
+    color: isDark ? '#aaa' : colors.textMuted,
+    fontWeight: '500',
+  },
+  filterChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  locationFilterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 6,
+    minWidth: 140,
+  },
+  locationFilterInput: {
+    ...typography.bodySmall,
+    color: isDark ? '#aaa' : colors.textDark,
+    fontWeight: '500',
+    flex: 1,
+    padding: 0,
+    minWidth: 60,
+  },
+  locationFilterPlaceholder: {
+    ...typography.bodySmall,
+    color: isDark ? '#666' : colors.textMuted,
+    fontWeight: '500',
+  },
+  locationFilterActive: {
     color: colors.primaryBlue,
     fontWeight: '600',
   },

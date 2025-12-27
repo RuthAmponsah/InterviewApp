@@ -9,6 +9,10 @@ import {
   Alert,
   Modal,
   RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from 'expo-haptics';
@@ -16,6 +20,7 @@ import BackButton from "../components/BackButton";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from '../config/supabase';
 
 type QuestionCategory = 'Behavioral' | 'Technical' | 'Situational' | 'Strengths' | 'Custom';
 
@@ -213,6 +218,35 @@ export default function QuestionBank({ navigation }: any) {
     }
   };
 
+  // Save answer to Supabase
+  const saveAnswerToDatabase = async () => {
+    if (!selectedQuestion || !answer.trim()) {
+      Alert.alert('Error', 'Please write an answer first.');
+      return;
+    }
+    try {
+      // You may want to get the user id from auth context or storage
+      const user_id = await AsyncStorage.getItem('user_id');
+      const { error } = await supabase.from('question_answers').insert([
+        {
+          user_id,
+          question_id: selectedQuestion.id,
+          answer,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+      if (error) {
+        Alert.alert('Error', 'Failed to save answer to database.');
+        return;
+      }
+      Alert.alert('Saved!', 'Your answer has been saved to your account.');
+      setAnswer('');
+      setSelectedQuestion(null);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save answer.');
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadCustomQuestions();
@@ -221,242 +255,251 @@ export default function QuestionBank({ navigation }: any) {
   };
 
   return (
-    <View style={styles.root}>
-      <ScrollView 
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primaryBlue}
-          />
-        }
-      >
-        <BackButton />
-        
-        <View style={styles.headerRow}>
-          <Text style={styles.logoText}>MY INTERVIEW</Text>
-          <TouchableOpacity 
-            style={styles.addButton}
-            onPress={() => setShowAddModal(true)}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={styles.root}>
+          <ScrollView 
+            contentContainerStyle={styles.content}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primaryBlue}
+              />
+            }
           >
-            <Ionicons name="add-circle" size={28} color={colors.primaryBlue} />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.title}>Question Bank</Text>
-        <Text style={styles.subtitle}>
-          Practice answering common interview questions
-        </Text>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search questions..."
-            placeholderTextColor={colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color={colors.textMuted} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Category Filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
-          <TouchableOpacity
-            style={[styles.filterChip, selectedCategory === 'All' && styles.filterChipActive]}
-            onPress={() => setSelectedCategory('All')}
-          >
-            <Text style={[styles.filterText, selectedCategory === 'All' && styles.filterTextActive]}>
-              All ({allQuestions.length})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, selectedCategory === 'Favorites' && styles.filterChipActive]}
-            onPress={() => setSelectedCategory('Favorites')}
-          >
-            <Ionicons 
-              name={selectedCategory === 'Favorites' ? "star" : "star-outline"} 
-              size={16} 
-              color={selectedCategory === 'Favorites' ? '#fff' : colors.textDark}
-              style={{ marginRight: 4 }}
-            />
-            <Text style={[styles.filterText, selectedCategory === 'Favorites' && styles.filterTextActive]}>
-              Favorites ({favorites.size})
-            </Text>
-          </TouchableOpacity>
-          {CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.filterChip, selectedCategory === cat && styles.filterChipActive]}
-              onPress={() => setSelectedCategory(cat)}
-            >
-              <Text style={[styles.filterText, selectedCategory === cat && styles.filterTextActive]}>
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Questions List */}
-        {!selectedQuestion ? (
-          <View style={styles.questionsList}>
-            {filteredQuestions.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="document-text-outline" size={48} color={colors.textMuted} />
-                <Text style={styles.emptyText}>No questions yet</Text>
-                <Text style={styles.emptySubtext}>Add your first custom question!</Text>
-              </View>
-            ) : (
-              filteredQuestions.map((question) => (
-                <View key={question.id} style={styles.questionCard}>
-                  <TouchableOpacity
-                    style={styles.questionContent}
-                    onPress={() => setSelectedQuestion(question)}
-                  >
-                    <View style={styles.questionHeader}>
-                      <Text style={styles.categoryBadge}>{question.category}</Text>
-                      {question.isCustom && (
-                        <Text style={styles.customBadge}>Custom</Text>
-                      )}
-                    </View>
-                    <Text style={styles.questionText}>{question.text}</Text>
-                    <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-                  </TouchableOpacity>
-                  <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                      style={styles.favoriteButton}
-                      onPress={() => toggleFavorite(question.id)}
-                    >
-                      <Ionicons 
-                        name={favorites.has(question.id) ? "star" : "star-outline"} 
-                        size={20} 
-                        color={favorites.has(question.id) ? "#FFD700" : colors.textMuted}
-                      />
-                    </TouchableOpacity>
-                    {question.isCustom && (
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => deleteCustomQuestion(question.id)}
-                      >
-                        <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              ))
-            )}
-          </View>
-        ) : (
-          <View style={styles.answerSection}>
-            <TouchableOpacity
-              style={styles.backToList}
-              onPress={() => {
-                setSelectedQuestion(null);
-                setAnswer('');
-              }}
-            >
-              <Ionicons name="arrow-back" size={20} color={colors.primaryBlue} />
-              <Text style={styles.backToListText}>Back to questions</Text>
-            </TouchableOpacity>
-
-            <View style={styles.selectedQuestionCard}>
-              <Text style={styles.categoryBadge}>{selectedQuestion.category}</Text>
-              <Text style={styles.selectedQuestionText}>{selectedQuestion.text}</Text>
+            <BackButton />
+            
+            <View style={styles.headerRow}>
+              <Text style={styles.logoText}>MY INTERVIEW</Text>
+              <TouchableOpacity 
+                style={styles.addButton}
+                onPress={() => setShowAddModal(true)}
+              >
+                <Ionicons name="add-circle" size={28} color={colors.primaryBlue} />
+              </TouchableOpacity>
             </View>
 
-            <Text style={styles.answerLabel}>Your Answer (STAR Method)</Text>
-            <TextInput
-              style={styles.answerInput}
-              placeholder="Situation: Describe the context...
-Task: What needed to be done?
-Action: What did you do?
-Result: What was the outcome?"
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              value={answer}
-              onChangeText={setAnswer}
-              multiline
-              numberOfLines={12}
-              textAlignVertical="top"
-            />
+            <Text style={styles.title}>Question Bank</Text>
+            <Text style={styles.subtitle}>
+              Practice answering common interview questions
+            </Text>
 
-            <TouchableOpacity style={styles.saveButton} onPress={saveAnswer}>
-              <Text style={styles.saveButtonText}>Save Answer</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search questions..."
+                placeholderTextColor={colors.textMuted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
 
-      {/* Add Custom Question Modal */}
-      <Modal
-        visible={showAddModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowAddModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Custom Question</Text>
-            
-            <Text style={styles.inputLabel}>Question</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Enter your question..."
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              value={newQuestion}
-              onChangeText={setNewQuestion}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-
-            <Text style={styles.inputLabel}>Category</Text>
-            <View style={styles.categoryGrid}>
-              {['Behavioral', 'Technical', 'Situational', 'Strengths'].map((cat) => (
+            {/* Category Filter */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+              <TouchableOpacity
+                style={[styles.filterChip, selectedCategory === 'All' && styles.filterChipActive]}
+                onPress={() => setSelectedCategory('All')}
+              >
+                <Text style={[styles.filterText, selectedCategory === 'All' && styles.filterTextActive]}>
+                  All ({allQuestions.length})
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.filterChip, selectedCategory === 'Favorites' && styles.filterChipActive]}
+                onPress={() => setSelectedCategory('Favorites')}
+              >
+                <Ionicons 
+                  name={selectedCategory === 'Favorites' ? "star" : "star-outline"} 
+                  size={16} 
+                  color={selectedCategory === 'Favorites' ? '#fff' : colors.textDark}
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={[styles.filterText, selectedCategory === 'Favorites' && styles.filterTextActive]}>
+                  Favorites ({favorites.size})
+                </Text>
+              </TouchableOpacity>
+              {CATEGORIES.map((cat) => (
                 <TouchableOpacity
                   key={cat}
-                  style={[
-                    styles.categoryOption,
-                    newCategory === cat && styles.categoryOptionSelected
-                  ]}
-                  onPress={() => setNewCategory(cat as QuestionCategory)}
+                  style={[styles.filterChip, selectedCategory === cat && styles.filterChipActive]}
+                  onPress={() => setSelectedCategory(cat)}
                 >
-                  <Text style={[
-                    styles.categoryOptionText,
-                    newCategory === cat && styles.categoryOptionTextSelected
-                  ]}>
+                  <Text style={[styles.filterText, selectedCategory === cat && styles.filterTextActive]}>
                     {cat}
                   </Text>
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => {
-                  setShowAddModal(false);
-                  setNewQuestion('');
-                }}
-              >
-                <Text style={styles.modalButtonTextCancel}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.modalButtonSave]}
-                onPress={addCustomQuestion}
-              >
-                <Text style={styles.modalButtonTextSave}>Add</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+            {/* Questions List */}
+            {!selectedQuestion ? (
+              <View style={styles.questionsList}>
+                {filteredQuestions.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="document-text-outline" size={48} color={colors.textMuted} />
+                    <Text style={styles.emptyText}>No questions yet</Text>
+                    <Text style={styles.emptySubtext}>Add your first custom question!</Text>
+                  </View>
+                ) : (
+                  filteredQuestions.map((question) => (
+                    <View key={question.id} style={styles.questionCard}>
+                      <TouchableOpacity
+                        style={styles.questionContent}
+                        onPress={() => setSelectedQuestion(question)}
+                      >
+                        <View style={styles.questionHeader}>
+                          <Text style={styles.categoryBadge}>{question.category}</Text>
+                          {question.isCustom && (
+                            <Text style={styles.customBadge}>Custom</Text>
+                          )}
+                        </View>
+                        <Text style={styles.questionText}>{question.text}</Text>
+                        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                      </TouchableOpacity>
+                      <View style={styles.actionButtons}>
+                        <TouchableOpacity
+                          style={styles.favoriteButton}
+                          onPress={() => toggleFavorite(question.id)}
+                        >
+                          <Ionicons 
+                            name={favorites.has(question.id) ? "star" : "star-outline"} 
+                            size={20} 
+                            color={favorites.has(question.id) ? "#FFD700" : colors.textMuted}
+                          />
+                        </TouchableOpacity>
+                        {question.isCustom && (
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => deleteCustomQuestion(question.id)}
+                          >
+                            <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  ))
+                )}
+              </View>
+            ) : (
+              <View style={styles.answerSection}>
+                <TouchableOpacity
+                  style={styles.backToList}
+                  onPress={() => {
+                    setSelectedQuestion(null);
+                    setAnswer('');
+                  }}
+                >
+                  <Ionicons name="arrow-back" size={20} color={colors.primaryBlue} />
+                  <Text style={styles.backToListText}>Back to questions</Text>
+                </TouchableOpacity>
+
+                <View style={styles.selectedQuestionCard}>
+                  <Text style={styles.categoryBadge}>{selectedQuestion.category}</Text>
+                  <Text style={styles.selectedQuestionText}>{selectedQuestion.text}</Text>
+                </View>
+
+                <Text style={styles.answerLabel}>Your Answer (STAR Method)</Text>
+                <TextInput
+                  style={styles.answerInput}
+                  placeholder="Situation: Describe the context...
+Task: What needed to be done?
+Action: What did you do?
+Result: What was the outcome?"
+                  placeholderTextColor={isDark ? '#666' : '#999'}
+                  value={answer}
+                  onChangeText={setAnswer}
+                  multiline
+                  numberOfLines={12}
+                  textAlignVertical="top"
+                />
+
+                <TouchableOpacity style={styles.saveButton} onPress={saveAnswer}>
+                  <Text style={styles.saveButtonText}>Save Answer</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.saveButton} onPress={saveAnswerToDatabase}>
+                  <Text style={styles.saveButtonText}>Save Answer to Account</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
+          {/* Add Custom Question Modal */}
+          <Modal
+            visible={showAddModal}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowAddModal(false)}
+          >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Add Custom Question</Text>
+                  <Text style={styles.inputLabel}>Question</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Enter your question..."
+                    placeholderTextColor={isDark ? '#666' : '#999'}
+                    value={newQuestion}
+                    onChangeText={setNewQuestion}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                  <Text style={styles.inputLabel}>Category</Text>
+                  <View style={styles.categoryGrid}>
+                    {['Behavioral', 'Technical', 'Situational', 'Strengths'].map((cat) => (
+                      <TouchableOpacity
+                        key={cat}
+                        style={[
+                          styles.categoryOption,
+                          newCategory === cat && styles.categoryOptionSelected
+                        ]}
+                        onPress={() => setNewCategory(cat as QuestionCategory)}
+                      >
+                        <Text style={[
+                          styles.categoryOptionText,
+                          newCategory === cat && styles.categoryOptionTextSelected
+                        ]}>
+                          {cat}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.modalButtonCancel]}
+                      onPress={() => {
+                        setShowAddModal(false);
+                        setNewQuestion('');
+                      }}
+                    >
+                      <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.modalButtonSave]}
+                      onPress={addCustomQuestion}
+                    >
+                      <Text style={styles.modalButtonTextSave}>Add</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
         </View>
-      </Modal>
-    </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -488,7 +488,54 @@ const ViewCV: React.FC = () => {
                 </Text>
               </View>
 
-              {suggestions.map((suggestion) => (
+              {/* Generate Improved CV Button */}
+              <View style={{ marginTop: 12, marginBottom: 12 }}>
+                <PrimaryButton
+                  title={improving ? "Generating..." : "Generate Improved CV ✨"}
+                  onPress={handleImproveCV}
+                  loading={improving}
+                />
+              </View>
+
+              {/* Improved CV Section - now directly under Generate button */}
+              {improvedCV && (
+                <View style={styles.improvedSection}>
+                  <View style={styles.improvedHeader}>
+                    <Ionicons name="sparkles" size={24} color={colors.primaryBlue} />
+                    <Text style={styles.improvedTitle}>Your Improved CV</Text>
+                  </View>
+                  <View style={styles.improvedComingSoonBanner}>
+                    <Ionicons name="time-outline" size={20} color={colors.textMuted} />
+                    <Text style={styles.improvedComingSoonText}>
+                      Coming Soon: Download as DOCX file
+                    </Text>
+                  </View>
+                  <View style={styles.improvedCVContainer}>
+                    <ScrollView 
+                      style={styles.improvedCVScroll}
+                      nestedScrollEnabled={true}
+                    >
+                      <Text style={styles.improvedCVText}>{improvedCV}</Text>
+                    </ScrollView>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.copyButton, copied && styles.copyButtonSuccess]}
+                    onPress={handleCopyImprovedCV}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons 
+                      name={copied ? "checkmark-circle" : "copy-outline"} 
+                      size={20} 
+                      color={copied ? "#10b981" : colors.primaryBlue} 
+                    />
+                    <Text style={[styles.copyButtonText, copied && styles.copyButtonTextSuccess]}>
+                      {copied ? "Copied!" : "Copy to Clipboard"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+                {suggestions.map((suggestion) => (
                 <TouchableOpacity
                   key={suggestion.id}
                   style={styles.suggestionRow}
@@ -534,58 +581,9 @@ const ViewCV: React.FC = () => {
               <Ionicons name="refresh" size={20} color={colors.primaryBlue} />
               <Text style={styles.reanalyzeText}>Re-analyze CV</Text>
             </TouchableOpacity>
-
-            {/* Generate Improved CV Button */}
-            <View style={{ marginTop: 16 }}>
-              <PrimaryButton
-                title={improving ? "Generating..." : "Generate Improved CV ✨"}
-                onPress={handleImproveCV}
-                loading={improving}
-              />
-            </View>
           </>
         )}
 
-        {/* Improved CV Section */}
-        {improvedCV && (
-          <View style={styles.improvedSection}>
-            <View style={styles.improvedHeader}>
-              <Ionicons name="sparkles" size={24} color={colors.primaryBlue} />
-              <Text style={styles.improvedTitle}>Your Improved CV</Text>
-            </View>
-            
-            <View style={styles.improvedComingSoonBanner}>
-              <Ionicons name="time-outline" size={20} color={colors.textMuted} />
-              <Text style={styles.improvedComingSoonText}>
-                Coming Soon: Download as DOCX file
-              </Text>
-            </View>
-
-            <View style={styles.improvedCVContainer}>
-              <ScrollView 
-                style={styles.improvedCVScroll}
-                nestedScrollEnabled={true}
-              >
-                <Text style={styles.improvedCVText}>{improvedCV}</Text>
-              </ScrollView>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.copyButton, copied && styles.copyButtonSuccess]}
-              onPress={handleCopyImprovedCV}
-              activeOpacity={0.7}
-            >
-              <Ionicons 
-                name={copied ? "checkmark-circle" : "copy-outline"} 
-                size={20} 
-                color={copied ? "#10b981" : colors.primaryBlue} 
-              />
-              <Text style={[styles.copyButtonText, copied && styles.copyButtonTextSuccess]}>
-                {copied ? "Copied!" : "Copy to Clipboard"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         {analyzed && suggestions.length === 0 && !improvedCV && (
           <View style={styles.emptyState}>

@@ -92,7 +92,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       if (currentCount >= 5) {
         Alert.alert(
           '🔒 Interview Limit Reached',
-          'You\'ve used all 5 free interviews this month.\n\nUpgrade to Premium for unlimited practice!',
+          "You've used all 5 free interviews this month.\n\nUpgrade to Premium for unlimited practice!",
           [
             {
               text: 'Maybe Later',

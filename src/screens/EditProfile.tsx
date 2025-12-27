@@ -317,23 +317,6 @@ export default function EditProfile({ navigation }: any) {
         }}
       />
 
-      {/* Error Modal */}
-      <Modal transparent visible={errorVisible} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalWarning}>
-              ⚠️ Warning
-            </Text>
-            <Text style={styles.modalText}>{errorMessage}</Text>
-            <TouchableOpacity 
-              style={styles.modalButton} 
-              onPress={() => setErrorVisible(false)}
-            >
-              <Text style={styles.modalButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -342,7 +325,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
   StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: isDark ? "#0f0f0f" : "#F3F4F6",
+      backgroundColor: isDark ? '#0f0f0f' : '#F3F4F6',
     },
     content: {
       paddingHorizontal: 20,
@@ -351,32 +334,33 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     logoText: {
       ...typography.heading,
-      fontWeight: "800",
+      fontWeight: '800',
       color: colors.primaryBlue,
-      alignSelf: "center",
+      alignSelf: 'center',
       marginBottom: 28,
     },
     title: {
-      ...typography.headingMedium,
-      color: isDark ? "#fff" : colors.textDark,
+      ...typography.heading,
+      color: isDark ? '#fff' : colors.textDark,
+      marginBottom: 8,
     },
     subtitle: {
       ...typography.bodyMedium,
-      color: isDark ? "#b5b5b5" : colors.textMuted,
-      marginTop: 4,
-      marginBottom: 20,
+      color: colors.textMuted,
+      marginBottom: 24,
+      lineHeight: 22,
     },
     photoSection: {
-      alignItems: "center",
+      alignItems: 'center',
       marginBottom: 24,
     },
     photoCircle: {
       width: 100,
       height: 100,
       borderRadius: 50,
-      backgroundColor: isDark ? "#2a2a2a" : "#E5E7EB",
-      alignItems: "center",
-      justifyContent: "center",
+      backgroundColor: isDark ? '#2a2a2a' : '#E5E7EB',
+      alignItems: 'center',
+      justifyContent: 'center',
       marginBottom: 12,
       borderWidth: 2,
       borderColor: isDark ? "#444" : "#D1D5DB",

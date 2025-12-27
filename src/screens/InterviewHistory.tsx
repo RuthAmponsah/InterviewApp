@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, RefreshControl, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from 'expo-haptics';
@@ -70,7 +70,6 @@ export default function InterviewHistory({ navigation }: any) {
   const deleteInterview = async (interviewId: string) => {
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
       // Delete from Supabase
       const { error } = await supabase
         .from('interview_history')
@@ -89,6 +88,17 @@ export default function InterviewHistory({ navigation }: any) {
     } catch (error) {
       console.error('Error deleting interview:', error);
     }
+  };
+
+  const confirmDeleteInterview = (interviewId: string) => {
+    Alert.alert(
+      'Delete Interview',
+      'Are you sure you want to delete this interview? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteInterview(interviewId) },
+      ]
+    );
   };
 
   const calculateStats = (data: InterviewRecord[]) => {
@@ -320,7 +330,7 @@ export default function InterviewHistory({ navigation }: any) {
               </View>
               <TouchableOpacity
                 style={styles.deleteButton}
-                onPress={() => deleteInterview(interview.id)}
+                onPress={() => confirmDeleteInterview(interview.id)}
                 activeOpacity={0.7}
               >
                 <Ionicons name="trash-outline" size={20} color="#EF4444" />

@@ -112,7 +112,8 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
 
     try {
       // 1. Create auth user in Supabase (NO email verification)
-      // This will NOT trigger any Supabase emails
+      // Create Supabase Auth account (no email verification required for testing)
+      console.log('Creating Supabase Auth account for:', email.toLowerCase());
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.toLowerCase(),
         password: password,
@@ -121,11 +122,14 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
           data: {
             name: name,
           },
+          // Skip email confirmation for development (requires Supabase dashboard setting)
+          // Go to Authentication > Settings > Enable email confirmations = OFF
         }
       });
 
       if (authError) {
         setLoading(false);
+        console.error('Supabase Auth signup error:', authError);
         
         // Handle email rate limit - don't block signup
         if (authError.message.includes('Email rate limit exceeded') || authError.message.includes('rate limit')) {
@@ -157,7 +161,7 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         .single();
 
       if (!existingUser) {
-        // Create user profile in database with password
+        // Create user profile in database (password is handled by Supabase Auth, don't store it)
         const { error: profileError } = await supabase
           .from('users')
           .insert({
@@ -166,7 +170,6 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
             name: name,
             gender: upperGender,
             age: ageNum,
-            password: password, // Store password (Supabase Auth already handles encryption)
           });
 
         if (profileError) {

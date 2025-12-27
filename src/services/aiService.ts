@@ -114,8 +114,8 @@ export const getConversationSummary = async (): Promise<string> => {
     console.log('Full history:', JSON.stringify(conversationHistory, null, 2));
     
     if (conversationHistory.length <= 1) {
-      console.log('Not enough conversation history to generate summary');
-      return "Not enough conversation data to generate feedback.";
+      console.log('No user responses in conversation history');
+      return "NO_RESPONSES_SUBMITTED";
     }
     
     const summaryPrompt = {

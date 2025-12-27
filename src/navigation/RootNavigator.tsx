@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useTheme } from "../theme/ThemeContext";
 import OfflineBanner from "../components/OfflineBanner";
+import { supabase } from "../config/supabase";
 
 // Screens
 import SignIn from "../screens/SignIn";
@@ -53,7 +54,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   InterviewType: undefined;
   InterviewChat: { mode: "text" | "voice" };
-  Feedback: { duration?: number; messageCount?: number; interviewId?: string } | undefined;
+  Feedback: { duration?: number; messageCount?: number; interviewId?: string; hasNoResponses?: boolean } | undefined;
   MyProfile: undefined;
   EditProfile: undefined;
   InterviewExperience: undefined;
@@ -201,6 +202,16 @@ const RootNavigator = () => {
     const determineInitialRoute = async () => {
       const hasCompletedOnboarding = await AsyncStorage.getItem("hasCompletedOnboarding");
       const userId = await AsyncStorage.getItem("userId");
+      
+      // Restore Supabase session if user is logged in
+      if (userId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('📱 App loaded - Supabase session:', session ? 'Active ✅' : 'None ❌');
+        
+        if (!session) {
+          console.log('⚠️ No Supabase session found despite userId. User may need to re-login.');
+        }
+      }
       
       if (hasCompletedOnboarding === "true") {
         // User has seen onboarding before

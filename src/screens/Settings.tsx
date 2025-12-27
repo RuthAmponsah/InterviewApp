@@ -108,9 +108,20 @@ const Settings = () => {
       <TouchableOpacity
         style={styles.logoutButton}
         onPress={async () => {
+          // Preserve onboarding status before clearing
+          const hasCompletedOnboarding = await AsyncStorage.getItem("hasCompletedOnboarding");
+          
           // Sign out from Supabase
           await supabase.auth.signOut();
+          
           // Clear local storage
+          await AsyncStorage.clear();
+          
+          // Restore onboarding status
+          if (hasCompletedOnboarding === 'true') {
+            await AsyncStorage.setItem("hasCompletedOnboarding", "true");
+          }
+          
           await AsyncStorage.setItem("isLoggedIn", "false");
           navigation.navigate("SignIn");
         }}

@@ -45,6 +45,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const [jobRole, setJobRole] = useState('');
 
   React.useEffect(() => {
+    ensureSupabaseSession();
     checkInterviewLimit();
     loadUserData();
     
@@ -60,6 +61,46 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       stopSpeaking();
     };
   }, []);
+
+  const ensureSupabaseSession = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log('⚠️ No session found on InterviewChat load');
+        console.log('Attempting to restore session from AsyncStorage...');
+        
+        // Try to get the manually stored session
+        const storedSession = await AsyncStorage.getItem('supabase.session');
+        
+        if (storedSession) {
+          const parsedSession = JSON.parse(storedSession);
+          console.log('Found stored session, restoring...');
+          
+          const { data, error } = await supabase.auth.setSession({
+            access_token: parsedSession.access_token,
+            refresh_token: parsedSession.refresh_token,
+          });
+          
+          if (error) {
+            console.error('❌ Failed to restore session:', error);
+            console.log('User needs to log out and log back in');
+          } else {
+            console.log('✅ Session restored successfully!');
+            console.log('Session user ID:', data.session?.user.id);
+          }
+        } else {
+          console.error('❌ No stored session found in AsyncStorage');
+          console.log('User needs to log out and log back in');
+        }
+      } else {
+        console.log('✅ Active session found on InterviewChat load');
+        console.log('Session user ID:', session.user.id);
+      }
+    } catch (error) {
+      console.error('Error checking session:', error);
+    }
+  };
 
   const checkInterviewLimit = async () => {
     try {
@@ -231,22 +272,41 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
     try {
       const userId = await AsyncStorage.getItem("userId");
       
-      if (userId && jobRole) {
+      if (userId) {
         // Calculate duration in minutes
         const durationMs = Date.now() - startTime;
         const durationMinutes = Math.round(durationMs / 60000);
+        const userMessageCount = messages.filter(m => m.from === 'user').length;
+        const hasNoResponses = userMessageCount === 0;
 
         console.log('Saving interview to database...');
         console.log('User ID:', userId);
-        console.log('Job Role:', jobRole);
+        console.log('Job Role:', jobRole || 'Not set');
         console.log('Duration:', durationMinutes);
+        console.log('User messages:', userMessageCount);
 
-        // Save to interview_history
+        // Check if Supabase session exists
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Supabase session active:', session ? 'Yes' : 'No');
+        console.log('Session user ID:', session?.user?.id);
+        console.log('Expected user ID:', userId);
+        
+        if (!session) {
+          console.error('❌ No Supabase session - RLS will block insert');
+          // Still try the insert but it will likely fail
+        }
+        
+        if (session && session.user.id !== userId) {
+          console.error('⚠️ Session user ID does not match stored userId!');
+          console.error('This will cause RLS policy violation');
+        }
+
+        // Save to interview_history (even if no job role, use 'Unknown')
         const { data: insertedInterview, error: insertError } = await supabase
           .from('interview_history')
           .insert({
             user_id: userId,
-            job_role: jobRole,
+            job_role: jobRole || 'Unknown',
             mode: mode,
             duration_minutes: durationMinutes,
             date: new Date().toISOString(),
@@ -257,6 +317,8 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         if (insertError) {
           console.error('❌ Error inserting interview:', insertError);
           console.error('Full error details:', JSON.stringify(insertError, null, 2));
+          console.error('Insert failed - interviewId will be undefined');
+          // Continue anyway to show feedback, but note the issue
         } else {
           console.log('✅ Interview saved successfully!');
           console.log('Interview data:', insertedInterview);
@@ -277,16 +339,16 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
             .eq('user_id', userId);
         }
         
-        // Navigate with performance metrics for AI feedback
-        const messageCount = messages.filter(m => m.from === 'user').length;
         const interviewId = insertedInterview?.id;
         
         console.log('Navigating to Feedback with ID:', interviewId);
         
+        // Navigate with flag if user submitted nothing
         navigation.navigate('Feedback', { 
           duration: durationMinutes, 
-          messageCount,
-          interviewId: interviewId // Pass the ID directly
+          messageCount: userMessageCount,
+          interviewId: interviewId,
+          hasNoResponses: hasNoResponses
         });
         return;
       }

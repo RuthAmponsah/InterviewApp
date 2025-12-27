@@ -42,15 +42,75 @@ const Feedback: React.FC = () => {
       const duration = route.params?.duration || 5;
       const messageCount = route.params?.messageCount || 3;
       const interviewId = route.params?.interviewId; // Get interview ID from params
+      const hasNoResponses = route.params?.hasNoResponses || false;
       
       console.log('Generating AI feedback for interview...');
       console.log('Interview ID from params:', interviewId);
+      console.log('Has no responses:', hasNoResponses);
+      
+      // If user ended without submitting anything, give score 0
+      if (hasNoResponses || messageCount === 0) {
+        console.log('User ended interview without submitting any responses');
+        const noResponseFeedback = {
+          strengths: ['You started the interview, which shows initiative.'],
+          improvements: [
+            'Complete the interview by answering at least one question.',
+            'Provide detailed responses to showcase your skills and experience.',
+            'Practice articulating your thoughts clearly in interview settings.'
+          ],
+          score: 0
+        };
+        
+        setFeedback(noResponseFeedback);
+        
+        // Save this feedback to database
+        if (userId && interviewId) {
+          const feedbackText = 'Score: 0/100. No responses submitted. The interview was ended before any answers were provided.';
+          await supabase
+            .from('interview_history')
+            .update({ feedback: feedbackText })
+            .eq('id', interviewId);
+          console.log('✅ Zero score feedback saved to database');
+        }
+        
+        setLoading(false);
+        return;
+      }
       
       // Get AI-generated feedback from conversation history
       const aiSummary = await getConversationSummary();
       
       console.log('AI Summary received:', aiSummary);
       console.log('AI Summary length:', aiSummary?.length || 0);
+      
+      // Handle NO_RESPONSES_SUBMITTED case
+      if (aiSummary === 'NO_RESPONSES_SUBMITTED') {
+        console.log('AI service detected no responses');
+        const noResponseFeedback = {
+          strengths: ['You started the interview, which shows initiative.'],
+          improvements: [
+            'Complete the interview by answering at least one question.',
+            'Provide detailed responses to showcase your skills and experience.',
+            'Practice articulating your thoughts clearly in interview settings.'
+          ],
+          score: 0
+        };
+        
+        setFeedback(noResponseFeedback);
+        
+        // Save this feedback to database
+        if (userId && interviewId) {
+          const feedbackText = 'Score: 0/100. No responses submitted. The interview was ended before any answers were provided.';
+          await supabase
+            .from('interview_history')
+            .update({ feedback: feedbackText })
+            .eq('id', interviewId);
+          console.log('✅ Zero score feedback saved to database');
+        }
+        
+        setLoading(false);
+        return;
+      }
       
       // Parse AI feedback into strengths and improvements
       const strengths: string[] = [];

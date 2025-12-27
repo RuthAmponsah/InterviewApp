@@ -75,37 +75,58 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
     setLoading(true);
 
     try {
-      // 1. First check if user exists in database with email and password
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email.toLowerCase())
-        .eq('password', password)
-        .single();
-
-      if (userError || !userData) {
-        setLoading(false);
-        showError('Invalid Credentials', 'The email or password you entered is incorrect. Please try again.');
-        console.error('User authentication error:', userError);
-        return;
-      }
-
-      // 2. Sign in with Supabase Auth (this creates the session)
+      // 1. Try to sign in with Supabase Auth FIRST (for new accounts)
+      console.log('Attempting Supabase Auth login for:', email.toLowerCase());
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase(),
         password: password,
       });
 
       if (authError) {
-        // If auth fails but user exists in DB, might be an auth-only issue
-        // Still allow sign in for development
-        console.log('Auth error but user verified in DB:', authError.message);
+        setLoading(false);
+        console.error('Supabase Auth failed:', authError.message);
+        console.error('Error code:', authError.status);
+        
+        // Check if user exists in auth.users but not verified
+        if (authError.message.includes('Email not confirmed')) {
+          showError('Email Not Verified', 'Please check your email and click the verification link before signing in.');
+        } else {
+          showError('Invalid Credentials', 'The email or password you entered is incorrect. Please try again.');
+        }
+        return;
       }
 
-      // Use the user data we already fetched from the database
+      console.log('✅ Supabase Auth successful, session created');
+      console.log('Auth user ID:', authData.user.id);
 
-      // Clear all previous user data and store new user info in AsyncStorage
+      // Fetch user profile from database using authenticated user's ID
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (userError || !userData) {
+        setLoading(false);
+        showError('Profile Error', 'Could not load your profile. Please contact support.');
+        console.error('User profile fetch error:', userError);
+        return;
+      }
+
+      // Clear previous user data but preserve onboarding status
+      const hasCompletedOnboarding = await AsyncStorage.getItem('hasCompletedOnboarding');
       await AsyncStorage.clear();
+      
+      // Mark onboarding as complete for returning users (they've signed up before)
+      // First-time users will see onboarding when they reach MainTabs
+      await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
+      
+      // Store the session explicitly in AsyncStorage AFTER clearing old data
+      if (authData.session) {
+        await AsyncStorage.setItem('supabase.session', JSON.stringify(authData.session));
+        console.log('✅ Session stored in AsyncStorage');
+      }
+      
       await AsyncStorage.setItem('isLoggedIn', 'true');
       await AsyncStorage.setItem('userId', userData.id);
       await AsyncStorage.setItem('userEmail', userData.email);
@@ -129,14 +150,11 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
 
       setLoading(false);
       
-      // Mark onboarding as complete and navigate
-      await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
-      
-      if (userData.job_role) {
-        navigation.replace('MainTabs');
-      } else {
-        navigation.replace('Welcome');
-      }
+      // Navigate to main app - user has already completed sign up
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' }],
+      });
 
     } catch (error) {
       setLoading(false);

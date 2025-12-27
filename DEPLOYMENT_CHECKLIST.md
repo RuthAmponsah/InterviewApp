@@ -183,186 +183,195 @@
 
 ---
 
-## 🎯 PRIORITY TASK LIST (Easy → Hard)
+## 🎯 PRIORITY TASK LIST
 
-### 🟢 QUICK WINS (30 mins - 2 hours each)
-Do these first for immediate progress:
+### 🔴 CRITICAL - DO FIRST (Blocking Launch)
 
-1. ✅ **Add age rating to store listings** ⭐ EASIEST
-   - Set to 16+ in App Store Connect & Google Play Console
-   - Already documented in Privacy Policy
-   - **NOTE**: Will be set during store listing creation (tasks #17 & #18)
+1. **Complete App Store Connect listing** ⚠️ REQUIRES $99 DEVELOPER ACCOUNT
+   - Purchase Apple Developer account
+   - Create app record
+   - Upload icons and screenshots (content ready in APP_STORE_LISTING.md)
+   - Write description and keywords (content ready)
+   - Configure IAPs
+   - Submit for review
 
-2. ✅ **Update README with setup instructions** ⭐ EASIEST
-   - Document npm install steps
-   - List all required API keys
-   - Add development setup guide
+2. **Complete Google Play Console listing** ⚠️ REQUIRES $25 DEVELOPER ACCOUNT
+   - Purchase Google Play Developer account
+   - Create app record
+   - Upload assets (content ready in APP_STORE_LISTING.md)
+   - Configure IAPs
+   - Complete content rating
+   - Submit for review
 
-3. ✅ **Add proper splash screen** 
-   - Design simple branded splash in Figma/Canva
-   - Update `app.json` splash config
-   - Test on device
+3. **Set up production RevenueCat**
+   - Create production project (currently using test keys)
+   - Configure App Store Connect products (premium_monthly £7.99, premium_annual £59.99)
+   - Configure Google Play Console products
+   - Link stores to RevenueCat
+   - Replace test API keys with production keys
+   - Test purchase flows in TestFlight/Internal Testing
 
-4. ✅ **Document database schema**
-   - List all tables and columns
-   - Document relationships
-   - Include SQL files in documentation
-
-5. ✅ **Add loading states where missing**
-   - Review screens for missing ActivityIndicators
-   - Add skeleton loaders to slow operations
-   - Improves user experience
-
-6. ✅ **Add proper app icons**
-   - Design 1024x1024 icon
-   - Generate all sizes with Expo
-   - Update icon.png and adaptive-icon.png
-
----
-
-### 🟡 MEDIUM PRIORITY (4-8 hours each)
-Important but requires moderate effort:
-
-7. **Add analytics tracking** 
-   - Install Firebase Analytics or Amplitude
-   - Track key events: sign up, interview start, subscription
-   - Set up conversion funnels
-
-8. **Add crash reporting (Sentry)**
-   - Install @sentry/react-native
-   - Configure DSN
-   - Test crash reporting
-
-9. **Optimize bundle size**
-   - Run `npx expo-doctor`
-   - Remove unused dependencies
-   - Enable Hermes (if not already)
-   - Analyze with `react-native-bundle-visualizer`
-
-10. ✅ **Test dark mode on all screens**
-    - Manual testing checklist
-    - Screenshot each screen
-    - Fix any contrast issues
-
-11. **Add app description and screenshots**
-    - Write compelling App Store description
-    - Take 5-6 screenshots per platform
-    - Highlight key features
-
-12. **Configure privacy policy & terms URLs**
-    - Host policies on website OR GitHub Pages
-    - Add URLs to app.json
-    - Link from app and store listings
+4. **Implement interview limit enforcement**
+   - Check interviews_this_month before starting interview
+   - Show upgrade prompt when limit reached
+   - Reset counter monthly via database function
+   - Test with free tier accounts
 
 ---
 
-### 🔴 HIGH PRIORITY (1-2 days each)
-Complex but essential for production:
+### 🟡 HIGH PRIORITY (Essential Testing)
 
-13. **Move all API keys to environment variables** ⚠️ CRITICAL SECURITY
-    - Create `.env` file
-    - Install `react-native-dotenv`
-    - Update all services to use `process.env`
-    - Add `.env` to `.gitignore`
-    - Document in README
-    - **DO THIS BEFORE ANY DEPLOYMENT**
+5. **Test full user flows** ⏱️ 1-2 days
+   - Sign up → onboarding → first interview → feedback
+   - Subscription purchase → restore → feature access
+   - CV upload → analysis → generate improved CV → copy to clipboard
+   - Profile editing, password reset, data export
+   - Test all edge cases and error handling
 
-14. **Implement interview limit enforcement**
-    - Check interviews_this_month before starting
-    - Show upgrade prompt at limit
-    - Reset counter monthly
-    - Test with free accounts
+6. **Cross-device testing** ⏱️ 1-2 days
+   - iOS: iPhone SE, iPhone 14, iPhone 15 Pro, iPad
+   - Android: Samsung S21, Pixel 7, OnePlus, tablets
+   - Test iOS 16, 17, 18
+   - Test Android 12, 13, 14
+   - Verify layouts, fonts, and interactions
 
-15. **Set up Row Level Security (RLS) policies**
-    - Create policies for all tables
-    - Ensure users can only access their own data
-    - Test with multiple accounts
-    - **CRITICAL FOR DATA SECURITY**
-
-16. **Set up production RevenueCat**
-    - Create production project
-    - Configure App Store Connect products
-    - Configure Google Play products
-    - Replace test API keys
-    - Test purchase flows
-
-17. **Complete App Store Connect listing**
-    - Create app record
-    - Upload icons and screenshots
-    - Write description and keywords
-    - Configure IAPs
-    - Submit for review
-
-18. **Complete Google Play Console listing**
-    - Create app record
-    - Upload assets
-    - Configure IAPs
-    - Complete content rating
-    - Submit for review
-
-19. **Run database migrations on production**
-    - Execute `add_subscription_columns.sql`
-    - Execute `add_cv_suggestions_table.sql`
-    - Verify migrations successful
-    - Set up automated backups
+7. **Network & edge case testing** ⏱️ 1 day
+   - Slow 3G network simulation
+   - Airplane mode / offline functionality
+   - App backgrounding during interview
+   - Interruptions (calls, notifications, low battery)
+   - API timeout handling
 
 ---
 
-### 🔵 COMPREHENSIVE TESTING (3-5 days)
-Time-consuming but necessary:
+### 🟢 MEDIUM PRIORITY (Pre-Launch Polish)
 
-20. **Test full user flows**
-    - Sign up → onboarding → first interview → feedback
-    - Subscription purchase → restore → feature access
-    - CV upload → analysis → generate improved CV → copy to clipboard
-    - Profile editing, password reset, data export
+8. **Add crash reporting (Sentry)** ⏱️ 3-4 hours - OPTIONAL BUT RECOMMENDED
+    - Install @sentry/react-native
+    - Configure DSN (guide ready: SENTRY_SETUP.md)
+    - Add error boundaries
+    - Test crash reporting
+    - Monitor production crashes
 
-21. **Cross-device testing**
-    - iOS: iPhone SE, iPhone 14, iPhone 15 Pro, iPad
-    - Android: Samsung S21, Pixel 7, OnePlus
-    - Test iOS 16, 17, 18
-    - Test Android 12, 13, 14
+9. **Add analytics tracking** ⏱️ 3-4 hours - OPTIONAL BUT RECOMMENDED
+    - Choose: Firebase Analytics / Amplitude / Expo Analytics
+    - Track key events: sign up, interview, subscription
+    - Set up conversion funnels
+    - Guide ready: ANALYTICS_SETUP.md
 
-22. **Network & edge case testing**
-    - Slow 3G network simulation
-    - Airplane mode / offline functionality
-    - App backgrounding during interview
-    - Interruptions (calls, notifications)
-
-23. **Load testing**
-    - Multiple concurrent users
-    - Large data sets (100+ interviews)
-    - Stress test AI service
-    - Monitor performance metrics
+10. **Load testing** ⏱️ 1 day
+    - Test with 10-50 concurrent users
+    - Large data sets (100+ interviews per user)
+    - Stress test AI service rate limits
+    - Monitor Supabase database performance
+    - Check API response times
 
 ---
 
-### 🟣 OPTIONAL FEATURES (Future versions)
-Don't block launch on these:
+### 🔵 LOW PRIORITY (Post-Launch / v1.1)
 
-24. **Interview Experience customization**
+11. **Interview Experience customization**
     - UI already exists (marked "Coming Soon")
-    - Implement difficulty levels
+    - Implement difficulty levels (Easy, Medium, Hard)
     - Add time pressure options
-    - Can wait for v1.1
+    - Can wait for v1.1 based on user feedback
 
-25. **Sector Packs implementation**
+12. **Sector Packs implementation**
     - UI already exists (marked "Coming Soon")
-    - Create sector-specific question banks
-    - Integrate with RevenueCat
-    - Launch as paid add-on later
+    - Create sector-specific question banks (NHS, Retail, Tech, etc.)
+    - Integrate with RevenueCat for purchases
+    - Launch as paid add-on in v1.1
 
-26. **Push notification setup**
-    - Configure FCM/APNS
+13. **Push notification setup**
+    - Configure FCM (Android) and APNS (iOS)
     - Create notification templates
-    - Schedule reminders
-    - Test delivery
+    - Schedule interview reminders
+    - Test delivery and click-through
+    - Add in v1.2
 
-27. **Add advanced analytics**
+14. **Add advanced analytics**
     - User cohort analysis
-    - Retention metrics
-    - A/B testing setup
-    - Revenue tracking
+    - Retention metrics and funnels
+    - A/B testing framework
+    - Revenue tracking and LTV
+    - Post-launch optimization
+
+---
+
+### ✅ COMPLETED TASKS
+
+15. ✅ **Configure privacy policy & terms URLs**
+    - Created comprehensive UK GDPR-compliant privacy policy (docs/privacy.md)
+    - Created detailed terms of service with subscription details (docs/terms.md)
+    - Hosted on GitHub Pages: https://ruthamponsah.github.io/InterviewApp/docs/
+    - Added URLs to app.json extra config
+    - Ready for App Store and Google Play submissions
+
+16. ✅ **Optimize bundle size**
+    - Ran npx expo-doctor - fixed all warnings
+    - Installed missing peer dependency (react-native-worklets)
+    - Updated to compatible SDK 54 versions
+    - Hermes enabled by default (optimized JS engine)
+    - All dependencies properly aligned
+
+17. ✅ **Move all API keys to environment variables** 
+    - Created `.env` file with all API keys
+    - Updated all service files to use Constants
+    - Added `.env` to `.gitignore`
+    - See ENV_SETUP.md
+
+18. ✅ **Set up Row Level Security (RLS) policies**
+    - Created policies for all 6 tables
+    - Users can only access their own data
+    - Ran setup_rls_policies.sql
+    - Database production-ready
+
+19. ✅ **Run database migrations on production**
+    - Executed add_subscription_columns.sql
+    - Executed add_cv_suggestions_table.sql
+    - Executed create_success_stories_table.sql
+    - Created 16 performance indexes
+    - See DATABASE_SETUP_GUIDE.md
+
+20. ✅ **Add app description and screenshots**
+    - Complete App Store description written
+    - Complete Google Play description written
+    - Screenshot requirements documented
+    - All content ready in APP_STORE_LISTING.md
+
+21. ✅ **Add proper app icons**
+    - Designed 1024x1024 icon (light/dark variants)
+    - Generated all sizes with Expo
+    - Updated icon.png and adaptive-icon.png
+
+22. ✅ **Add proper splash screen**
+    - Designed branded splash screen
+    - Updated app.json splash config
+    - Tested on iOS and Android
+
+23. ✅ **Document database schema**
+    - Listed all tables and columns
+    - Documented relationships and RLS policies
+    - Created DATABASE_SETUP_GUIDE.md
+
+24. ✅ **Add loading states**
+    - Added ActivityIndicator to all major screens
+    - Proper loading UX on Home, Profile, Jobs, Feedback
+    - All async operations have loading states
+
+25. ✅ **Test dark mode on all screens**
+    - Manual testing complete
+    - All screens support light/dark themes
+    - Contrast and readability verified
+
+26. ✅ **Update README with setup instructions**
+    - Documented npm install steps
+    - Listed all required API keys
+    - Added development setup guide
+
+27. ✅ **Add age rating to store listings**
+    - Set to 12+ (documented in APP_STORE_LISTING.md)
+    - Will be configured during store setup
 
 ---
 

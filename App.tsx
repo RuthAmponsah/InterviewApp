@@ -5,6 +5,7 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeContext';
 import { useFonts, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
 import { initializePurchases } from './src/services/purchaseService';
+import { initializeNotifications } from './src/services/notificationService';
 import AnimatedSplash from './src/components/AnimatedSplash';
 
 export default function App() {
@@ -16,6 +17,9 @@ export default function App() {
   useEffect(() => {
     // Initialize RevenueCat for in-app purchases
     initializePurchases();
+    
+    // Initialize push notifications with Duolingo-style reminders
+    initializeNotifications();
   }, []);
 
   if (!fontsLoaded) {

@@ -3,12 +3,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import PrimaryButton from '../components/PrimaryButton';
+import ConfettiAnimation from '../components/ConfettiAnimation';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
 import { getConversationSummary, clearConversationHistory } from '../services/aiService';
+import * as Haptics from 'expo-haptics';
 
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
 type FeedbackRouteProp = RouteProp<RootStackParamList, 'Feedback'>;
@@ -26,6 +28,7 @@ const Feedback: React.FC = () => {
     score: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     generateFeedback();
@@ -201,6 +204,14 @@ const Feedback: React.FC = () => {
       console.log('Setting feedback state with:', JSON.stringify(feedbackData, null, 2));
       setFeedback(feedbackData);
       console.log('Feedback state set successfully');
+      
+      // Trigger confetti for high scores
+      if (feedbackData.score >= 80) {
+        setTimeout(() => {
+          setShowConfetti(true);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }, 500);
+      }
 
       // Save feedback to the most recent interview in database (don't let this fail the whole function)
       try {
@@ -248,25 +259,29 @@ const Feedback: React.FC = () => {
   };
 
   return (
-    <ScrollView
-      style={styles.root}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+    <>
+      <ConfettiAnimation visible={showConfetti} duration={3000} />
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.logoText}>MY INTERVIEW</Text>
 
-      <Text style={styles.title}>Here is your feedback</Text>
-      <Text style={styles.subtitle}>
-        These points are based on your most recent interview practice.
-      </Text>
+        <Text style={styles.title}>
+          {feedback && feedback.score >= 80 ? '🎉 Amazing job!' : 'Here is your feedback'}
+        </Text>
+        <Text style={styles.subtitle}>
+          These points are based on your most recent interview practice.
+        </Text>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primaryBlue} />
-          <Text style={styles.loadingText}>Analyzing your interview...</Text>
-        </View>
-      ) : feedback ? (
-        <View style={styles.card}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primaryBlue} />
+            <Text style={styles.loadingText}>Analyzing your interview...</Text>
+          </View>
+        ) : feedback ? (
+          <View style={styles.card}>
           <View style={styles.scoreContainer}>
             <Text style={styles.scoreLabel}>Interview Score</Text>
             <Text style={styles.scoreValue}>{feedback.score}/100</Text>
@@ -291,7 +306,8 @@ const Feedback: React.FC = () => {
       ) : null}
 
       <PrimaryButton title="Back to home" onPress={goHome} />
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 };
 

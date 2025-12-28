@@ -21,6 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from "../config/supabase";
 import { initializeInterviewChat, sendMessageToAI, speakText, stopSpeaking } from "../services/aiService";
 import { startRecording, stopRecording, transcribeAudio, cancelRecording } from "../services/voiceRecordingService";
+import { incrementWeeklyCount, checkAndSendStreakMilestone, scheduleStreakWarning } from "../services/notificationService";
 import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'InterviewChat'>;
@@ -386,6 +387,18 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
             .update({ total_interviews: (progress.total_interviews || 0) + 1 })
             .eq('user_id', userId);
         }
+        
+        // Update notification stats
+        await incrementWeeklyCount();
+        
+        // Check for streak milestones
+        const currentStreak = parseInt(await AsyncStorage.getItem('streak') || '0');
+        if (currentStreak > 0) {
+          await checkAndSendStreakMilestone(currentStreak);
+        }
+        
+        // Re-schedule streak warning for tomorrow
+        await scheduleStreakWarning();
         
         const interviewId = insertedInterview?.id;
         

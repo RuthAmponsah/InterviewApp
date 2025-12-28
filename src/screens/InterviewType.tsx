@@ -82,9 +82,9 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
         </Text>
 
         <PrimaryButton 
-          title="Vocal interview (Coming Soon)" 
-          onPress={() => {}} 
-          disabled={true}
+          title="Vocal interview" 
+          onPress={() => goToChat('voice')} 
+          disabled={!allChecked}
         />
         <PrimaryButton
           title="Text-based interview"
@@ -94,7 +94,7 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
         />
 
         <Text style={styles.tip}>
-          Tip: Voice interview mode is coming soon. For now, enjoy text-based practice!
+          Tip: Voice interviews use cloud transcription. Make sure you have a good internet connection.
         </Text>
       </View>
     </View>

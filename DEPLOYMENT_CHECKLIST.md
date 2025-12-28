@@ -118,6 +118,16 @@
 - [ ] Interview Experience customization (currently "Coming Soon")
 - [ ] Sector Packs implementation (currently "Coming Soon")
 - [ ] Implement actual interview limit enforcement
+- [ ] **Voice Recording: Migrate to Native Speech Recognition** 🎤
+  - **Current:** Using cloud-based Groq Whisper API (works in Expo Go)
+  - **Production Goal:** Switch to native on-device speech recognition
+  - **Requires:** Apple Developer Account ($99/year) for EAS build
+  - **Steps:**
+    1. Enroll in Apple Developer Program
+    2. Replace `expo-audio` + Groq Whisper with `expo-speech-recognition`
+    3. Run `eas build --profile production --platform ios`
+    4. Benefits: Lower cost (no API calls), faster response, works offline
+  - **Files to update:** `src/services/voiceRecordingService.ts`, `app.json` (remove expo-audio plugin, add expo-speech-recognition)
 - [] Add analytics tracking ✅ (📄 See ANALYTICS_SETUP.md)
   - ✅ Expo Analytics installed and configured
   - ✅ Analytics service created with key event tracking

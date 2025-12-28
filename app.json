@@ -18,7 +18,10 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "MY INTERVIEW needs access to your photo library to let you choose a profile photo.",
         "NSUserNotificationsUsageDescription": "MY INTERVIEW would like to send you interview reminders and progress updates to help you stay consistent with your practice.",
-        "NSDocumentsFolderUsageDescription": "MY INTERVIEW needs access to your documents to let you upload your CV for AI analysis."
+        "NSDocumentsFolderUsageDescription": "MY INTERVIEW needs access to your documents to let you upload your CV for AI analysis.",
+        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -32,10 +35,10 @@
         "ACCESS_NETWORK_STATE",
         "POST_NOTIFICATIONS",
         "READ_MEDIA_IMAGES",
-        "READ_EXTERNAL_STORAGE"
+        "READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ],
       "blockedPermissions": [
-        "RECORD_AUDIO",
         "CAMERA",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
@@ -47,11 +50,16 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-speech-recognition",
+      "expo-audio"
     ],
     "extra": {
       "privacyPolicyUrl": "https://ruthamponsah.github.io/InterviewApp/docs/privacy",
-      "termsOfServiceUrl": "https://ruthamponsah.github.io/InterviewApp/docs/terms"
+      "termsOfServiceUrl": "https://ruthamponsah.github.io/InterviewApp/docs/terms",
+      "eas": {
+        "projectId": "5fe21a1b-adb5-4a48-ab5a-6d149d888986"
+      }
     }
   }
 }

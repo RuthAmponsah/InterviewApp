@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -33,27 +33,72 @@ type SettingsRoute =
   | "Subscription"
   | "SectorPacks";
 
-const SECTIONS: { emoji: string; label: string; route: SettingsRoute; badge?: string; comingSoon?: boolean }[] = [
-  { emoji: "👤", label: "Account", route: "MyProfile" },
-  { emoji: "⭐", label: "Subscription", route: "Subscription", badge: "FREE" },
-  { emoji: "📋", label: "Interview history", route: "InterviewHistory" },
-  { emoji: "📊", label: "Progress dashboard", route: "ProgressDashboard" },
-  { emoji: "💬", label: "Question bank", route: "QuestionBank" },
-  { emoji: "💡", label: "Interview tips", route: "InterviewTips" },
-  { emoji: "🎨", label: "App customisation", route: "AppCustomisation" },
-  { emoji: "🎯", label: "Interview experience", route: "InterviewExperience", badge: "COMING SOON", comingSoon: true },
-  { emoji: "💼", label: "Job preferences", route: "JobPreferences" },
-  { emoji: "📚", label: "Sector Packs", route: "SectorPacks", badge: "COMING SOON", comingSoon: true },
-  { emoji: "🔒", label: "Privacy and security", route: "PrivacySecurity" },
-  { emoji: "💬", label: "Support", route: "Support" },
-  { emoji: "ℹ️", label: "About us", route: "AboutUs" },
-];
-
 const Settings = () => {
   const navigation = useNavigation<Nav>();
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
   const styles = makeStyles(colors, isDark);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
+
+  useEffect(() => {
+    fetchSubscriptionStatus();
+  }, []);
+
+  const fetchSubscriptionStatus = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) return;
+
+      // Check if user is ruth@gmail.com (dev/test account - treat as premium)
+      const userEmail = await AsyncStorage.getItem('userEmail');
+      if (userEmail === 'ruth@gmail.com') {
+        setSubscriptionTier('annual');
+        return;
+      }
+
+      const { data } = await supabase
+        .from('user_preferences')
+        .select('subscription_tier')
+        .eq('user_id', userId)
+        .single();
+
+      if (data) {
+        setSubscriptionTier(data.subscription_tier || 'free');
+      }
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    }
+  };
+
+  const getSubscriptionBadge = () => {
+    if (subscriptionTier === 'annual' || subscriptionTier === 'monthly') {
+      return 'PREMIUM';
+    }
+    return 'FREE';
+  };
+
+  const getSubscriptionHelper = () => {
+    if (subscriptionTier === 'annual' || subscriptionTier === 'monthly') {
+      return 'Unlimited interviews • Premium features';
+    }
+    return '5 interviews per month • Upgrade for unlimited';
+  };
+
+  const SECTIONS: { emoji: string; label: string; route: SettingsRoute; badge?: string; comingSoon?: boolean }[] = [
+    { emoji: "👤", label: "Account", route: "MyProfile" },
+    { emoji: "⭐", label: "Subscription", route: "Subscription", badge: getSubscriptionBadge() },
+    { emoji: "📋", label: "Interview history", route: "InterviewHistory" },
+    { emoji: "📊", label: "Progress dashboard", route: "ProgressDashboard" },
+    { emoji: "💬", label: "Question bank", route: "QuestionBank" },
+    { emoji: "💡", label: "Interview tips", route: "InterviewTips" },
+    { emoji: "🎨", label: "App customisation", route: "AppCustomisation" },
+    { emoji: "🎯", label: "Interview experience", route: "InterviewExperience", badge: "COMING SOON", comingSoon: true },
+    { emoji: "💼", label: "Job preferences", route: "JobPreferences" },
+    { emoji: "📚", label: "Sector Packs", route: "SectorPacks", badge: "COMING SOON", comingSoon: true },
+    { emoji: "🔒", label: "Privacy and security", route: "PrivacySecurity" },
+    { emoji: "💬", label: "Support", route: "Support" },
+    { emoji: "ℹ️", label: "About us", route: "AboutUs" },
+  ];
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
@@ -89,7 +134,7 @@ const Settings = () => {
               )}
               {label === "Subscription" && (
                 <Text style={[styles.rowHelper, { marginLeft: 30 }]}>
-                  5 interviews per month • Upgrade for unlimited
+                  {getSubscriptionHelper()}
                 </Text>
               )}
               {label === "Sector Packs" && (

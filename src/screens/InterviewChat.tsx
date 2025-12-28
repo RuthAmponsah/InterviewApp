@@ -12,6 +12,7 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
     Alert,
+    ActivityIndicator,
 } from 'react-native';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
@@ -19,6 +20,7 @@ import { typography } from "../theme/colors";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from "../config/supabase";
 import { initializeInterviewChat, sendMessageToAI, speakText, stopSpeaking } from "../services/aiService";
+import { startRecording, stopRecording, transcribeAudio, cancelRecording } from "../services/voiceRecordingService";
 import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'InterviewChat'>;
@@ -39,6 +41,8 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const [input, setInput] = useState('');
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const flatListRef = React.useRef<FlatList>(null);
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -106,6 +110,13 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
     try {
       const userId = await AsyncStorage.getItem('userId');
       if (!userId) return;
+
+      // Check if user is ruth@gmail.com (dev/test account - unlimited access)
+      const userEmail = await AsyncStorage.getItem('userEmail');
+      if (userEmail === 'ruth@gmail.com') {
+        console.log('✅ Developer account - unlimited interviews');
+        return;
+      }
 
       // Get user preferences
       const { data: prefs } = await supabase
@@ -211,17 +222,59 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() || isAiTyping) return;
+  const handleVoicePress = async () => {
+    try {
+      if (isRecording) {
+        // Stop recording and transcribe
+        setIsRecording(false);
+        const audioUri = await stopRecording();
+        
+        if (audioUri) {
+          setIsTranscribing(true);
+          const transcript = await transcribeAudio(audioUri);
+          setIsTranscribing(false);
+          
+          if (transcript && transcript.trim()) {
+            setInput(transcript);
+            // Auto-send after transcription
+            setTimeout(() => {
+              sendMessageWithText(transcript);
+            }, 500);
+          }
+        }
+      } else {
+        // Start recording
+        const started = await startRecording();
+        if (started) {
+          setIsRecording(true);
+          setInput(''); // Clear input when starting to record
+        } else {
+          Alert.alert(
+            'Microphone Access',
+            'Please allow microphone access in your device settings to use voice input.',
+            [{ text: 'OK' }]
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Voice recording error:', error);
+      setIsRecording(false);
+      setIsTranscribing(false);
+      Alert.alert('Error', 'Failed to process voice input. Please try again.');
+    }
+  };
+
+  const sendMessageWithText = async (text: string) => {
+    if (!text.trim() || isAiTyping) return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
       from: 'user',
-      text: input.trim(),
+      text: text.trim(),
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    const userInput = input.trim();
+    const userInput = text.trim();
     setInput('');
 
     // Auto-scroll to bottom after sending
@@ -229,43 +282,35 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
-    // Get AI response
+    // Send to AI
     setIsAiTyping(true);
-    try {
-      const aiResponse = await sendMessageToAI(userInput);
-      
+    const aiResponse = await sendMessageToAI(userInput);
+    setIsAiTyping(false);
+
+    if (aiResponse) {
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
         from: 'ai',
         text: aiResponse,
       };
-      
       setMessages((prev) => [...prev, aiMsg]);
+
+      // If voice mode, speak the AI response
+      if (mode === 'voice' && aiResponse) {
+        setIsSpeaking(true);
+        await speakText(aiResponse);
+        setIsSpeaking(false);
+      }
+
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
-
-      // Speak the AI response if in voice mode
-      if (mode === 'voice') {
-        console.log('Speaking AI response:', aiResponse);
-        setIsSpeaking(true);
-        const success = await speakText(aiResponse);
-        if (!success) {
-          console.error('Failed to speak text');
-        }
-        setIsSpeaking(false);
-      }
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      const errorMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        from: 'ai',
-        text: "I'm having trouble responding right now. Could you try again?",
-      };
-      setMessages((prev) => [...prev, errorMsg]);
-    } finally {
-      setIsAiTyping(false);
     }
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || isAiTyping) return;
+    sendMessageWithText(input);
   };
 
   const endInterview = async () => {
@@ -448,14 +493,22 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.voiceContainer}>
           {/* Animated voice circle */}
           <View style={styles.voiceCircleContainer}>
-            <View style={[styles.voiceCircle, isSpeaking && styles.voiceCircleActive]}>
+            <TouchableOpacity 
+              style={[
+                styles.voiceCircle, 
+                (isSpeaking || isAiTyping) && styles.voiceCircleDisabled,
+                isRecording && styles.voiceCircleRecording
+              ]}
+              onPress={handleVoicePress}
+              disabled={isSpeaking || isAiTyping}
+            >
               <Ionicons 
-                name={isSpeaking ? "volume-high" : "mic"} 
+                name={isRecording ? "stop-circle" : isSpeaking ? "volume-high" : isTranscribing ? "hourglass" : "mic"} 
                 size={48} 
                 color="#fff" 
               />
-            </View>
-            {isSpeaking && (
+            </TouchableOpacity>
+            {(isSpeaking || isRecording) && (
               <>
                 <View style={[styles.pulseCircle, styles.pulse1]} />
                 <View style={[styles.pulseCircle, styles.pulse2]} />
@@ -466,29 +519,38 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
           
           {/* Status text */}
           <Text style={styles.voiceStatusText}>
-            {isSpeaking ? 'Aya is speaking...' : isAiTyping ? 'Aya is thinking...' : 'Listening...'}
+            {isTranscribing 
+              ? 'Transcribing...' 
+              : isRecording 
+              ? 'Recording... (Tap to stop)' 
+              : isSpeaking 
+              ? 'Aya is speaking...' 
+              : isAiTyping 
+              ? 'Aya is thinking...' 
+              : 'Tap mic to speak'}
           </Text>
           
           {/* Text input below */}
           <View style={styles.voiceInputContainer}>
             <TextInput
               style={styles.voiceInput}
-              placeholder="Type your answer here..."
+              placeholder="Or type your answer here..."
               placeholderTextColor={isDark ? '#666' : colors.textMuted}
               value={input}
               onChangeText={setInput}
               multiline
               maxLength={500}
+              editable={!isRecording && !isTranscribing}
             />
             <TouchableOpacity 
-              style={[styles.voiceSendBtn, (!input.trim() || isAiTyping) && styles.sendBtnDisabled]} 
+              style={[styles.voiceSendBtn, (!input.trim() || isAiTyping || isRecording || isTranscribing) && styles.sendBtnDisabled]} 
               onPress={sendMessage}
-              disabled={!input.trim() || isAiTyping}
+              disabled={!input.trim() || isAiTyping || isRecording || isTranscribing}
             >
               <Ionicons 
                 name="send" 
                 size={20} 
-                color={(!input.trim() || isAiTyping) ? '#999' : '#fff'} 
+                color={(!input.trim() || isAiTyping || isRecording || isTranscribing) ? '#999' : '#fff'} 
               />
             </TouchableOpacity>
           </View>
@@ -676,6 +738,15 @@ const makeStyles = (colors: any, isDark: boolean) =>
     voiceCircleActive: {
       backgroundColor: '#10B981',
       shadowColor: '#10B981',
+    },
+    voiceCircleRecording: {
+      backgroundColor: '#EF4444',
+      shadowColor: '#EF4444',
+    },
+    voiceCircleDisabled: {
+      backgroundColor: '#999',
+      shadowColor: '#999',
+      opacity: 0.6,
     },
     pulseCircle: {
       position: 'absolute',

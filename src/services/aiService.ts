@@ -185,8 +185,13 @@ export const speakText = async (text: string): Promise<boolean> => {
     // Stop any currently playing audio
     if (currentSound) {
       console.log('Stopping previous audio...');
-      await currentSound.stopAsync();
-      await currentSound.unloadAsync();
+      try {
+        await currentSound.stopAsync();
+        await currentSound.unloadAsync();
+      } catch (stopError) {
+        // Ignore errors when stopping - audio may already be stopped
+        console.log('Audio already stopped or unloaded');
+      }
       currentSound = null;
     }
 

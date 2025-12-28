@@ -1,6 +1,6 @@
 # Privacy Policy for MY INTERVIEW App
 
-**Last Updated:** December 27, 2025  
+**Last Updated:** December 28, 2025  
 **Effective Date:** December 27, 2025
 
 ## Introduction
@@ -27,10 +27,22 @@ MY INTERVIEW is designed for users aged 16 and over who are seeking employment a
 - **Performance Data**: Crash reports, error logs (anonymized)
 - **Network Information**: Connection type for service optimization
 
+### Voice Interview Data
+
+When you use the **Voice Interview** feature (optional, Premium only):
+
+- **Microphone Access**: We request microphone permission only when you choose to use voice interviews
+- **Audio Recording**: Voice recordings are created temporarily on your device during practice sessions
+- **Transcription**: Audio is sent to our AI provider (Groq) for speech-to-text conversion
+- **Local Storage**: Audio files are stored locally on your device for up to **30 minutes** to allow for transcription retry if needed
+- **Automatic Deletion**: Audio files are automatically deleted after 30 minutes or when you close the app
+- **No Server Storage**: Audio recordings are **never stored on our servers** - they are only temporarily processed for transcription
+
 ### Information We Do NOT Collect
 
 - ❌ Location data
-- ❌ Camera or microphone access (no recording)
+- ❌ Camera access
+- ❌ Permanent audio/voice storage (temporary only, see above)
 - ❌ Contacts or address book
 - ❌ Calendar or photos (except explicit CV uploads)
 - ❌ Biometric data
@@ -95,7 +107,7 @@ We share data with trusted third-party services:
 | Service | Purpose | Data Shared | Privacy Policy |
 |---------|---------|-------------|----------------|
 | **Supabase** | Database & authentication | Account data, profile, interview history | [Supabase Privacy](https://supabase.com/privacy) |
-| **Groq AI** | AI interview feedback | Interview responses (temporary) | [Groq Privacy](https://groq.com/privacy-policy/) |
+| **Groq AI** | AI interview feedback & voice transcription | Interview responses, audio (temporary processing only) | [Groq Privacy](https://groq.com/privacy-policy/) |
 | **RevenueCat** | Subscription management | Email, subscription status, device ID | [RevenueCat Privacy](https://www.revenuecat.com/privacy) |
 | **Adzuna** | Job search | Location preferences (no personal data) | [Adzuna Privacy](https://www.adzuna.co.uk/privacy.html) |
 | **Resend** | Email notifications | Email address, name | [Resend Privacy](https://resend.com/legal/privacy-policy) |

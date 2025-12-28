@@ -422,42 +422,40 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Only show message list in text mode */}
-      {mode === 'text' && (
-        <FlatList
-          ref={flatListRef}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          renderItem={({ item }) => (
-            <View style={styles.messageContainer}>
-              {item.from === 'ai' && (
-                <Text style={styles.senderLabel}>Aya</Text>
-              )}
-              <View
-                style={[
-                styles.bubble,
-                item.from === 'user' ? styles.userBubble : styles.aiBubble,
+      {/* Message list - shown in both text and voice modes */}
+      <FlatList
+        ref={flatListRef}
+        style={[styles.list, mode === 'voice' && styles.listVoiceMode]}
+        contentContainerStyle={styles.listContent}
+        data={messages}
+        keyExtractor={(item) => item.id}
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        renderItem={({ item }) => (
+          <View style={styles.messageContainer}>
+            {item.from === 'ai' && (
+              <Text style={styles.senderLabel}>Aya</Text>
+            )}
+            <View
+              style={[
+              styles.bubble,
+              item.from === 'user' ? styles.userBubble : styles.aiBubble,
+            ]}
+          >
+            <Text
+              style={[
+                styles.bubbleText,
+                item.from === 'user' ? styles.userText : styles.aiText,
               ]}
             >
-              <Text
-                style={[
-                  styles.bubbleText,
-                  item.from === 'user' ? styles.userText : styles.aiText,
-                ]}
-              >
-                {item.text}
-              </Text>
-            </View>
+              {item.text}
+            </Text>
           </View>
-        )}
-      />
+        </View>
       )}
+    />
 
-      {/* Typing indicator - only in text mode */}
-      {mode === 'text' && isAiTyping && (
+      {/* Typing indicator - shown in both modes */}
+      {isAiTyping && (
         <View style={styles.typingContainer}>
           <Text style={styles.senderLabel}>Aya</Text>
           <View style={styles.typingBubble}>
@@ -490,70 +488,52 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       )}
 
       {mode === 'voice' && (
-        <View style={styles.voiceContainer}>
-          {/* Animated voice circle */}
-          <View style={styles.voiceCircleContainer}>
-            <TouchableOpacity 
-              style={[
-                styles.voiceCircle, 
-                (isSpeaking || isAiTyping) && styles.voiceCircleDisabled,
-                isRecording && styles.voiceCircleRecording
-              ]}
-              onPress={handleVoicePress}
-              disabled={isSpeaking || isAiTyping}
-            >
-              <Ionicons 
-                name={isRecording ? "stop-circle" : isSpeaking ? "volume-high" : isTranscribing ? "hourglass" : "mic"} 
-                size={48} 
-                color="#fff" 
-              />
-            </TouchableOpacity>
-            {(isSpeaking || isRecording) && (
-              <>
-                <View style={[styles.pulseCircle, styles.pulse1]} />
-                <View style={[styles.pulseCircle, styles.pulse2]} />
-                <View style={[styles.pulseCircle, styles.pulse3]} />
-              </>
-            )}
-          </View>
-          
-          {/* Status text */}
-          <Text style={styles.voiceStatusText}>
-            {isTranscribing 
-              ? 'Transcribing...' 
-              : isRecording 
-              ? 'Recording... (Tap to stop)' 
-              : isSpeaking 
-              ? 'Aya is speaking...' 
-              : isAiTyping 
-              ? 'Aya is thinking...' 
-              : 'Tap mic to speak'}
-          </Text>
-          
-          {/* Text input below */}
-          <View style={styles.voiceInputContainer}>
-            <TextInput
-              style={styles.voiceInput}
-              placeholder="Or type your answer here..."
-              placeholderTextColor={isDark ? '#666' : colors.textMuted}
-              value={input}
-              onChangeText={setInput}
-              multiline
-              maxLength={500}
-              editable={!isRecording && !isTranscribing}
+        <View style={styles.voiceInputRow}>
+          {/* Voice button */}
+          <TouchableOpacity 
+            style={[
+              styles.voiceButton, 
+              (isSpeaking || isAiTyping) && styles.voiceButtonDisabled,
+              isRecording && styles.voiceButtonRecording
+            ]}
+            onPress={handleVoicePress}
+            disabled={isSpeaking || isAiTyping}
+          >
+            <Ionicons 
+              name={isRecording ? "stop" : isTranscribing ? "hourglass" : isSpeaking ? "volume-high" : "mic"} 
+              size={24} 
+              color="#fff" 
             />
-            <TouchableOpacity 
-              style={[styles.voiceSendBtn, (!input.trim() || isAiTyping || isRecording || isTranscribing) && styles.sendBtnDisabled]} 
-              onPress={sendMessage}
-              disabled={!input.trim() || isAiTyping || isRecording || isTranscribing}
-            >
-              <Ionicons 
-                name="send" 
-                size={20} 
-                color={(!input.trim() || isAiTyping || isRecording || isTranscribing) ? '#999' : '#fff'} 
-              />
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
+          
+          {/* Text input */}
+          <TextInput
+            style={styles.voiceTextInput}
+            placeholder={
+              isTranscribing 
+                ? 'Transcribing...' 
+                : isRecording 
+                ? 'Recording... (Tap to stop)' 
+                : isSpeaking 
+                ? 'Aya is speaking...'
+                : 'Tap mic or type here...'
+            }
+            placeholderTextColor={isDark ? '#666' : colors.textMuted}
+            value={input}
+            onChangeText={setInput}
+            multiline
+            maxLength={500}
+            editable={!isRecording && !isTranscribing}
+          />
+          
+          {/* Send button */}
+          <TouchableOpacity 
+            style={[styles.sendBtn, (!input.trim() || isAiTyping || isRecording || isTranscribing) && styles.sendBtnDisabled]} 
+            onPress={sendMessage}
+            disabled={!input.trim() || isAiTyping || isRecording || isTranscribing}
+          >
+            <Text style={styles.sendText}>{isAiTyping ? 'Wait...' : 'Send'}</Text>
+          </TouchableOpacity>
         </View>
       )}
     </KeyboardAvoidingView>
@@ -834,6 +814,47 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodySmall,
       color: colors.primaryBlue,
       fontWeight: '600',
+    },
+    listVoiceMode: {
+      flex: 1,
+    },
+    voiceInputRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      gap: 10,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? '#333' : colors.border,
+      backgroundColor: isDark ? '#1d1d1d' : '#fff',
+    },
+    voiceButton: {
+      backgroundColor: colors.primaryBlue,
+      borderRadius: 24,
+      width: 48,
+      height: 48,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    voiceButtonRecording: {
+      backgroundColor: '#EF4444',
+    },
+    voiceButtonDisabled: {
+      backgroundColor: '#999',
+      opacity: 0.6,
+    },
+    voiceTextInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: isDark ? '#444' : colors.border,
+      borderRadius: 24,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      maxHeight: 100,
+      minHeight: 44,
+      ...typography.bodyMedium,
+      color: isDark ? '#fff' : colors.textDark,
+      backgroundColor: isDark ? '#2a2a2a' : '#F9FAFB',
     },
   });
 

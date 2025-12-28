@@ -6,6 +6,7 @@
 - ✅ User Authentication (Sign Up, Sign In, Password Reset)
 - ✅ Interview Practice (Text & Voice modes)
 - ✅ AI Integration (Groq SDK configured)
+- ✅ **Voice Recognition** (Groq Whisper API - see below)
 - ✅ Database Integration (Supabase configured)
 - ✅ Profile Management
 - ✅ CV Upload & AI Analysis (with suggestion tracking)
@@ -21,6 +22,24 @@
 - ✅ Theme Support (Light/Dark mode)
 - ✅ Offline Detection
 - ✅ Onboarding Flow (skips for returning users)
+
+### Voice Recognition Implementation ✅
+**Completed: December 28, 2025**
+
+The voice interview feature uses a cloud-based approach compatible with Expo Go:
+- **Recording**: `expo-av` (stable, well-tested)
+- **Transcription**: Groq Whisper API (`whisper-large-v3-turbo` model)
+- **File Handling**: React Native native FormData with file URI
+- **HTTP Client**: XMLHttpRequest for better React Native compatibility
+
+**Flow:**
+1. User taps mic → starts recording (expo-av)
+2. User taps again → stops recording, gets file URI
+3. File sent to Groq Whisper API for transcription
+4. Transcribed text sent as user message to AI
+5. AI response spoken via TTS (Google TTS)
+
+**Privacy**: Audio files stored locally for up to 30 minutes, then auto-deleted. Never stored on servers.
 
 ⚠️ Download My Data (Marked as "Coming Soon")
 ### 2. Monetization

@@ -18,7 +18,6 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
   
   const [checklist, setChecklist] = useState({
     quietSpace: false,
-    goodLighting: false,
     ready: false,
   });
 
@@ -27,7 +26,7 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
     setChecklist(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const allChecked = checklist.quietSpace && checklist.goodLighting && checklist.ready;
+  const allChecked = checklist.quietSpace && checklist.ready;
 
   const goToChat = (mode: 'text' | 'voice') => {
     navigation.navigate('InterviewChat', { mode });
@@ -51,16 +50,6 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
             {checklist.quietSpace && <Ionicons name="checkmark" size={16} color="#fff" />}
           </View>
           <Text style={styles.checklistText}>Find a quiet space</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.checklistItem}
-          onPress={() => toggleChecklistItem('goodLighting')}
-        >
-          <View style={[styles.checkbox, checklist.goodLighting && styles.checkboxChecked]}>
-            {checklist.goodLighting && <Ionicons name="checkmark" size={16} color="#fff" />}
-          </View>
-          <Text style={styles.checklistText}>Good lighting (if using camera)</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 

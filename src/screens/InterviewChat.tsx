@@ -315,6 +315,9 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
 
   const endInterview = async () => {
     try {
+      // Stop any speaking immediately
+      await stopSpeaking();
+      
       const userId = await AsyncStorage.getItem("userId");
       
       if (userId) {

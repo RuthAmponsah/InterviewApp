@@ -114,12 +114,11 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       }
 
       // Clear previous user data but preserve onboarding status
-      const hasCompletedOnboarding = await AsyncStorage.getItem('hasCompletedOnboarding');
       await AsyncStorage.clear();
       
       // Mark onboarding as complete for returning users (they've signed up before)
-      // First-time users will see onboarding when they reach MainTabs
-      await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
+      // Uses 'hasSeenOnboarding' to match OnboardingWalkthrough.tsx
+      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
       
       // Store the session explicitly in AsyncStorage AFTER clearing old data
       if (authData.session) {

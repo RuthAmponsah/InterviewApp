@@ -177,23 +177,16 @@ export const clearConversationHistory = () => {
 
 // Text-to-Speech using PlayAI
 let currentSound: Audio.Sound | null = null;
+let isSpeaking = false;
 
 export const speakText = async (text: string): Promise<boolean> => {
   try {
     console.log('🔊 Starting TTS for text:', text.substring(0, 50) + '...');
+    console.log('Full text length:', text.length);
     
     // Stop any currently playing audio
-    if (currentSound) {
-      console.log('Stopping previous audio...');
-      try {
-        await currentSound.stopAsync();
-        await currentSound.unloadAsync();
-      } catch (stopError) {
-        // Ignore errors when stopping - audio may already be stopped
-        console.log('Audio already stopped or unloaded');
-      }
-      currentSound = null;
-    }
+    await stopSpeaking();
+    isSpeaking = true;
 
     // Configure audio mode for playback
     console.log('Configuring audio mode...');
@@ -204,60 +197,107 @@ export const speakText = async (text: string): Promise<boolean> => {
       shouldDuckAndroid: true,
     });
 
-    // Truncate text if too long (max 200 characters for better compatibility)
-    const maxLength = 200;
-    let textToSpeak = text;
-    if (text.length > maxLength) {
-      const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-      textToSpeak = '';
-      for (const sentence of sentences) {
-        if ((textToSpeak + sentence).length <= maxLength) {
-          textToSpeak += sentence;
+    // Split text into chunks for reliable playback (Google TTS has ~200 char limit per request)
+    const maxLength = 180;
+    const chunks: string[] = [];
+    
+    // Split by sentences first
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    let currentChunk = '';
+    
+    for (const sentence of sentences) {
+      if ((currentChunk + sentence).length <= maxLength) {
+        currentChunk += sentence;
+      } else {
+        if (currentChunk.trim()) {
+          chunks.push(currentChunk.trim());
+        }
+        // If single sentence is too long, split by commas or just truncate
+        if (sentence.length > maxLength) {
+          const parts = sentence.split(/,\s*/);
+          let part = '';
+          for (const p of parts) {
+            if ((part + p).length <= maxLength) {
+              part += (part ? ', ' : '') + p;
+            } else {
+              if (part.trim()) chunks.push(part.trim());
+              part = p.substring(0, maxLength);
+            }
+          }
+          if (part.trim()) currentChunk = part;
+          else currentChunk = '';
         } else {
-          break;
+          currentChunk = sentence;
         }
       }
-      if (!textToSpeak) {
-        textToSpeak = text.substring(0, maxLength);
-      }
-      console.log('Text truncated to:', textToSpeak);
     }
+    if (currentChunk.trim()) {
+      chunks.push(currentChunk.trim());
+    }
+    
+    console.log(`Split into ${chunks.length} chunks for TTS`);
 
-    // Use Google Translate TTS (most reliable)
-    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(textToSpeak)}`;
-    console.log('Using Google TTS...');
-    
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: ttsUrl },
-      { shouldPlay: true }
-    );
-    
-    currentSound = sound;
-    console.log('✅ Audio playing!');
-    
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.didJustFinish) {
-        console.log('Audio finished playing');
-        sound.unloadAsync();
-        currentSound = null;
+    // Play each chunk sequentially
+    for (let i = 0; i < chunks.length; i++) {
+      if (!isSpeaking) {
+        console.log('Speech stopped by user');
+        break;
       }
-    });
-
+      
+      const chunk = chunks[i];
+      console.log(`Playing chunk ${i + 1}/${chunks.length}: "${chunk.substring(0, 30)}..."`);
+      
+      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(chunk)}`;
+      
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: ttsUrl },
+          { shouldPlay: true }
+        );
+        
+        currentSound = sound;
+        
+        // Wait for this chunk to finish before playing next
+        await new Promise<void>((resolve) => {
+          sound.setOnPlaybackStatusUpdate((status) => {
+            if (status.isLoaded && status.didJustFinish) {
+              sound.unloadAsync();
+              currentSound = null;
+              resolve();
+            }
+          });
+          
+          // Timeout fallback in case callback doesn't fire (estimate ~100ms per char)
+          setTimeout(() => {
+            resolve();
+          }, Math.max(chunk.length * 80, 3000));
+        });
+        
+      } catch (chunkError) {
+        console.error(`Error playing chunk ${i + 1}:`, chunkError);
+        // Continue with next chunk
+      }
+    }
+    
+    console.log('✅ Completed speaking all chunks');
+    isSpeaking = false;
     return true;
   } catch (error) {
     console.error('❌ Error with text-to-speech:', error);
+    isSpeaking = false;
     return false;
   }
 };
 
 export const stopSpeaking = async () => {
+  isSpeaking = false;
   if (currentSound) {
     try {
       await currentSound.stopAsync();
       await currentSound.unloadAsync();
       currentSound = null;
     } catch (error) {
-      console.error('Error stopping audio:', error);
+      // Ignore - may already be stopped
     }
   }
 };

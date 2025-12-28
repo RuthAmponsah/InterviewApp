@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -9,7 +9,9 @@ import {
   View,
   RefreshControl,
   Platform,
+  Animated,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -51,6 +53,10 @@ const Home: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [streakBroken, setStreakBroken] = useState(false);
   const [canRecoverStreak, setCanRecoverStreak] = useState(false);
+  
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
 
   // ---------------------------
   // 1️⃣ GREETING BASED ON TIME
@@ -211,6 +217,24 @@ const Home: React.FC = () => {
     loadLatestFeedback();
   }, []);
 
+  // Trigger entrance animation when loading completes
+  useEffect(() => {
+    if (!loading) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [loading]);
+
   // Pull to refresh handler
   const onRefresh = async () => {
     setRefreshing(true);
@@ -251,19 +275,27 @@ const Home: React.FC = () => {
       </View>
 
       {/* Primary CTA card */}
-      <TouchableOpacity
-        style={[styles.card, styles.primaryCard]}
-        activeOpacity={0.85}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          navigation.navigate('InterviewType');
-        }}
-      >
-        <Text style={styles.cardTitlePrimary}>Start interview</Text>
-        <Text style={styles.cardBodyPrimary}>
-          Get a realistic mock interview tailored to your target role.
-        </Text>
-      </TouchableOpacity>
+      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('InterviewType');
+          }}
+        >
+          <LinearGradient
+            colors={['#1E63FF', '#0D47A1']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.card, styles.primaryCard]}
+          >
+            <Text style={styles.cardTitlePrimary}>🎤  Start interview</Text>
+            <Text style={styles.cardBodyPrimary}>
+              Get a realistic mock interview tailored to your target role.
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
 
       {/* Row of cards */}
       <View style={styles.row}>
@@ -408,9 +440,8 @@ const makeStyles = (colors: any, isDark: boolean) =>
     paddingBottom: 28,
   },
   logoText: {
-    fontSize: 34,
-    fontFamily: 'Poppins_600SemiBold',
-    letterSpacing: 0.5,
+    ...typography.heading,
+    fontWeight: "800",
     color: colors.primaryBlue,
     alignSelf: 'center',
     marginBottom: 28,

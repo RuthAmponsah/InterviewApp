@@ -6,16 +6,16 @@ Everything below is what's left to do. Tasks are ordered by priority.
 
 ---
 
-## 🔴 STEP 1: Developer Accounts (Required for Launch)
+## ✅ STEP 1: Developer Accounts (SUBMITTED - AWAITING APPROVAL)
 
-### 1.1 Apple Developer Account
-**Cost:** $99/year | **Time:** 1-2 days for approval
+### 1.1 Apple Developer Account ⏳ PENDING APPROVAL
+**Cost:** $99/year | **Status:** Submitted, waiting 24-48 hours
 
-1. Go to: https://developer.apple.com/programs/enroll/
-2. Sign in with your Apple ID (or create one)
-3. Enroll as an **Individual** (unless you have a company)
-4. Pay the $99 annual fee
-5. Wait for approval (usually 24-48 hours)
+- [x] Go to: https://developer.apple.com/programs/enroll/
+- [x] Sign in with Apple ID
+- [x] Enroll as Individual
+- [x] Pay the $99 annual fee
+- [ ] Wait for approval (usually 24-48 hours)
 
 **Why needed:**
 - Required to publish on App Store
@@ -24,14 +24,14 @@ Everything below is what's left to do. Tasks are ordered by priority.
 
 ---
 
-### 1.2 Google Play Developer Account
-**Cost:** $25 one-time | **Time:** 1-2 days for approval
+### 1.2 Google Play Developer Account ⏳ PENDING APPROVAL
+**Cost:** $25 one-time | **Status:** Submitted, waiting 1-2 days
 
-1. Go to: https://play.google.com/console/signup
-2. Sign in with your Google account
-3. Pay the $25 one-time fee
-4. Complete identity verification
-5. Wait for approval
+- [x] Go to: https://play.google.com/console/signup
+- [x] Sign in with Google account
+- [x] Pay the $25 one-time fee
+- [x] Complete identity verification
+- [ ] Wait for approval
 
 **Why needed:**
 - Required to publish on Google Play Store
@@ -39,7 +39,21 @@ Everything below is what's left to do. Tasks are ordered by priority.
 
 ---
 
-## 🔴 STEP 2: App Store Connect Setup
+## ⏳ EMAIL VERIFICATION (RESEND) - PENDING DNS PROPAGATION
+
+### Domain Verification Status
+- [x] Resend account created
+- [x] Domain added to Resend
+- [x] DNS records added to Squarespace
+- [ ] Wait for DNS propagation (can take up to 48 hours)
+- [ ] Verify domain in Resend dashboard
+- [ ] Update emailService.ts with production FROM email
+
+**Check status:** https://resend.com/domains
+
+---
+
+## 🟡 STEP 2: App Store Connect Setup (AFTER APPLE APPROVAL)
 
 ### 2.1 Create App Record
 1. Go to: https://appstoreconnect.apple.com/
@@ -137,9 +151,15 @@ Copy from `APP_STORE_LISTING.md`:
 
 ---
 
-## 🔴 STEP 4: RevenueCat Production Setup
+## � STEP 4: RevenueCat Production Setup (CAN START NOW!)
 
-### 4.1 Link App Store Connect
+### 4.0 Create RevenueCat Account (DO NOW)
+1. Go to: https://www.revenuecat.com/
+2. Click **Sign Up** (free tier available)
+3. Create a new **Project** called "MY INTERVIEW"
+4. Note your project ID
+
+### 4.1 Link App Store Connect (AFTER APPLE APPROVAL)
 1. Go to: https://app.revenuecat.com/
 2. Navigate to your project → **Apps**
 3. Click **+ New** → **App Store**
@@ -149,7 +169,7 @@ Copy from `APP_STORE_LISTING.md`:
    - **App Store Connect App-Specific Shared Secret:** 
      (Get from App Store Connect → App → App Information → App-Specific Shared Secret)
 
-### 4.2 Link Google Play
+### 4.2 Link Google Play (AFTER GOOGLE APPROVAL)
 1. In RevenueCat → **Apps** → **+ New** → **Google Play**
 2. Enter:
    - **App name:** MY INTERVIEW Android
@@ -160,7 +180,7 @@ Copy from `APP_STORE_LISTING.md`:
    - Download JSON key
    - Upload to RevenueCat
 
-### 4.3 Configure Products
+### 4.3 Configure Products (AFTER STORE PRODUCTS CREATED)
 1. In RevenueCat → **Products**
 2. Add App Store product: `premium_monthly`
 3. Add App Store product: `premium_annual`

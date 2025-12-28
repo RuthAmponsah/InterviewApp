@@ -19,6 +19,8 @@ Email service is configured to use **Resend** - a modern, developer-friendly ema
 5. Click "Add"
 6. **Copy the API key** (starts with `re_...`)
 
+re_NYxDBDSk_NpyNRUurANca4yx1s1uvQBvn
+
 ### Step 3: Add API Key to App
 1. Open: `src/services/emailService.ts`
 2. Line 5, replace:

@@ -15,6 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "../theme/ThemeContext";
+import { supabase } from "../config/supabase";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Welcome">;
 
@@ -155,6 +156,21 @@ export default function Welcome() {
     if (!job) return;
     await AsyncStorage.setItem("jobRole", job);
     await AsyncStorage.setItem("hasCompletedOnboarding", "true");
+    
+    // Save job role to database
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      if (userId) {
+        await supabase
+          .from('users')
+          .update({ job_role: job })
+          .eq('id', userId);
+        console.log('✅ Job role saved to database:', job);
+      }
+    } catch (error) {
+      console.log('Failed to save job to database:', error);
+    }
+    
     navigation.navigate("MainTabs");
   };
 
@@ -235,6 +251,7 @@ export default function Welcome() {
           onFocus={() => setIsFocus(true)}
           onBlur={() => setIsFocus(false)}
           onChange={(item) => {
+            stopSpeaking(); // Stop any current speech when selecting a job
             setJob(item.value);
             setIsFocus(false);
           }}

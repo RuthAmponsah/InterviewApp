@@ -17,7 +17,7 @@ import { typography } from "../theme/colors";
 import { 
   requestNotificationPermissions, 
   scheduleDailyReminder, 
-  cancelDailyReminder,
+  cancelAllReminders,
   sendTestNotification,
 } from "../services/notificationService";
 
@@ -99,7 +99,7 @@ const Notifications: React.FC = () => {
       if (value && permissionsGranted) {
         await scheduleDailyReminder(reminderTime.hour, reminderTime.minute);
       } else {
-        await cancelDailyReminder();
+        await cancelAllReminders();
       }
     }
   };

@@ -338,7 +338,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
   StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: isDark ? "#0f0f0f" : "#F3F4F6",
+      backgroundColor: isDark ? '#1a1a1a' : '#F3F4F6',
     },
     content: {
       paddingHorizontal: 24,

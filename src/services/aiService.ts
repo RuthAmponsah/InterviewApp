@@ -1,5 +1,5 @@
 import Groq from "groq-sdk";
-import { Audio } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
 import Constants from 'expo-constants';
 
 // Initialize Groq client
@@ -176,7 +176,7 @@ export const clearConversationHistory = () => {
 };
 
 // Text-to-Speech using PlayAI
-let currentSound: Audio.Sound | null = null;
+let currentPlayer: AudioPlayer | null = null;
 let isSpeaking = false;
 
 export const speakText = async (text: string): Promise<boolean> => {
@@ -190,11 +190,9 @@ export const speakText = async (text: string): Promise<boolean> => {
 
     // Configure audio mode for playback
     console.log('Configuring audio mode...');
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: true,
-      shouldDuckAndroid: true,
+    await setAudioModeAsync({
+      allowsRecording: false,
+      playsInSilentMode: true,
     });
 
     // Split text into chunks for reliable playback (Google TTS has ~200 char limit per request)
@@ -250,25 +248,25 @@ export const speakText = async (text: string): Promise<boolean> => {
       const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(chunk)}`;
       
       try {
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: ttsUrl },
-          { shouldPlay: true }
-        );
-        
-        currentSound = sound;
+        const player = createAudioPlayer({ uri: ttsUrl }, { rate: 1.5 });
+        currentPlayer = player;
+        player.play();
         
         // Wait for this chunk to finish before playing next
         await new Promise<void>((resolve) => {
-          sound.setOnPlaybackStatusUpdate((status) => {
-            if (status.isLoaded && status.didJustFinish) {
-              sound.unloadAsync();
-              currentSound = null;
+          const checkStatus = setInterval(() => {
+            // Check if player finished or if we're no longer speaking
+            if (!isSpeaking || !player.playing) {
+              clearInterval(checkStatus);
+              player.remove();
+              currentPlayer = null;
               resolve();
             }
-          });
+          }, 100);
           
           // Timeout fallback in case callback doesn't fire (estimate ~100ms per char)
           setTimeout(() => {
+            clearInterval(checkStatus);
             resolve();
           }, Math.max(chunk.length * 80, 3000));
         });
@@ -291,11 +289,11 @@ export const speakText = async (text: string): Promise<boolean> => {
 
 export const stopSpeaking = async () => {
   isSpeaking = false;
-  if (currentSound) {
+  if (currentPlayer) {
     try {
-      await currentSound.stopAsync();
-      await currentSound.unloadAsync();
-      currentSound = null;
+      currentPlayer.pause();
+      currentPlayer.remove();
+      currentPlayer = null;
     } catch (error) {
       // Ignore - may already be stopped
     }

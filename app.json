@@ -52,7 +52,12 @@
     "plugins": [
       "expo-font",
       "expo-speech-recognition",
-      "expo-audio"
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow MY INTERVIEW to access your microphone for voice recording during interview practice."
+        }
+      ]
     ],
     "extra": {
       "privacyPolicyUrl": "https://ruthamponsah.github.io/InterviewApp/docs/privacy",

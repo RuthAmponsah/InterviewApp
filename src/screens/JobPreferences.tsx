@@ -12,6 +12,7 @@ import { Dropdown } from "react-native-element-dropdown";
 import BackButton from "../components/BackButton";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+import { supabase } from "../config/supabase";
 
 const JOB_TYPES = [
   "Software Engineer",
@@ -60,6 +61,21 @@ const JobPreferences: React.FC = () => {
     if (!job) return;
     setSaving(true);
     await AsyncStorage.setItem("jobRole", job);
+    
+    // Also save to database for persistence across sign-ins
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      if (userId) {
+        await supabase
+          .from('users')
+          .update({ job_role: job })
+          .eq('id', userId);
+        console.log('✅ Job role saved to database:', job);
+      }
+    } catch (error) {
+      console.log('Failed to save job to database:', error);
+    }
+    
     setSaving(false);
     setSavedText("Job preference saved ✅");
     setTimeout(() => setSavedText(""), 2000);

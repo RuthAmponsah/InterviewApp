@@ -1,15 +1,23 @@
 /**
  * Voice Recording Service
- * Uses expo-av (deprecated but stable) for recording
+ * Uses expo-audio for recording
  * Uses Groq Whisper API for transcription
  */
-import { Audio } from 'expo-av';
+import { 
+  RecordingPresets, 
+  setAudioModeAsync,
+  requestRecordingPermissionsAsync,
+} from 'expo-audio';
+// @ts-ignore - AudioModule is not exported in types but exists at runtime
+import AudioModule from 'expo-audio/build/AudioModule';
 import { getInfoAsync } from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
 
 const GROQ_API_KEY = Constants.expoConfig?.extra?.groqApiKey || process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
 
-let recording: Audio.Recording | null = null;
+// Use AudioRecorder from the native module
+const AudioRecorder = AudioModule.AudioRecorder;
+let recorder: InstanceType<typeof AudioRecorder> | null = null;
 
 /**
  * Request microphone permissions from the user
@@ -18,7 +26,7 @@ let recording: Audio.Recording | null = null;
 export const requestMicrophonePermissions = async (): Promise<boolean> => {
   try {
     console.log('🎤 Requesting microphone permissions...');
-    const { granted } = await Audio.requestPermissionsAsync();
+    const { granted } = await requestRecordingPermissionsAsync();
     if (!granted) {
       console.log('🎤 Microphone permission denied');
       return false;
@@ -45,22 +53,22 @@ export const startRecording = async (): Promise<boolean> => {
 
     console.log('🎤 Setting audio mode for recording...');
     // Set audio mode to allow recording on iOS
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: true,
-      playsInSilentModeIOS: true,
+    await setAudioModeAsync({
+      allowsRecording: true,
+      playsInSilentMode: true,
     });
 
     console.log('🎤 Creating and starting recording...');
-    const { recording: newRecording } = await Audio.Recording.createAsync(
-      Audio.RecordingOptionsPresets.HIGH_QUALITY
-    );
+    // Create a new recorder using the native AudioRecorder class
+    recorder = new AudioRecorder(RecordingPresets.HIGH_QUALITY);
+    await recorder.prepareToRecordAsync();
+    recorder.record();
     
-    recording = newRecording;
     console.log('✅ Recording started');
     return true;
   } catch (error) {
     console.error('Error starting recording:', error);
-    recording = null;
+    recorder = null;
     return false;
   }
 };
@@ -71,24 +79,24 @@ export const startRecording = async (): Promise<boolean> => {
  */
 export const stopRecording = async (): Promise<string | null> => {
   try {
-    if (!recording) {
+    if (!recorder) {
       console.log('No active recording');
       return null;
     }
 
     console.log('🛑 Stopping recording...');
-    await recording.stopAndUnloadAsync();
+    await recorder.stop();
     
     // Reset audio mode but keep playsInSilentMode for TTS
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
+    await setAudioModeAsync({
+      allowsRecording: false,
+      playsInSilentMode: true,
     });
     
-    const uri = recording.getURI();
+    const uri = recorder.uri;
     console.log('✅ Recording stopped. URI:', uri);
     
-    // Keep the recording reference so file persists
+    // Keep the recorder reference so file persists
     // Don't set to null yet - we need the file for transcription
     
     return uri;
@@ -194,9 +202,9 @@ export const transcribeAudio = async (uri: string): Promise<string | null> => {
  * Clean up recording reference
  */
 const cleanupRecording = () => {
-  if (recording) {
+  if (recorder) {
     console.log('🧹 Cleaning up recording');
-    recording = null;
+    recorder = null;
   }
 };
 
@@ -205,17 +213,17 @@ const cleanupRecording = () => {
  */
 export const cancelRecording = async (): Promise<void> => {
   try {
-    if (recording) {
+    if (recorder) {
       console.log('❌ Cancelling recording...');
-      await recording.stopAndUnloadAsync();
+      await recorder.stop();
       
       // Reset audio mode
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
+      await setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
       });
       
-      recording = null;
+      recorder = null;
     }
   } catch (error) {
     console.error('Error cancelling recording:', error);

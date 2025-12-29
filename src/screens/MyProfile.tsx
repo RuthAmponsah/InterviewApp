@@ -88,9 +88,11 @@ export default function MyProfile() {
         if (data) {
           setName(data.name);
           setEmail(data.email);
+          console.log('📸 Profile data from DB:', { name: data.name, photo: data.profile_photo });
           if (data.profile_photo) {
             setProfilePhoto(data.profile_photo);
             await AsyncStorage.setItem("userProfilePhoto", data.profile_photo);
+            console.log('✅ Profile photo set:', data.profile_photo);
           }
         }
 
@@ -119,9 +121,14 @@ export default function MyProfile() {
       const storedEmail = await AsyncStorage.getItem("userEmail");
       const storedPhoto = await AsyncStorage.getItem("userProfilePhoto");
       
+      console.log('📦 AsyncStorage photo fallback:', storedPhoto);
+      
       if (!name && storedName) setName(storedName);
       if (!email && storedEmail) setEmail(storedEmail);
-      if (!profilePhoto && storedPhoto) setProfilePhoto(storedPhoto);
+      if (!profilePhoto && storedPhoto) {
+        setProfilePhoto(storedPhoto);
+        console.log('✅ Using AsyncStorage photo:', storedPhoto);
+      }
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
@@ -192,7 +199,11 @@ export default function MyProfile() {
       <View style={styles.header}>
         <View style={styles.avatar}>
           {profilePhoto ? (
-            <Image source={{ uri: profilePhoto }} style={styles.avatarImage} />
+            <Image 
+              source={{ uri: profilePhoto }} 
+              style={styles.avatarImage}
+              onError={(e) => console.log('Profile photo load error:', e.nativeEvent.error)}
+            />
           ) : (
             <Ionicons name="person" size={50} color={colors.textMuted} />
           )}

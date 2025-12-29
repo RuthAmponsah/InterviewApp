@@ -16,6 +16,8 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
+import { decode } from "base64-arraybuffer";
 import PrimaryButton from "../components/PrimaryButton";
 import BackButton from "../components/BackButton";
 import TextInputField from "../components/TextInputField";
@@ -93,21 +95,26 @@ export default function EditProfile({ navigation }: any) {
       const userId = await AsyncStorage.getItem("userId");
       if (!userId) return;
 
-      // Convert image to blob
-      const response = await fetch(uri);
-      const blob = await response.blob();
+      // Read file as base64 - this works properly in React Native
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: 'base64',
+      });
       
-      // Create unique filename
-      const fileExt = uri.split('.').pop();
+      // Determine content type from file extension
+      const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const contentType = fileExt === 'png' ? 'image/png' : 'image/jpeg';
       const fileName = `${userId}-${Date.now()}.${fileExt}`;
       const filePath = `profile-photos/${fileName}`;
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
+      console.log('📤 Uploading photo:', { filePath, contentType, base64Length: base64.length });
+
+      // Convert base64 to ArrayBuffer and upload
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, blob, {
-          contentType: 'image/jpeg',
+        .upload(filePath, decode(base64), {
+          contentType,
           upsert: true,
+          cacheControl: '3600',
         });
 
       if (uploadError) {
@@ -117,22 +124,35 @@ export default function EditProfile({ navigation }: any) {
         return;
       }
 
+      console.log('✅ Upload successful:', uploadData);
+
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
       if (urlData?.publicUrl) {
+        console.log('📸 Generated public URL:', urlData.publicUrl);
+        
         // Update database with photo URL
-        await supabase
+        const { error: updateError } = await supabase
           .from('users')
           .update({ profile_photo: urlData.publicUrl })
           .eq('id', userId);
 
+        if (updateError) {
+          console.error('Error updating profile_photo in DB:', updateError);
+        } else {
+          console.log('✅ Profile photo URL saved to database');
+        }
+
         // Store in AsyncStorage
         await AsyncStorage.setItem("userProfilePhoto", urlData.publicUrl);
         
-        console.log('✅ Photo uploaded successfully!');
+        console.log('✅ Photo uploaded successfully:', urlData.publicUrl);
+        
+        // Update local state
+        setProfilePhoto(urlData.publicUrl);
       }
     } catch (error) {
       console.error('Photo upload error:', error);

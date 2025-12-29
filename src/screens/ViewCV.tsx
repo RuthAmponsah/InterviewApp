@@ -21,6 +21,7 @@ import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
 import { analyzeCVWithAI, improveCV } from "../services/aiService";
 import * as Clipboard from 'expo-clipboard';
+import * as DocumentPicker from 'expo-document-picker';
 
 // Conditional import for native module (only works in development builds, not Expo Go)
 let ReactNativeBlobUtil: any = null;
@@ -156,60 +157,34 @@ const ViewCV: React.FC = () => {
   };
 
   const handleAnalyzeCV = async () => {
-    if (!cvUri) {
-      Alert.alert("Error", "No CV found. Please upload a CV first.");
+    // Don't require cvUri anymore - just need text
+    if (!cvText || cvText.trim().length < 50) {
+      Alert.alert(
+        "CV Content Required",
+        "Please paste your CV content in the text box. We need at least 50 characters to analyze.",
+        [{ text: "OK" }]
+      );
       return;
     }
 
     if (!jobRole) {
       Alert.alert(
         "Job Role Required",
-        "Please set your target job role in Job Preferences first so Aya can provide relevant suggestions.",
+        "Please set your target job role in Settings → Job Preferences first so Aya can provide relevant suggestions.",
         [{ text: "OK" }]
       );
       return;
     }
 
-    // Check if we have CV text
-    if (!cvText || cvText.trim().length < 50) {
-      // Try to extract if in development build
-      if (ReactNativeBlobUtil && cvUri) {
-        await extractTextFromFile(cvUri);
-        // Check again after extraction attempt
-        const currentText = await AsyncStorage.getItem('cvText');
-        if (currentText && currentText.trim().length >= 50) {
-          setCvText(currentText);
-          // Continue with analysis below
-        } else {
-          // Extraction failed, show text input
-          Alert.alert(
-            "CV Content Required",
-            "Please paste your CV content in the text box below so Aya can provide specific feedback on YOUR CV.",
-            [{ text: "OK" }]
-          );
-          setShowTextInput(true);
-          return;
-        }
-      } else {
-        // In Expo Go, just show text input
-        Alert.alert(
-          "CV Content Required",
-          "Please paste your CV content in the text box below so Aya can provide specific feedback on YOUR CV.",
-          [{ text: "OK" }]
-        );
-        setShowTextInput(true);
-        return;
-      }
-    }
+    console.log('🔍 Starting CV analysis...');
+    console.log('📝 CV text length:', cvText.length);
+    console.log('💼 Job role:', jobRole);
 
     setAnalyzing(true);
 
     try {
       // Save CV text for future use
       await AsyncStorage.setItem("cvText", cvText);
-
-      console.log('🔍 Starting CV analysis for role:', jobRole);
-      console.log('📝 CV text length:', cvText.length);
 
       // Call AI service with actual CV content
       const analysis = await analyzeCVWithAI(cvText, jobRole);
@@ -220,7 +195,7 @@ const ViewCV: React.FC = () => {
       const userId = await AsyncStorage.getItem("userId");
       console.log('👤 User ID:', userId);
       
-      if (userId) {
+      if (userId && analysis.suggestions) {
         // Delete old suggestions
         await supabase
           .from('cv_suggestions')
@@ -247,29 +222,31 @@ const ViewCV: React.FC = () => {
         }
 
         if (data) {
-          console.log('✅ Suggestions saved, data length:', data.length);
-          const loadedSuggestions = data.map(item => ({
+          const mappedSuggestions = data.map((item: any) => ({
             id: item.id,
             category: item.category,
             suggestion: item.suggestion,
             completed: item.completed,
           }));
-          setSuggestions(loadedSuggestions);
+          setSuggestions(mappedSuggestions);
           setAnalyzed(true);
-          console.log('✅ State updated - analyzed:', true, 'suggestions:', loadedSuggestions.length);
+          Alert.alert("Analysis Complete! ✅", "Aya has reviewed your CV. Check the suggestions below.");
         }
+      } else if (analysis.suggestions) {
+        // Fallback if no userId
+        const mappedSuggestions = analysis.suggestions.map((s: any, idx: number) => ({
+          id: idx,
+          category: s.category,
+          suggestion: s.suggestion,
+          completed: false,
+        }));
+        setSuggestions(mappedSuggestions);
+        setAnalyzed(true);
+        Alert.alert("Analysis Complete! ✅", "Aya has reviewed your CV. Check the suggestions below.");
       }
-
-      Alert.alert(
-        "Analysis Complete! 🎯",
-        "Aya has reviewed your CV and provided suggestions to improve it for your target role."
-      );
     } catch (error) {
-      console.error('Error analyzing CV:', error);
-      Alert.alert(
-        "Analysis Error",
-        "Aya couldn't analyze your CV. Please try again or contact support if the issue persists."
-      );
+      console.error('❌ CV Analysis error:', error);
+      Alert.alert("Analysis Failed", "Something went wrong. Please try again.");
     } finally {
       setAnalyzing(false);
     }
@@ -372,6 +349,66 @@ const ViewCV: React.FC = () => {
       Alert.alert("Error", "Couldn't copy to clipboard. Please try again.");
     }
   };
+
+  const handleUploadCV = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+        
+        // Save file info
+        await AsyncStorage.setItem("cvUri", file.uri);
+        await AsyncStorage.setItem("cvFileName", file.name);
+        await AsyncStorage.setItem("cvMimeType", file.mimeType || 'application/pdf');
+        
+        setCvUri(file.uri);
+        setCvFileName(file.name);
+        
+        // Try to extract text if possible
+        if (file.mimeType === 'text/plain' || file.name.endsWith('.txt')) {
+          // For text files, read directly
+          try {
+            const response = await fetch(file.uri);
+            const text = await response.text();
+            if (text && text.length > 10) {
+              setCvText(text);
+              await AsyncStorage.setItem('cvText', text);
+              Alert.alert("Success! ✅", "CV uploaded and text extracted. Click 'Analyze with Aya' to get feedback.");
+              return;
+            }
+          } catch (e) {
+            console.log('Could not read text file:', e);
+          }
+        }
+        
+        // For PDF/DOC files, try to extract text
+        if (ReactNativeBlobUtil) {
+          await extractTextFromFile(file.uri);
+          const extractedText = await AsyncStorage.getItem('cvText');
+          if (extractedText && extractedText.length > 50) {
+            Alert.alert("Success! ✅", "CV uploaded and text extracted. Click 'Analyze with Aya' to get feedback.");
+            return;
+          }
+        }
+        
+        // If text extraction didn't work, prompt user to paste
+        setShowTextInput(true);
+        Alert.alert(
+          "CV Uploaded 📄",
+          "Your file has been uploaded, but we couldn't extract the text automatically. Please paste your CV content in the text box below.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error('Error uploading CV:', error);
+      Alert.alert("Error", "Failed to upload CV. Please try again.");
+    }
+  };
+
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
@@ -407,11 +444,23 @@ const ViewCV: React.FC = () => {
           </View>
         </View>
 
-        {/* Coming Soon Notice */}
+        {/* Upload CV Button - Coming Soon */}
+        <TouchableOpacity
+          style={[styles.uploadButton, { opacity: 0.5 }]}
+          onPress={() => Alert.alert("Coming Soon! 🚀", "Auto-extraction from PDF and DOCX files is coming soon. For now, please paste your CV text in the box below.")}
+        >
+          <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
+          <Text style={styles.uploadButtonText}>Upload CV File</Text>
+          <View style={styles.comingSoonPill}>
+            <Text style={styles.comingSoonPillText}>Soon</Text>
+          </View>
+        </TouchableOpacity>
+        
+        {/* Coming Soon Banner */}
         <View style={styles.comingSoonBanner}>
-          <Ionicons name="time-outline" size={20} color={colors.primaryBlue} />
+          <Ionicons name="time-outline" size={18} color={isDark ? "#93C5FD" : "#1E40AF"} />
           <Text style={styles.comingSoonText}>
-            🚀 Automatic CV Upload Coming Soon! For now, paste your CV text below.
+            Auto-extraction from PDF/DOCX coming soon! For now, please paste your CV text below.
           </Text>
         </View>
 
@@ -419,7 +468,7 @@ const ViewCV: React.FC = () => {
         <View style={styles.textInputContainer}>
           <View style={styles.inputHeader}>
             <Text style={styles.inputLabel}>
-              📝 Paste your CV text here for specific feedback:
+              📝 Paste your CV text here:
             </Text>
             {cvText.length > 0 && (
               <TouchableOpacity
@@ -667,6 +716,41 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: isDark ? "#93C5FD" : "#1E40AF",
       flex: 1,
       lineHeight: 18,
+    },
+    uploadButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primaryBlue,
+      borderRadius: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      marginBottom: 8,
+      gap: 10,
+    },
+    uploadButtonText: {
+      ...typography.bodyMedium,
+      fontWeight: "600",
+      color: "#fff",
+    },
+    comingSoonPill: {
+      backgroundColor: "rgba(255,255,255,0.25)",
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 10,
+      marginLeft: 4,
+    },
+    comingSoonPillText: {
+      ...typography.caption,
+      fontSize: 10,
+      fontWeight: "700",
+      color: "#fff",
+    },
+    uploadHint: {
+      ...typography.caption,
+      color: isDark ? "#888" : colors.textMuted,
+      textAlign: "center",
+      marginBottom: 16,
     },
     textInputContainer: {
       marginVertical: 16,

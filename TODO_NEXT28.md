@@ -15,7 +15,7 @@ Everything below is what's left to do. Tasks are ordered by priority.
 - [x] Sign in with Apple ID
 - [x] Enroll as Individual
 - [x] Pay the $99 annual fee
-- [ ] Wait for approval (usually 24-48 hours)
+- [x] Wait for approval (usually 24-48 hours)
 
 **Why needed:**
 - Required to publish on App Store
@@ -31,7 +31,7 @@ Everything below is what's left to do. Tasks are ordered by priority.
 - [x] Sign in with Google account
 - [x] Pay the $25 one-time fee
 - [x] Complete identity verification
-- [ ] Wait for approval
+- [x] Wait for approval
 
 **Why needed:**
 - Required to publish on Google Play Store

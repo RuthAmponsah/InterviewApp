@@ -133,10 +133,14 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       
       if (userData.job_role) {
         await AsyncStorage.setItem('jobRole', userData.job_role);
+        console.log('✅ Job role loaded from database:', userData.job_role);
+      } else {
+        console.log('⚠️ No job role found in database - user needs to set in Job Preferences');
       }
       
       if (userData.profile_photo) {
         await AsyncStorage.setItem('userProfilePhoto', userData.profile_photo);
+        console.log('✅ Profile photo loaded:', userData.profile_photo);
       }
 
       // Link user with RevenueCat and sync subscription status

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Dimensions, Image } from 'react-native';
-import { Audio } from 'expo-av';
+import { createAudioPlayer } from 'expo-audio';
 
 interface AnimatedSplashProps {
   onFinish: () => void;
@@ -50,11 +50,9 @@ const AnimatedSplash: React.FC<AnimatedSplashProps> = ({ onFinish }) => {
 
   const playSound = async () => {
     try {
-      const { sound } = await Audio.Sound.createAsync(
-        require('../../assets/sounds/woosh.mp3'),
-        { shouldPlay: true }
-      );
-      // Sound will auto-cleanup when component unmounts
+      const player = createAudioPlayer(require('../../assets/sounds/woosh.mp3'));
+      player.play();
+      // Player will be garbage collected when component unmounts
     } catch (error) {
       console.log('Error playing sound:', error);
       // Continue without sound if file not found

@@ -1,8 +1,29 @@
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from "react-native";
 import * as Haptics from 'expo-haptics';
+import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+
+// Preload sound globally for instant playback
+let cachedPlayer: AudioPlayer | null = null;
+
+const loadSound = async () => {
+  if (!cachedPlayer) {
+    try {
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+      });
+      cachedPlayer = createAudioPlayer(require('../../assets/sounds/pop.mp3'));
+      cachedPlayer.volume = 0.15;
+    } catch (error) {
+      console.log('Failed to load sound:', error);
+    }
+  }
+};
+
+// Load sound on module init
+loadSound();
 
 interface ButtonProps {
   title: string;
@@ -10,6 +31,7 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   variant?: "primary" | "outline";
+  playSound?: boolean;
 }
 
 const PrimaryButton = ({
@@ -18,12 +40,24 @@ const PrimaryButton = ({
   disabled = false,
   loading = false,
   variant = "primary",
+  playSound = true,
 }: ButtonProps) => {
-  const { colors } = useTheme();  // ⭐ FIX
+  const { colors } = useTheme();
   const isPrimary = variant === "primary";
 
-  const handlePress = () => {
+  const handlePress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    if (playSound && cachedPlayer) {
+      try {
+        await cachedPlayer.seekTo(0);
+        cachedPlayer.play();
+      } catch (error) {
+        // Silently fail if sound doesn't play
+        console.log('Sound play error:', error);
+      }
+    }
+    
     onPress();
   };
 

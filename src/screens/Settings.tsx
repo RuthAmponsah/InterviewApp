@@ -15,6 +15,7 @@ import MyProfile from "./MyProfile";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../config/supabase";
 import { Ionicons } from "@expo/vector-icons";
+import AppTutorial from "../components/AppTutorial";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -39,6 +40,7 @@ const Settings = () => {
   const isDark = theme === "dark";
   const styles = makeStyles(colors, isDark);
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
+  const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
     fetchSubscriptionStatus();
@@ -106,6 +108,21 @@ const Settings = () => {
 
       <Text style={styles.title}>Settings</Text>
       <Text style={styles.subtitle}>Manage your preferences</Text>
+
+      {/* How to use app tutorial button */}
+      <TouchableOpacity
+        style={styles.tutorialButton}
+        onPress={() => setShowTutorial(true)}
+      >
+        <View style={styles.tutorialContent}>
+          <Text style={styles.tutorialEmoji}>📖</Text>
+          <View style={styles.tutorialTextContainer}>
+            <Text style={styles.tutorialTitle}>How to use the app</Text>
+            <Text style={styles.tutorialSubtitle}>Learn all features with screenshots</Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={colors.primaryBlue} />
+      </TouchableOpacity>
 
       <View style={styles.card}>
         {SECTIONS.map(({ emoji, label, route, badge, comingSoon }) => (
@@ -181,6 +198,9 @@ const Settings = () => {
           Terms & Conditions · Privacy Policy
         </Text>
       </View>
+
+      {/* App Tutorial Modal */}
+      <AppTutorial visible={showTutorial} onClose={() => setShowTutorial(false)} />
     </ScrollView>
   );
 };
@@ -198,6 +218,39 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     title: { ...typography.headingSmall, color: isDark ? '#fff' : colors.textDark },
     subtitle: { ...typography.bodyMedium, color: isDark ? '#aaa' : colors.textMuted, marginBottom: 16 },
+    tutorialButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: isDark ? '#1a2a4a' : '#E8F0FE',
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: isDark ? '#2a4a7a' : colors.primaryBlue + '30',
+    },
+    tutorialContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    tutorialEmoji: {
+      fontSize: 28,
+      marginRight: 12,
+    },
+    tutorialTextContainer: {
+      flex: 1,
+    },
+    tutorialTitle: {
+      ...typography.bodyMedium,
+      fontWeight: '600',
+      color: isDark ? '#fff' : colors.textDark,
+    },
+    tutorialSubtitle: {
+      ...typography.caption,
+      color: isDark ? '#b5b5b5' : colors.textMuted,
+      marginTop: 2,
+    },
     card: {
       backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
       borderRadius: 20,

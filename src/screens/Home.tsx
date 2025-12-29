@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
@@ -141,6 +142,18 @@ const Home: React.FC = () => {
 
     loadStreak();
   }, []);
+
+  // Pop sound for buttons
+  const playPopSound = async () => {
+    try {
+      await setAudioModeAsync({ playsInSilentMode: true });
+      const player = createAudioPlayer(require('../../assets/sounds/pop.mp3'));
+      player.volume = 0.15;
+      player.play();
+    } catch (error) {
+      // Silently fail
+    }
+  };
 
   const useStreakFreeze = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -280,6 +293,7 @@ const Home: React.FC = () => {
           activeOpacity={0.9}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            playPopSound();
             navigation.navigate('InterviewType');
           }}
         >

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Dimensions, Image } from 'react-native';
-import { createAudioPlayer } from 'expo-audio';
+import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
 
 interface AnimatedSplashProps {
   onFinish: () => void;
@@ -10,6 +10,7 @@ const AnimatedSplash: React.FC<AnimatedSplashProps> = ({ onFinish }) => {
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const iconOpacity = useRef(new Animated.Value(0)).current;
+  const playerRef = useRef<AudioPlayer | null>(null);
 
   useEffect(() => {
     // Play woosh sound
@@ -50,11 +51,18 @@ const AnimatedSplash: React.FC<AnimatedSplashProps> = ({ onFinish }) => {
 
   const playSound = async () => {
     try {
+      // Configure audio mode first (required for iOS)
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+      });
+      
       const player = createAudioPlayer(require('../../assets/sounds/woosh.mp3'));
+      player.volume = 0.5;
+      playerRef.current = player;
       player.play();
-      // Player will be garbage collected when component unmounts
+      console.log('🔊 Woosh sound playing');
     } catch (error) {
-      console.log('Error playing sound:', error);
+      console.log('Error playing woosh sound:', error);
       // Continue without sound if file not found
     }
   };

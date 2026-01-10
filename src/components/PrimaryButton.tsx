@@ -7,6 +7,7 @@ import { typography } from "../theme/colors";
 
 // Preload sound globally for instant playback
 let cachedPlayer: AudioPlayer | null = null;
+let audioReady = false;
 
 const loadSound = async () => {
   if (!cachedPlayer) {
@@ -15,9 +16,11 @@ const loadSound = async () => {
         playsInSilentMode: true,
       });
       cachedPlayer = createAudioPlayer(require('../../assets/sounds/pop.mp3'));
-      cachedPlayer.volume = 0.15;
+      cachedPlayer.volume = 0.1;
+      audioReady = true;
+      console.log('🔊 Pop sound loaded successfully');
     } catch (error) {
-      console.log('Failed to load sound:', error);
+      console.log('Failed to load pop sound:', error);
     }
   }
 };
@@ -48,14 +51,18 @@ const PrimaryButton = ({
   const handlePress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
-    if (playSound && cachedPlayer) {
+    if (playSound && cachedPlayer && audioReady) {
       try {
         await cachedPlayer.seekTo(0);
         cachedPlayer.play();
+        console.log('🔊 Pop sound played');
       } catch (error) {
         // Silently fail if sound doesn't play
         console.log('Sound play error:', error);
       }
+    } else if (playSound && !audioReady) {
+      // Try to load sound if not ready
+      await loadSound();
     }
     
     onPress();

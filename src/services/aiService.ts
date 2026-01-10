@@ -1,5 +1,5 @@
 import Groq from "groq-sdk";
-import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
+import { Audio } from 'expo-av';
 import Constants from 'expo-constants';
 
 // Initialize Groq client
@@ -175,8 +175,8 @@ export const clearConversationHistory = () => {
   conversationHistory = [];
 };
 
-// Text-to-Speech using PlayAI
-let currentPlayer: AudioPlayer | null = null;
+// Text-to-Speech using Google TTS via expo-av
+let currentSound: Audio.Sound | null = null;
 let isSpeaking = false;
 
 export const speakText = async (text: string): Promise<boolean> => {
@@ -184,15 +184,21 @@ export const speakText = async (text: string): Promise<boolean> => {
     console.log('🔊 Starting TTS for text:', text.substring(0, 50) + '...');
     console.log('Full text length:', text.length);
     
-    // Stop any currently playing audio
+    // Stop any currently playing audio and clean up
     await stopSpeaking();
+    
+    // Small delay to ensure previous audio is fully released
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     isSpeaking = true;
 
-    // Configure audio mode for playback
-    console.log('Configuring audio mode...');
-    await setAudioModeAsync({
-      allowsRecording: false,
-      playsInSilentMode: true,
+    // Configure audio mode for playback (important after recording!)
+    console.log('Configuring audio mode for playback...');
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
     });
 
     // Split text into chunks for reliable playback (Google TTS has ~200 char limit per request)
@@ -248,28 +254,91 @@ export const speakText = async (text: string): Promise<boolean> => {
       const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(chunk)}`;
       
       try {
-        const player = createAudioPlayer({ uri: ttsUrl }, { rate: 1.5 });
-        currentPlayer = player;
-        player.play();
+        // Ensure clean state before loading new sound
+        if (currentSound) {
+          try {
+            await currentSound.unloadAsync();
+          } catch (e) {
+            // Ignore
+          }
+          currentSound = null;
+        }
         
-        // Wait for this chunk to finish before playing next
+        // Re-configure audio mode before each chunk (ensures it works after recording)
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+        });
+        
+        // Create and load the sound with expo-av
+        console.log(`Loading audio for chunk ${i + 1}...`);
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: ttsUrl },
+          { shouldPlay: false }
+        );
+        currentSound = sound;
+        console.log(`Audio loaded for chunk ${i + 1}`);
+        
+        // Set rate with pitch correction AFTER loading (1.3x speed, same pitch)
+        await sound.setRateAsync(1.3, true, Audio.PitchCorrectionQuality.High);
+        
+        // Play the sound
+        console.log(`Playing audio for chunk ${i + 1}...`);
+        await sound.playAsync();
+        
+        // Wait for this chunk to finish before playing next using polling
         await new Promise<void>((resolve) => {
-          const checkStatus = setInterval(() => {
-            // Check if player finished or if we're no longer speaking
-            if (!isSpeaking || !player.playing) {
+          let resolved = false;
+          
+          // Poll playback status every 200ms
+          const checkStatus = setInterval(async () => {
+            if (resolved) return;
+            
+            // Check if user stopped
+            if (!isSpeaking) {
+              resolved = true;
               clearInterval(checkStatus);
-              player.remove();
-              currentPlayer = null;
+              resolve();
+              return;
+            }
+            
+            try {
+              const status = await sound.getStatusAsync();
+              if (status.isLoaded) {
+                // Check if finished playing
+                if (!status.isPlaying && status.positionMillis > 0) {
+                  console.log(`✅ Chunk ${i + 1} finished (pos: ${status.positionMillis}ms, duration: ${status.durationMillis}ms)`);
+                  resolved = true;
+                  clearInterval(checkStatus);
+                  resolve();
+                }
+              }
+            } catch (e) {
+              // Sound may have been unloaded
+              if (!resolved) {
+                resolved = true;
+                clearInterval(checkStatus);
+                resolve();
+              }
+            }
+          }, 200);
+          
+          // Safety timeout (30 seconds max per chunk)
+          setTimeout(() => {
+            if (!resolved) {
+              console.log(`⚠️ Chunk ${i + 1} safety timeout reached`);
+              resolved = true;
+              clearInterval(checkStatus);
               resolve();
             }
-          }, 100);
-          
-          // Timeout fallback in case callback doesn't fire (estimate ~100ms per char)
-          setTimeout(() => {
-            clearInterval(checkStatus);
-            resolve();
-          }, Math.max(chunk.length * 80, 3000));
+          }, 30000);
         });
+        
+        // Clean up this chunk's sound
+        await sound.unloadAsync();
+        currentSound = null;
         
       } catch (chunkError) {
         console.error(`Error playing chunk ${i + 1}:`, chunkError);
@@ -288,14 +357,20 @@ export const speakText = async (text: string): Promise<boolean> => {
 };
 
 export const stopSpeaking = async () => {
+  console.log('🛑 Stopping speech...');
   isSpeaking = false;
-  if (currentPlayer) {
+  if (currentSound) {
     try {
-      currentPlayer.pause();
-      currentPlayer.remove();
-      currentPlayer = null;
+      const status = await currentSound.getStatusAsync();
+      if (status.isLoaded) {
+        await currentSound.stopAsync();
+        await currentSound.unloadAsync();
+      }
+      currentSound = null;
+      console.log('🛑 Sound stopped and unloaded');
     } catch (error) {
-      // Ignore - may already be stopped
+      console.log('Stop speaking cleanup error (safe to ignore):', error);
+      currentSound = null;
     }
   }
 };

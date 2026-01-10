@@ -148,10 +148,11 @@ const Home: React.FC = () => {
     try {
       await setAudioModeAsync({ playsInSilentMode: true });
       const player = createAudioPlayer(require('../../assets/sounds/pop.mp3'));
-      player.volume = 0.15;
+      player.volume = 0.1;
       player.play();
+      console.log('🔊 Home pop sound played');
     } catch (error) {
-      // Silently fail
+      console.log('Home sound error:', error);
     }
   };
 

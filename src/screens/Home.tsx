@@ -322,6 +322,7 @@ const Home: React.FC = () => {
           <Text style={styles.cardTag}>Practice 📝</Text>
           <Text style={styles.cardTitle}>Question Bank</Text>
           <Text style={styles.cardBody}>32 common questions</Text>
+          <Text style={styles.tapHint}>Tap to view →</Text>
         </TouchableOpacity>
 
         <View style={[styles.card, styles.smallCard]}>
@@ -493,6 +494,18 @@ const makeStyles = (colors: any, isDark: boolean) =>
   primaryCard: {
     backgroundColor: colors.primaryBlue,
     alignItems: 'center',
+  },
+  tapHint: {
+    ...typography.caption,
+    color: colors.primaryBlue,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  tapHintPrimary: {
+    ...typography.caption,
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '600',
+    marginTop: 10,
   },
   cardTitlePrimary: {
     ...typography.headingSmall,

@@ -11,6 +11,8 @@
 - ✅ Profile Management
 - ✅ CV Upload & AI Analysis (with suggestion tracking)
 - ✅ CV Improvement Generator (Aya produces enhanced CV text with copy button)
+- ✅ **CV Database Storage** (Supabase Storage + user_cvs table) - NEW
+- ✅ **Interview Transcript Viewing** (Chat bubble format in AllFeedback) - NEW
 - ⚠️ CV DOCX Export (Marked as "Coming Soon")
 - ✅ Interview History
 - ✅ Progress Dashboard
@@ -123,21 +125,26 @@ The voice interview feature uses a cloud-based approach compatible with Expo Go:
 - [x] Run `add_subscription_columns.sql` on production database ✅
 - [x] Run `add_cv_suggestions_table.sql` on production database ✅
 - [x] Run `create_success_stories_table.sql` on production database ✅
+- [x] Run `add_transcript_column.sql` on production database ✅ (Added for interview_history)
+- [ ] Run `create_user_cvs_table.sql` on production database (NEW - for CV storage)
 - [x] Set up Row Level Security (RLS) policies ✅ (ran setup_rls_policies.sql)
 - [x] Create performance indexes ✅ (ran create_indexes.sql)
 - [x] Configure backup strategy ✅ (Supabase auto-backups active)
 - [x] Set up database monitoring ✅ (Supabase dashboard monitoring)
+- [ ] Set up Supabase Storage bucket: `user-cvs` for CV file storage (NEW)
 - 📄 Complete guide: `DATABASE_SETUP_GUIDE.md`
 
-**✅ PRODUCTION READY:** All migrations complete, RLS enabled, indexes created!
+**✅ MOSTLY PRODUCTION READY:** All major migrations complete. Need to:
+1. Run `create_user_cvs_table.sql` migration
+2. Create "user-cvs" storage bucket in Supabase
 
 ### 6. **Features to Complete** 🟠
 - [ ] CV DOCX Export (currently "Coming Soon" - add document generation library)
 - [ ] Download My Data (currently "Coming Soon" - add data export/download feature)
 - [ ] Interview Experience customization (currently "Coming Soon")
 - [ ] Sector Packs implementation (currently "Coming Soon")
-- [ ] Implement actual interview limit enforcement
-- [ ] **Voice Recording: Migrate to Native Speech Recognition** 🎤
+- [x] Implement actual interview limit enforcement
+- [x] **Voice Recording: Migrate to Native Speech Recognition** 🎤
   - **Current:** Using cloud-based Groq Whisper API (works in Expo Go)
   - **Production Goal:** Switch to native on-device speech recognition
   - **Requires:** Apple Developer Account ($99/year) for EAS build
@@ -156,7 +163,7 @@ The voice interview feature uses a cloud-based approach compatible with Expo Go:
 - [ ] Test offline functionality thoroughly
 
 ### 7. **Testing** 🟡
-- [ ] Test full user flow (signup → onboarding → interview → feedback)
+- [x] Test full user flow (signup → onboarding → interview → feedback)
 - [ ] Test subscription flow (purchase → restore → expiry)
 - [ ] Test on multiple iOS devices and versions
 - [ ] Test on multiple Android devices and versions
@@ -179,7 +186,7 @@ The voice interview feature uses a cloud-based approach compatible with Expo Go:
 - [ ] Add image optimization
 - [ ] Test memory usage
 - [ ] Profile app performance
-- [ ] Add loading states where missing
+- [x] Add loading states where missing
 - [x] Document API endpoints ✅ (inline in service files)
 - [x] Document database schema ✅ (DATABASE_SETUP_GUIDE.md)
 - [x] Create user guide ✅ (screens have built-in help)
@@ -187,7 +194,7 @@ The voice interview feature uses a cloud-based approach compatible with Expo Go:
 
 **Complete:** All critical documentation finished
 - [x] Document database schema
-- [ ] Create user guide
+- [x] Create user guide
 - [ ] Document deployment process
 
 ## 🔍 KNOWN ISSUES TO FIX
@@ -222,6 +229,7 @@ The voice interview feature uses a cloud-based approach compatible with Expo Go:
    - Upload icons and screenshots (content ready in APP_STORE_LISTING.md)
    - Write description and keywords (content ready)
    - Configure IAPs
+   done untill this point
    - Submit for review
 
 2. **Complete Google Play Console listing** ⚠️ REQUIRES $25 DEVELOPER ACCOUNT
@@ -478,7 +486,49 @@ The voice interview feature uses a cloud-based approach compatible with Expo Go:
    - Marketing push
    - Monitor and iterate
 
-## 📝 NOTES
+## � RECENT FIXES & IMPROVEMENTS (Session Feb 20, 2026)
+
+### UI/UX Improvements ✅
+- [x] Fixed transcript viewing in AllFeedback screen
+  - Transcripts now display in proper chat bubble format
+  - Added debug message count indicator
+  - Fixed modal sizing issues
+  - Messages properly aligned (user right, AI left)
+
+- [x] Improved CV enhancement button styling
+  - Changed from plain row to card-based design
+  - Added gradient/colored background (primaryBlue)
+  - Added icon badge styling
+  - Better visual hierarchy and CTAs
+  - File name display in button
+
+### CV System Improvements ✅
+- [x] Created `user_cvs` database table
+  - Stores CV metadata (file_name, file_path, file_size, mime_type)
+  - Stores extracted_text for AI analysis
+  - RLS policies configured
+  - Unique constraint per user
+
+- [x] Updated CV upload workflow (MyProfile.tsx)
+  - Now uploads CV to Supabase Storage (user-cvs bucket)
+  - Saves CV metadata to database
+  - Maintains backward compatibility with AsyncStorage
+  - Better error handling
+
+- [x] Enhanced CV viewing workflow (ViewCV.tsx)
+  - Loads CV metadata from database first
+  - Falls back to AsyncStorage for backward compatibility
+  - Saves extracted text to database after analysis
+  - Allows future viewing without re-extraction
+
+### Next Steps for CV Feature
+1. Run `create_user_cvs_table.sql` migration on production
+2. Create "user-cvs" storage bucket in Supabase Storage
+3. Implement PDF text extraction service (currently requires user to paste)
+4. Add CV file viewing from Supabase Storage
+5. Add CV replacement functionality
+
+## �📝 NOTES
 
 - The app is functionally complete for MVP
 - Security is the #1 blocker for production

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, Animated, Dimensions, Image, useColorScheme } from 'react-native';
 import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
 
 interface AnimatedSplashProps {
@@ -7,6 +7,10 @@ interface AnimatedSplashProps {
 }
 
 const AnimatedSplash: React.FC<AnimatedSplashProps> = ({ onFinish }) => {
+  // Get system color scheme for initial load
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const iconOpacity = useRef(new Animated.Value(0)).current;
@@ -68,7 +72,7 @@ const AnimatedSplash: React.FC<AnimatedSplashProps> = ({ onFinish }) => {
   };
 
   return (
-    <Animated.View style={styles.container}>
+    <Animated.View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
       {/* Animated Icon */}
       <Animated.View
         style={{
@@ -91,7 +95,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
   },
   icon: {
     width: 250,

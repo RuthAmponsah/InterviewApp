@@ -215,8 +215,7 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
 
       // 5. Clear all previous user data and store new user info in AsyncStorage
       await AsyncStorage.clear();
-      // Mark onboarding as seen so it won't show again after login
-      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+      // NOTE: Do NOT set hasSeenOnboarding here - let new users see the welcome walkthrough on Home screen
       
       // Store the session so Supabase can authenticate database operations
       if (authData.session) {

@@ -16,6 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../config/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import AppTutorial from "../components/AppTutorial";
+import PaywallModal from "../components/PaywallModal";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -41,6 +42,7 @@ const Settings = () => {
   const styles = makeStyles(colors, isDark);
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     fetchSubscriptionStatus();
@@ -129,7 +131,14 @@ const Settings = () => {
           <TouchableOpacity
             key={label}
             style={[styles.row, comingSoon && { opacity: 0.6 }]}
-            onPress={() => !comingSoon && navigation.navigate(route)}
+            onPress={() => {
+              if (comingSoon) return;
+              if (route === 'Subscription') {
+                setShowPaywall(true);
+              } else {
+                navigation.navigate(route);
+              }
+            }}
             disabled={comingSoon}
           >
             <View style={{ flex: 1 }}>
@@ -201,6 +210,13 @@ const Settings = () => {
 
       {/* App Tutorial Modal */}
       <AppTutorial visible={showTutorial} onClose={() => setShowTutorial(false)} />
+
+      {/* Paywall Modal */}
+      <PaywallModal 
+        visible={showPaywall} 
+        onClose={() => setShowPaywall(false)}
+        onSuccess={() => fetchSubscriptionStatus()}
+      />
     </ScrollView>
   );
 };

@@ -138,20 +138,37 @@ const transformAdzunaJob = (job: AdzunaJob): Job => {
 export const searchJobs = async (
   category: string = 'All Jobs',
   page: number = 1,
-  resultsPerPage: number = 20
+  resultsPerPage: number = 20,
+  remoteFilter: string = 'All',
+  location: string = ''
 ): Promise<{ jobs: Job[]; totalResults: number }> => {
   try {
+    // Build search keywords - include category name for better results
+    let keywords = '';
+    
+    // Add category as keyword search (e.g., "Data Analyst", "Software Developer")
+    if (category !== 'All Jobs' && category !== 'Saved Jobs') {
+      keywords = category;
+    }
+    
+    // Add remote filter keywords
+    if (remoteFilter === 'Remote') {
+      keywords = keywords ? `${keywords} remote` : 'remote';
+    } else if (remoteFilter === 'Hybrid') {
+      keywords = keywords ? `${keywords} hybrid` : 'hybrid';
+    }
+
     // Build query parameters
     const params = new URLSearchParams({
       app_id: ADZUNA_APP_ID,
       app_key: ADZUNA_APP_KEY,
       results_per_page: resultsPerPage.toString(),
-      what: '', // Keywords
-      where: 'uk', // Location
+      what: keywords,
+      where: location.trim() || 'uk', // Use provided location or default to UK
     });
 
-    // Add category filter if not "All Jobs"
-    if (category !== 'All Jobs' && CATEGORY_MAP[category]) {
+    // Also add category tag filter for more precise results
+    if (category !== 'All Jobs' && category !== 'Saved Jobs' && CATEGORY_MAP[category]) {
       params.append('category', CATEGORY_MAP[category]);
     }
 

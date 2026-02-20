@@ -113,12 +113,24 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
         return;
       }
 
-      // Clear previous user data but preserve onboarding status
+      // Clear previous user data
       await AsyncStorage.clear();
       
-      // Mark onboarding as complete for returning users (they've signed up before)
-      // Uses 'hasSeenOnboarding' to match OnboardingWalkthrough.tsx
-      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+      // Store userId early so onboarding check can access it
+      await AsyncStorage.setItem('userId', authData.user.id);
+      
+      // Check if user has done interviews before - if so, skip onboarding
+      const { data: interviewHistory } = await supabase
+        .from('interview_history')
+        .select('id')
+        .eq('user_id', authData.user.id)
+        .limit(1);
+      
+      if (interviewHistory && interviewHistory.length > 0) {
+        // Returning user with interview history - skip onboarding (per-user flag)
+        await AsyncStorage.setItem(`hasSeenOnboarding_${authData.user.id}`, 'true');
+      }
+      // Otherwise, let them see the walkthrough (new account or never did interviews)
       
       // Store the session explicitly in AsyncStorage AFTER clearing old data
       if (authData.session) {
@@ -127,7 +139,6 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       }
       
       await AsyncStorage.setItem('isLoggedIn', 'true');
-      await AsyncStorage.setItem('userId', userData.id);
       await AsyncStorage.setItem('userEmail', userData.email);
       await AsyncStorage.setItem('userName', userData.name);
       

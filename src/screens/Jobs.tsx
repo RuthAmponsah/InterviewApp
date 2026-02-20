@@ -10,6 +10,8 @@ import {
   RefreshControl,
   ActivityIndicator,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -68,18 +70,35 @@ const Jobs: React.FC = () => {
     fetchJobs();
   }, []);
 
-  // Fetch new jobs when category changes
+  // Fetch new jobs when category or remote filter changes
   useEffect(() => {
     if (selectedCategory !== 'Saved Jobs') {
       fetchJobs();
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, remoteFilter]);
+
+  // Debounce location filter to avoid too many API calls
+  useEffect(() => {
+    if (selectedCategory === 'Saved Jobs') return;
+    
+    const timeoutId = setTimeout(() => {
+      fetchJobs();
+    }, 500); // Wait 500ms after user stops typing
+    
+    return () => clearTimeout(timeoutId);
+  }, [locationFilter]);
 
   const fetchJobs = async () => {
     try {
       setLoading(true);
       setApiError(false);
-      const { jobs: fetchedJobs, totalResults: total } = await searchJobs(selectedCategory);
+      const { jobs: fetchedJobs, totalResults: total } = await searchJobs(
+        selectedCategory,
+        1,
+        20,
+        remoteFilter,
+        locationFilter
+      );
       setJobs(fetchedJobs);
       setTotalResults(total);
       setLoading(false);
@@ -116,22 +135,15 @@ const Jobs: React.FC = () => {
     setRefreshing(false);
   };
 
-  // Filter jobs based on category, remote type, and location
+  // Filter jobs based on category and remote type
   let filteredJobs =
     selectedCategory === 'Saved Jobs'
       ? jobs.filter((j) => savedJobs.includes(j.id))
       : jobs;
 
-  // Apply remote filter
+  // Apply remote filter for additional client-side filtering
   if (remoteFilter !== 'All') {
     filteredJobs = filteredJobs.filter(job => job.remote === remoteFilter);
-  }
-
-  // Apply location filter
-  if (locationFilter.trim()) {
-    filteredJobs = filteredJobs.filter(job => 
-      job.location.toLowerCase().includes(locationFilter.toLowerCase())
-    );
   }
 
   const openJob = (job: Job) => {
@@ -173,7 +185,11 @@ const Jobs: React.FC = () => {
   };
 
   return (
-    <View style={styles.root}>
+    <KeyboardAvoidingView 
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
       {/* Logo */}
       <Text style={styles.logoText}>MY INTERVIEW</Text>
 
@@ -236,14 +252,36 @@ const Jobs: React.FC = () => {
         )}
       </View>
 
-      {/* Filter Buttons */}
+      {/* Location Search - Prominent Position */}
+      <View style={styles.locationSearchContainer}>
+        <Ionicons 
+          name="location-outline" 
+          size={20} 
+          color={locationFilter ? colors.primaryBlue : (isDark ? '#888' : colors.textMuted)} 
+        />
+        <TextInput
+          style={styles.locationSearchInput}
+          placeholder="Search by city (e.g., London, Manchester)"
+          placeholderTextColor={isDark ? '#666' : colors.textMuted}
+          value={locationFilter}
+          onChangeText={setLocationFilter}
+        />
+        {locationFilter ? (
+          <TouchableOpacity onPress={() => setLocationFilter('')}>
+            <Ionicons name="close-circle" size={20} color={colors.primaryBlue} />
+          </TouchableOpacity>
+        ) : (
+          <Ionicons name="search" size={18} color={isDark ? '#666' : colors.textMuted} />
+        )}
+      </View>
+
+      {/* Remote Type Filter Buttons */}
       <View style={styles.filtersContainer}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filtersScroll}
         >
-          {/* Remote Type Filters */}
           {['All', 'Remote', 'Hybrid', 'On-site'].map((type) => (
             <TouchableOpacity
               key={type}
@@ -263,30 +301,6 @@ const Jobs: React.FC = () => {
               </Text>
             </TouchableOpacity>
           ))}
-          
-          {/* Location Filter */}
-          <View style={styles.locationFilterContainer}>
-            <Ionicons 
-              name="location-outline" 
-              size={16} 
-              color={locationFilter ? colors.primaryBlue : (isDark ? '#666' : colors.textMuted)} 
-            />
-            <TextInput
-              style={[
-                styles.locationFilterInput,
-                locationFilter && styles.locationFilterActive,
-              ]}
-              placeholder="Location"
-              placeholderTextColor={isDark ? '#666' : colors.textMuted}
-              value={locationFilter}
-              onChangeText={setLocationFilter}
-            />
-            {locationFilter ? (
-              <TouchableOpacity onPress={() => setLocationFilter('')}>
-                <Ionicons name="close-circle" size={16} color={colors.primaryBlue} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
         </ScrollView>
       </View>
 
@@ -295,6 +309,38 @@ const Jobs: React.FC = () => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primaryBlue} />
           <Text style={styles.loadingText}>Finding jobs for you...</Text>
+        </View>
+      ) : filteredJobs.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons 
+            name={selectedCategory === 'Saved Jobs' ? 'bookmark-outline' : 'briefcase-outline'} 
+            size={60} 
+            color={isDark ? '#444' : '#ccc'} 
+          />
+          <Text style={styles.emptyTitle}>
+            {selectedCategory === 'Saved Jobs' 
+              ? 'No saved jobs yet'
+              : remoteFilter !== 'All'
+                ? `No ${remoteFilter.toLowerCase()} jobs found`
+                : 'No jobs found'
+            }
+          </Text>
+          <Text style={styles.emptySubtitle}>
+            {selectedCategory === 'Saved Jobs'
+              ? 'Tap the bookmark icon on any job to save it here'
+              : remoteFilter !== 'All'
+                ? `Try selecting a different work type or category`
+                : 'Try adjusting your filters or search criteria'
+            }
+          </Text>
+          {remoteFilter !== 'All' && (
+            <TouchableOpacity 
+              style={styles.emptyButton}
+              onPress={() => setRemoteFilter('All')}
+            >
+              <Text style={styles.emptyButtonText}>Show All Jobs</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <FlatList
@@ -384,7 +430,7 @@ const Jobs: React.FC = () => {
           }}
         />
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -483,13 +529,33 @@ const makeStyles = (colors: any, isDark: boolean) =>
   },
 
   /* Filters */
+  locationSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 10,
+  },
+  locationSearchInput: {
+    ...typography.bodyMedium,
+    color: isDark ? '#fff' : colors.textDark,
+    flex: 1,
+    padding: 0,
+  },
   filtersContainer: {
     paddingHorizontal: 20,
     marginBottom: 16,
+    alignItems: 'center',
   },
   filtersScroll: {
     gap: 8,
-    paddingRight: 20,
+    justifyContent: 'center',
   },
   filterChip: {
     backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
@@ -512,31 +578,6 @@ const makeStyles = (colors: any, isDark: boolean) =>
   filterChipTextActive: {
     color: '#FFFFFF',
     fontWeight: '600',
-  },
-  locationFilterContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 6,
-    minWidth: 140,
-  },
-  locationFilterInput: {
-    ...typography.bodySmall,
-    color: isDark ? '#aaa' : colors.textDark,
-    fontWeight: '500',
-    flex: 1,
-    padding: 0,
-    minWidth: 60,
-  },
-  locationFilterPlaceholder: {
-    ...typography.bodySmall,
-    color: isDark ? '#666' : colors.textMuted,
-    fontWeight: '500',
   },
   locationFilterActive: {
     color: colors.primaryBlue,
@@ -643,6 +684,38 @@ const makeStyles = (colors: any, isDark: boolean) =>
     ...typography.bodyMedium,
     color: isDark ? '#aaa' : colors.textMuted,
     marginTop: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingBottom: 100,
+  },
+  emptyTitle: {
+    ...typography.headingSmall,
+    color: isDark ? '#fff' : colors.textDark,
+    marginTop: 20,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    ...typography.bodyMedium,
+    color: isDark ? '#888' : colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  emptyButton: {
+    marginTop: 24,
+    backgroundColor: colors.primaryBlue,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  emptyButtonText: {
+    ...typography.bodyMedium,
+    color: '#fff',
+    fontWeight: '600',
   },
 });
 

@@ -200,7 +200,6 @@ const RootNavigator = () => {
 
   useEffect(() => {
     const determineInitialRoute = async () => {
-      const hasCompletedOnboarding = await AsyncStorage.getItem("hasCompletedOnboarding");
       const userId = await AsyncStorage.getItem("userId");
       
       // Restore Supabase session if user is logged in
@@ -211,20 +210,21 @@ const RootNavigator = () => {
         if (!session) {
           console.log('⚠️ No Supabase session found despite userId. User may need to re-login.');
         }
-      }
-      
-      if (hasCompletedOnboarding === "true") {
-        // User has seen onboarding before
-        if (userId) {
-          // User is logged in, go to main app
+        
+        // Check if THIS user has seen onboarding before
+        const hasSeenKey = `hasSeenOnboarding_${userId}`;
+        const hasSeenOnboarding = await AsyncStorage.getItem(hasSeenKey);
+        
+        if (hasSeenOnboarding === "true") {
+          // User has seen onboarding before, go directly to main app
           setInitialRoute("MainTabs");
         } else {
-          // User logged out, go to sign in
-          setInitialRoute("SignIn");
+          // First time this user is logging in, show welcome
+          setInitialRoute("Welcome");
         }
       } else {
-        // First time user, show welcome
-        setInitialRoute("Welcome");
+        // User not logged in, go straight to sign in
+        setInitialRoute("SignIn");
       }
     };
 

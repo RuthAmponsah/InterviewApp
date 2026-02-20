@@ -33,6 +33,7 @@ export default function MyProfile() {
     questions20: false,
   });
   const [profileCompletion, setProfileCompletion] = useState(0);
+  const [missingItems, setMissingItems] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -40,15 +41,42 @@ export default function MyProfile() {
   const calculateCompletion = async () => {
     let completedItems = 0;
     const totalItems = 4;
+    const missing: string[] = [];
 
-    if (name && name !== "User") completedItems++;
-    if (email) completedItems++;
-    if (profilePhoto) completedItems++;
+    // Read directly from AsyncStorage to ensure accurate data
+    const storedName = await AsyncStorage.getItem('userName');
+    const storedEmail = await AsyncStorage.getItem('userEmail');
+    const storedPhoto = await AsyncStorage.getItem('userProfilePhoto');
+    const storedRole = await AsyncStorage.getItem('jobRole');
+
+    console.log('📊 Profile check:', { storedName, storedEmail, storedPhoto: !!storedPhoto, storedRole });
+
+    if (storedName && storedName.trim() !== "" && storedName !== "User") {
+      completedItems++;
+    } else {
+      missing.push('Name');
+    }
+    
+    if (storedEmail) {
+      completedItems++;
+    } else {
+      missing.push('Email');
+    }
+    
+    if (storedPhoto) {
+      completedItems++;
+    } else {
+      missing.push('Profile photo');
+    }
     
     // Check if job role is set
-    const role = await AsyncStorage.getItem('jobRole');
-    if (role) completedItems++;
+    if (storedRole) {
+      completedItems++;
+    } else {
+      missing.push('Job role (in Job Preferences)');
+    }
     
+    setMissingItems(missing);
     const percentage = Math.round((completedItems / totalItems) * 100);
     setProfileCompletion(percentage);
     
@@ -76,24 +104,48 @@ export default function MyProfile() {
       if (isComplete === 'true') {
         setProfileCompletion(100);
       }
+
+      // Always load from AsyncStorage first (most reliable)
+      const storedName = await AsyncStorage.getItem('userName');
+      const storedEmail = await AsyncStorage.getItem('userEmail');
+      const storedPhoto = await AsyncStorage.getItem('userProfilePhoto');
+      
+      if (storedName && storedName !== 'User') {
+        setName(storedName);
+      }
+      if (storedEmail) {
+        setEmail(storedEmail);
+      }
+      if (storedPhoto) {
+        setProfilePhoto(storedPhoto);
+      }
       
       if (userId) {
-        // Fetch latest data from Supabase
-        const { data, error } = await supabase
-          .from('users')
-          .select('name, email, profile_photo')
-          .eq('id', userId)
-          .single();
+        // Try to fetch latest data from Supabase (may fail due to RLS)
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('name, email, profile_photo')
+            .eq('id', userId)
+            .single();
 
-        if (data) {
-          setName(data.name);
-          setEmail(data.email);
-          console.log('📸 Profile data from DB:', { name: data.name, photo: data.profile_photo });
-          if (data.profile_photo) {
-            setProfilePhoto(data.profile_photo);
-            await AsyncStorage.setItem("userProfilePhoto", data.profile_photo);
-            console.log('✅ Profile photo set:', data.profile_photo);
+          if (data && !error) {
+            if (data.name) {
+              setName(data.name);
+              await AsyncStorage.setItem('userName', data.name);
+            }
+            if (data.email) {
+              setEmail(data.email);
+            }
+            console.log('📸 Profile data from DB:', { name: data.name, photo: data.profile_photo });
+            if (data.profile_photo) {
+              setProfilePhoto(data.profile_photo);
+              await AsyncStorage.setItem("userProfilePhoto", data.profile_photo);
+              console.log('✅ Profile photo set:', data.profile_photo);
+            }
           }
+        } catch (dbError) {
+          console.log('⚠️ Could not fetch from DB, using AsyncStorage values');
         }
 
         // Check achievements
@@ -114,20 +166,6 @@ export default function MyProfile() {
           interviews10: (progress?.total_interviews || 0) >= 10,
           questions20: hasCustomQuestions,
         });
-      }
-
-      // Fallback to AsyncStorage if offline
-      const storedName = await AsyncStorage.getItem("userName");
-      const storedEmail = await AsyncStorage.getItem("userEmail");
-      const storedPhoto = await AsyncStorage.getItem("userProfilePhoto");
-      
-      console.log('📦 AsyncStorage photo fallback:', storedPhoto);
-      
-      if (!name && storedName) setName(storedName);
-      if (!email && storedEmail) setEmail(storedEmail);
-      if (!profilePhoto && storedPhoto) {
-        setProfilePhoto(storedPhoto);
-        console.log('✅ Using AsyncStorage photo:', storedPhoto);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -179,7 +217,20 @@ export default function MyProfile() {
       >
         {/* Profile Completion - Only show if not complete */}
         {profileCompletion < 100 && (
-        <View style={styles.completionCard}>
+        <TouchableOpacity 
+          style={styles.completionCard}
+          activeOpacity={0.85}
+          onPress={() => {
+            // Navigate to the first missing item's screen
+            if (missingItems.some(item => item.includes('Job role'))) {
+              navigation.navigate('JobPreferences');
+            } else if (missingItems.includes('Profile photo')) {
+              navigation.navigate('EditProfile');
+            } else {
+              navigation.navigate('EditProfile');
+            }
+          }}
+        >
         <View style={styles.completionHeader}>
           <Text style={styles.completionTitle}>Profile Completion</Text>
           <Text style={styles.completionPercentage}>{profileCompletion}%</Text>
@@ -187,12 +238,13 @@ export default function MyProfile() {
         <View style={styles.progressBarContainer}>
           <View style={[styles.progressBar, { width: `${profileCompletion}%` }]} />
         </View>
-        <Text style={styles.completionHint}>
-          {profileCompletion < 50 
-            ? "Complete your profile to get personalized recommendations" 
-            : "Almost there! Finish your profile to unlock all features"}
-        </Text>
-      </View>
+        {missingItems.length > 0 && (
+          <Text style={styles.completionHint}>
+            Missing: {missingItems.join(', ')}
+          </Text>
+        )}
+        <Text style={styles.tapHint}>Tap to complete →</Text>
+      </TouchableOpacity>
         )}
 
       {/* Header Section */}
@@ -265,55 +317,26 @@ export default function MyProfile() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.row}
-          onPress={async () => {
-            try {
-              const result = await DocumentPicker.getDocumentAsync({
-                type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-                copyToCacheDirectory: true,
-              });
-
-              if (!result.canceled && result.assets && result.assets.length > 0) {
-                const file = result.assets[0];
-                await AsyncStorage.setItem("cvUri", file.uri);
-                await AsyncStorage.setItem("cvFileName", file.name);
-                await AsyncStorage.setItem("cvMimeType", file.mimeType || 'application/pdf');
-                setCvUploaded(true);
-                setCvFileName(file.name);
-                Alert.alert("Success", "CV uploaded successfully! Click 'View CV' to analyze it.");
-              }
-            } catch (error) {
-              console.error('Error uploading CV:', error);
-              Alert.alert("Error", "Failed to upload CV. Please try again.");
-            }
-          }}
+          style={styles.cvCard}
+          onPress={() => navigation.navigate("ViewCV")}
+          activeOpacity={0.7}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
-            <Text style={styles.rowText}>
-              {cvUploaded ? 'Replace CV' : 'Upload CV'}
-            </Text>
-            {cvUploaded && <Ionicons name="checkmark-circle" size={20} color={colors.primaryBlue} />}
+          <View style={styles.cvCardIcon}>
+            <Ionicons name="sparkles" size={20} color="#fff" />
           </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cvCardTitle}>✨ Enhance Your CV</Text>
+            <Text style={styles.cvCardSubtitle}>
+              Upload or paste your CV to get AI-powered suggestions
+            </Text>
+            {cvFileName && (
+              <Text style={styles.cvCardFile}>
+                📄 {cvFileName}
+              </Text>
+            )}
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.primaryBlue} />
         </TouchableOpacity>
-
-        {cvUploaded && (
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => navigation.navigate("ViewCV")}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
-              <View>
-                <Text style={styles.rowText}>View CV</Text>
-                {cvFileName && (
-                  <Text style={[styles.rowSubtext, { fontSize: 12, marginTop: 2 }]}>
-                    {cvFileName}
-                  </Text>
-                )}
-              </View>
-              <Ionicons name="document-text" size={20} color={colors.textMuted} />
-            </View>
-          </TouchableOpacity>
-        )}
 
         <TouchableOpacity
           style={styles.row}
@@ -408,6 +431,12 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodySmall,
       color: colors.textMuted,
       lineHeight: 18,
+    },
+    tapHint: {
+      ...typography.caption,
+      color: colors.primaryBlue,
+      fontWeight: '600',
+      marginTop: 10,
     },
 
     /* Header */
@@ -545,6 +574,47 @@ const makeStyles = (colors: any, isDark: boolean) =>
     rowSubtext: {
       ...typography.bodySmall,
       color: isDark ? "#9CA3AF" : "#6B7280",
+    },
+    cvCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primaryBlue,
+      borderRadius: 16,
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      marginVertical: 16,
+      marginHorizontal: 0,
+      shadowColor: colors.primaryBlue,
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 6,
+      gap: 12,
+    },
+    cvCardIcon: {
+      backgroundColor: 'rgba(255,255,255,0.3)',
+      borderRadius: 12,
+      padding: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    cvCardTitle: {
+      ...typography.bodyMedium,
+      fontWeight: '700',
+      color: '#fff',
+      fontSize: 16,
+      marginBottom: 4,
+    },
+    cvCardSubtitle: {
+      ...typography.caption,
+      color: 'rgba(255,255,255,0.9)',
+      fontSize: 13,
+      marginBottom: 6,
+    },
+    cvCardFile: {
+      ...typography.caption,
+      color: 'rgba(255,255,255,0.7)',
+      fontSize: 12,
     },
     logoutButton: {
       flexDirection: 'row',

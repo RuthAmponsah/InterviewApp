@@ -1,10 +1,15 @@
 import Groq from "groq-sdk";
 import { Audio } from 'expo-av';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Initialize Groq client
 // Get your free API key from: https://console.groq.com/keys
 const GROQ_API_KEY = Constants.expoConfig?.extra?.groqApiKey || process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
+
+// ElevenLabs for Aya's soothing voice (free: 10k chars/month at elevenlabs.io)
+const ELEVENLABS_API_KEY = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY || '';
+const ELEVENLABS_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Rachel - warm, calm voice
 
 if (!GROQ_API_KEY) {
   console.error('⚠️ Groq API key not found. Please check your .env file.');
@@ -19,10 +24,79 @@ interface ChatMessage {
   content: string;
 }
 
+// Common interview questions by category (most popular first)
+const COMMON_QUESTIONS = {
+  opener: "Tell me about yourself and why you're interested in this role.",
+  behavioral: [
+    "Tell me about a time you faced a significant challenge at work. How did you handle it?",
+    "Describe a situation where you had to work with a difficult colleague or client.",
+    "Give me an example of a goal you achieved and how you reached it.",
+    "Tell me about a time you made a mistake. How did you handle it?",
+    "Describe a situation where you had to meet a tight deadline.",
+    "Tell me about a time you showed leadership.",
+    "Give an example of when you had to adapt to a major change.",
+    "Describe a time you went above and beyond for a customer or project.",
+    "Tell me about a conflict you resolved at work.",
+    "Give an example of when you had to learn something new quickly.",
+  ],
+  general: [
+    "What are your greatest strengths?",
+    "What do you consider your weaknesses?",
+    "Where do you see yourself in 5 years?",
+    "Why are you leaving your current position?",
+    "What motivates you in your work?",
+    "How do you handle stress and pressure?",
+    "What's your ideal work environment?",
+    "How do you prioritize your tasks?",
+    "What are you most proud of in your career?",
+    "What do you know about our company?",
+  ],
+  closing: [
+    "Do you have any questions for me?",
+    "Is there anything else you'd like to add that we haven't covered?",
+  ]
+};
+
+// Get questions that haven't been asked recently for this role
+const getQuestionsForRole = async (jobRole: string): Promise<string[]> => {
+  try {
+    const key = `askedQuestions_${jobRole.replace(/\s+/g, '_')}`;
+    const askedStr = await AsyncStorage.getItem(key);
+    const askedQuestions: string[] = askedStr ? JSON.parse(askedStr) : [];
+    
+    // Get all available questions
+    const allBehavioral = [...COMMON_QUESTIONS.behavioral];
+    const allGeneral = [...COMMON_QUESTIONS.general];
+    
+    // Filter out recently asked questions
+    const availableBehavioral = allBehavioral.filter(q => !askedQuestions.includes(q));
+    const availableGeneral = allGeneral.filter(q => !askedQuestions.includes(q));
+    
+    // If we've used most questions, reset the pool
+    if (availableBehavioral.length < 3) {
+      await AsyncStorage.removeItem(key);
+      return [...allBehavioral.slice(0, 4), ...allGeneral.slice(0, 3)];
+    }
+    
+    // Pick 4 behavioral and 3 general questions
+    const selectedBehavioral = availableBehavioral.slice(0, 4);
+    const selectedGeneral = availableGeneral.slice(0, 3);
+    
+    // Save these as asked
+    const newAsked = [...askedQuestions, ...selectedBehavioral, ...selectedGeneral];
+    await AsyncStorage.setItem(key, JSON.stringify(newAsked));
+    
+    return [...selectedBehavioral, ...selectedGeneral];
+  } catch (e) {
+    console.log('Error getting questions:', e);
+    return [...COMMON_QUESTIONS.behavioral.slice(0, 4), ...COMMON_QUESTIONS.general.slice(0, 3)];
+  }
+};
+
 // Keep conversation history for context
 let conversationHistory: ChatMessage[] = [];
 
-export const initializeInterviewChat = (jobRole: string, userName?: string) => {
+export const initializeInterviewChat = async (jobRole: string, userName?: string) => {
   // Role-specific guidance
   const roleGuidance: { [key: string]: string } = {
     'Software Engineer': 'Focus on coding skills, algorithms, system design, debugging, and problem-solving approaches.',
@@ -53,6 +127,10 @@ export const initializeInterviewChat = (jobRole: string, userName?: string) => {
 
   const specificGuidance = roleGuidance[jobRole] || 'Focus on relevant skills, experience, and problem-solving ability.';
 
+  // Get fresh questions for this interview
+  const questionsForInterview = await getQuestionsForRole(jobRole);
+  const questionList = questionsForInterview.map((q, i) => `${i + 2}. ${q}`).join('\n');
+
   // Reset conversation history
   conversationHistory = [
     {
@@ -60,16 +138,39 @@ export const initializeInterviewChat = (jobRole: string, userName?: string) => {
       content: `You are Aya, an empathetic and professional interview coach. You're helping ${userName || 'the user'} prepare for a ${jobRole} position. 
 
 Your responsibilities:
-- Ask relevant interview questions for the ${jobRole} role
+- Ask interview questions from the list below (adapt wording naturally but cover these topics)
 - ${specificGuidance}
-- Provide constructive feedback on their answers
-- Encourage them with positive reinforcement
-- Ask follow-up questions to help them elaborate
-- Keep responses concise (2-3 sentences max)
+- Provide brief constructive feedback on their answers (1 sentence)
+- Keep your responses concise (2-3 sentences max)
 - Be friendly and supportive, not intimidating
-- Mix behavioral (STAR method), technical, and situational questions
 
-Start by asking them to tell you about themselves and their interest in the ${jobRole} role.`
+QUESTIONS TO ASK (in this order):
+1. ${COMMON_QUESTIONS.opener}
+${questionList}
+8. ${COMMON_QUESTIONS.closing[0]}
+
+IMPORTANT RULES:
+- Ask questions one at a time, wait for their response
+- You can rephrase questions to sound natural, but cover these topics
+- Add brief encouragement between questions
+- After question 8, wrap up the interview
+
+FOLLOW-UP QUESTIONS (CRITICAL):
+- If they give a SHORT, VAGUE, or POOR answer (less than 2 sentences, no specific examples, or "I don't know"), ask a follow-up like:
+  * "Can you tell me more about that?" 
+  * "Could you give me a specific example?"
+  * "What did you learn from that experience?"
+  * "How did you handle that specifically?"
+- Follow-ups are NOT new questions - they help the user elaborate on the SAME question
+- Only ask ONE follow-up per question, then move to the next main question
+- If they answer well with good detail, move directly to the next main question
+- Keep follow-ups short (1 sentence) - they're just prompts, not full questions
+
+ENDING THE INTERVIEW:
+- After covering all 8 questions, end with: "Great job today! Good luck with your ${jobRole} career - I'm confident you'll do well! [END INTERVIEW]"
+- The [END INTERVIEW] tag signals the app to navigate to feedback
+
+Start with question 1: Ask them to tell you about themselves and their interest in the ${jobRole} role.`
     }
   ];
 };
@@ -132,9 +233,16 @@ IMPROVEMENTS:
 - [Specific actionable improvement 2]
 - [Specific actionable improvement 3]
 
+QUESTIONS TO PRACTICE:
+- [List any questions where they struggled or needed multiple follow-ups]
+
 SCORE: [0-100]
 
 CRITICAL: Only evaluate the USER'S responses. Do NOT give credit for MY (the interviewer's) questions or guidance. Ignore my responses entirely when scoring.
+
+Special attention:
+- If I had to ask follow-up questions to get them to elaborate, note this as an area to work on
+- Questions where they struggled after 2 attempts should be listed in "QUESTIONS TO PRACTICE"
 
 Scoring criteria - be HARSH and REALISTIC:
 - 90-100: Outstanding - Detailed STAR method examples, quantifiable results, highly professional language, perfect alignment with questions, demonstrates deep expertise
@@ -175,9 +283,65 @@ export const clearConversationHistory = () => {
   conversationHistory = [];
 };
 
-// Text-to-Speech using Google TTS via expo-av
+// Text-to-Speech using ElevenLabs (soothing) with Google TTS fallback
 let currentSound: Audio.Sound | null = null;
 let isSpeaking = false;
+
+// Try ElevenLabs first for natural voice
+const getElevenLabsAudio = async (text: string): Promise<string | null> => {
+  if (!ELEVENLABS_API_KEY) {
+    console.log('⚠️ No ElevenLabs API key found');
+    return null;
+  }
+  
+  console.log('🎙️ ElevenLabs API key present, making request...');
+  
+  try {
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
+      {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': ELEVENLABS_API_KEY,
+        },
+        body: JSON.stringify({
+          text,
+          model_id: 'eleven_turbo_v2_5',
+          voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+        }),
+      }
+    );
+    
+    console.log('🎙️ ElevenLabs response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log('❌ ElevenLabs error:', errorText);
+      return null;
+    }
+    
+    console.log('✅ ElevenLabs audio received, converting to base64...');
+    
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        console.log('✅ ElevenLabs base64 conversion complete');
+        resolve(reader.result as string);
+      };
+      reader.onerror = () => {
+        console.log('❌ FileReader error');
+        resolve(null);
+      };
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.log('❌ ElevenLabs fetch error:', error);
+    return null;
+  }
+};
 
 export const speakText = async (text: string): Promise<boolean> => {
   try {
@@ -200,6 +364,55 @@ export const speakText = async (text: string): Promise<boolean> => {
       staysActiveInBackground: false,
       shouldDuckAndroid: true,
     });
+
+    // Try ElevenLabs first for beautiful voice
+    if (ELEVENLABS_API_KEY) {
+      console.log('🎙️ Trying ElevenLabs voice...');
+      const audioData = await getElevenLabsAudio(text);
+      
+      if (audioData) {
+        try {
+          const { sound } = await Audio.Sound.createAsync(
+            { uri: audioData },
+            { shouldPlay: true }
+          );
+          currentSound = sound;
+          
+          // Wait for playback to complete
+          await new Promise<void>((resolve) => {
+            const interval = setInterval(async () => {
+              if (!isSpeaking) {
+                clearInterval(interval);
+                resolve();
+                return;
+              }
+              try {
+                const status = await sound.getStatusAsync();
+                if (status.isLoaded && !status.isPlaying && status.positionMillis > 0) {
+                  clearInterval(interval);
+                  resolve();
+                }
+              } catch {
+                clearInterval(interval);
+                resolve();
+              }
+            }, 200);
+            setTimeout(() => { clearInterval(interval); resolve(); }, 120000);
+          });
+          
+          await sound.unloadAsync();
+          currentSound = null;
+          isSpeaking = false;
+          console.log('✅ ElevenLabs playback complete');
+          return true;
+        } catch (e) {
+          console.log('ElevenLabs playback failed, using Google TTS');
+        }
+      }
+    }
+
+    // Fallback to Google TTS
+    console.log('📢 Using Google TTS...');
 
     // Split text into chunks for reliable playback (Google TTS has ~200 char limit per request)
     const maxLength = 180;

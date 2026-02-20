@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
+  Modal,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +19,7 @@ import { typography } from '../theme/colors';
 import BackButton from '../components/BackButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
+import * as Haptics from 'expo-haptics';
 
 interface FeedbackItem {
   id: string;
@@ -24,6 +27,7 @@ interface FeedbackItem {
   job_role: string;
   feedback: string;
   duration_minutes: number;
+  transcript?: string;
 }
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -37,6 +41,8 @@ const AllFeedback: React.FC = () => {
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [currentTranscript, setCurrentTranscript] = useState<{from: string; text: string}[]>([]);
   const [stats, setStats] = useState({
     totalFeedback: 0,
     averageScore: 0,
@@ -52,20 +58,33 @@ const AllFeedback: React.FC = () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
       if (!userId) {
+        console.log('⚠️ No userId found');
         setLoading(false);
         return;
       }
 
       const { data, error } = await supabase
         .from('interview_history')
-        .select('id, date, job_role, feedback, duration_minutes')
+        .select('id, date, job_role, feedback, duration_minutes, transcript')
         .eq('user_id', userId)
         .not('feedback', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error loading feedback:', error);
+        console.error('❌ Error loading feedback:', error);
+        Alert.alert('Database Error', `Failed to load feedback: ${error.message}`);
       } else if (data) {
+        console.log('📊 Loaded feedback, count:', data.length);
+        data.forEach((item, i) => {
+          console.log(`Interview ${i}:`, {
+            id: item.id,
+            job_role: item.job_role,
+            has_feedback: !!item.feedback,
+            has_transcript: !!item.transcript,
+            transcript_type: typeof item.transcript,
+            transcript_preview: item.transcript ? item.transcript.substring(0, 50) : 'NULL'
+          });
+        });
         setFeedbackList(data);
         
         // Calculate stats
@@ -110,6 +129,61 @@ const AllFeedback: React.FC = () => {
       day: 'numeric', 
       year: 'numeric' 
     });
+  };
+
+  const openTranscript = (transcriptString: string | undefined) => {
+    console.log('🔍 Opening transcript...');
+    console.log('📦 Received type:', typeof transcriptString);
+    console.log('📦 Received value:', transcriptString);
+    
+    if (!transcriptString) {
+      console.log('⚠️ No transcript provided - null/undefined');
+      Alert.alert('No Transcript', 'This interview does not have a transcript saved.');
+      return;
+    }
+
+    if (typeof transcriptString !== 'string') {
+      console.log('⚠️ Transcript is not a string!', typeof transcriptString);
+      Alert.alert('Transcript Error', 'Transcript data is in wrong format.');
+      return;
+    }
+
+    if (transcriptString.trim() === '') {
+      console.log('⚠️ Transcript is empty string');
+      Alert.alert('No Transcript', 'Transcript is empty.');
+      return;
+    }
+
+    try {
+      console.log('🔄 Attempting to parse...');
+      let parsed = transcriptString;
+      
+      // Handle double-stringified JSON
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed);
+        console.log('✅ First parse successful, type:', typeof parsed);
+        
+        if (typeof parsed === 'string') {
+          console.log('🔄 Double-stringified detected, parsing again...');
+          parsed = JSON.parse(parsed);
+        }
+      }
+      
+      if (!Array.isArray(parsed)) {
+        console.error('❌ Not an array after parsing:', parsed);
+        Alert.alert('Transcript Error', 'Transcript format invalid (not an array)');
+        return;
+      }
+      
+      console.log('✅ Successfully parsed! Messages:', parsed.length);
+      setCurrentTranscript(parsed);
+      setShowTranscript(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {
+      console.error('❌ Parse error:', e);
+      console.error('Attempted to parse:', transcriptString);
+      Alert.alert('Transcript Error', `Parse failed: ${(e as Error).message}`);
+    }
   };
 
   return (
@@ -183,7 +257,19 @@ const AllFeedback: React.FC = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          feedbackList.map((item) => {
+          <>
+            {feedbackList.some(item => !item.transcript) && (
+              <View style={styles.infoBanner}>
+                <Ionicons name="information-circle" size={18} color={colors.primaryBlue} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.infoBannerTitle}>📝 Transcripts Available</Text>
+                  <Text style={styles.infoBannerText}>
+                    Recent interviews include full conversation transcripts. Click "View transcript" to see the chat!
+                  </Text>
+                </View>
+              </View>
+            )}
+            {feedbackList.map((item) => {
             // Parse the feedback text to extract score, strengths, and improvements
             const scoreMatch = item.feedback.match(/Score:\s*(\d+)\/100/);
             const strengthsMatch = item.feedback.match(/Strengths:\s*(.+?)\s*Areas to improve:/s);
@@ -227,11 +313,91 @@ const AllFeedback: React.FC = () => {
                     <Text style={styles.sectionText}>{improvements}</Text>
                   </View>
                 )}
+                
+                {item.transcript && (
+                  <TouchableOpacity 
+                    style={styles.transcriptButton}
+                    onPress={() => {
+                      console.log('🎬 Transcript button pressed');
+                      console.log('📦 Transcript value:', item.transcript?.substring(0, 50));
+                      openTranscript(item.transcript);
+                    }}
+                  >
+                    <Ionicons name="document-text-outline" size={16} color={colors.primaryBlue} />
+                    <Text style={styles.transcriptButtonText}>View transcript</Text>
+                    <Ionicons name="chevron-forward" size={16} color={colors.primaryBlue} />
+                  </TouchableOpacity>
+                )}
               </View>
             );
-          })
+          })}
+          </>
         )}
       </ScrollView>
+      
+      {/* Transcript Modal */}
+      <Modal
+        visible={showTranscript}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setShowTranscript(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderLeft}>
+                <Ionicons name="chatbubbles" size={24} color={colors.primaryBlue} />
+                <Text style={styles.modalTitle}>Interview Transcript</Text>
+              </View>
+              <TouchableOpacity 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowTranscript(false);
+                }}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={22} color={isDark ? '#fff' : '#666'} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView 
+              style={styles.transcriptScroll} 
+              contentContainerStyle={styles.transcriptContent}
+              showsVerticalScrollIndicator={true}
+            >
+              <Text style={{fontSize: 12, color: colors.textMuted, marginBottom: 12}}>
+                📋 Transcript has {currentTranscript.length} messages
+              </Text>
+              {currentTranscript.length === 0 ? (
+                <Text style={styles.noTranscriptText}>No transcript available</Text>
+              ) : (
+                currentTranscript.map((msg, index) => (
+                  <View 
+                    key={index} 
+                    style={[
+                      styles.simpleMessageRow,
+                      msg.from === 'user' && styles.userMessageRow
+                    ]}
+                  >
+                    <View style={[
+                      styles.simpleBubble,
+                      msg.from === 'user' ? styles.userBubble : styles.aiBubble
+                    ]}>
+                      <Text style={[
+                        styles.bubbleText,
+                        msg.from === 'user' ? styles.userBubbleText : styles.aiBubbleText
+                      ]}>
+                        {msg.text}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -353,6 +519,28 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: '#fff',
       textAlign: 'center',
     },
+    infoBanner: {
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
+      borderLeftWidth: 4,
+      borderLeftColor: colors.primaryBlue,
+      borderRadius: 8,
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      padding: 12,
+      marginBottom: 20,
+      gap: 12,
+    },
+    infoBannerTitle: {
+      ...typography.bodyMedium,
+      fontWeight: '700',
+      color: colors.primaryBlue,
+      marginBottom: 4,
+    },
+    infoBannerText: {
+      ...typography.caption,
+      color: isDark ? '#aaa' : colors.textMuted,
+      lineHeight: 18,
+    },
     card: {
       backgroundColor: isDark ? '#2a2a2a' : '#fff',
       borderRadius: 16,
@@ -429,6 +617,146 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodySmall,
       color: isDark ? '#b5b5b5' : colors.textMuted,
       lineHeight: 20,
+    },
+    transcriptButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 10,
+      backgroundColor: isDark ? 'rgba(0, 122, 255, 0.15)' : 'rgba(0, 122, 255, 0.1)',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(0, 122, 255, 0.3)' : 'rgba(0, 122, 255, 0.2)',
+    },
+    transcriptButtonText: {
+      ...typography.bodySmall,
+      color: colors.primaryBlue,
+      marginHorizontal: 6,
+      fontWeight: '600',
+    },
+    // Modal styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 16,
+    },
+    modalContainer: {
+      width: '100%',
+      maxWidth: 400,
+      height: '85%',
+      backgroundColor: isDark ? '#1a1a1a' : '#fff',
+      borderRadius: 24,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E5E7EB',
+      flexDirection: 'column',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? '#333' : colors.border,
+    },
+    modalHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    modalTitle: {
+      ...typography.headingSmall,
+      fontSize: 18,
+      color: isDark ? '#fff' : colors.textDark,
+    },
+    closeButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    transcriptScroll: {
+      flex: 1,
+    },
+    transcriptContent: {
+      paddingHorizontal: 12,
+      paddingVertical: 16,
+      flexGrow: 1,
+    },
+    noTranscriptText: {
+      ...typography.bodyMedium,
+      color: isDark ? '#888' : colors.textMuted,
+      textAlign: 'center',
+      paddingVertical: 40,
+    },
+    simpleMessageRow: {
+      flexDirection: 'row',
+      justifyContent: 'flex-start',
+      marginVertical: 8,
+      paddingHorizontal: 8,
+    },
+    userMessageRow: {
+      justifyContent: 'flex-end',
+    },
+    simpleBubble: {
+      maxWidth: '85%',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 18,
+      shadowColor: '#000',
+      shadowOpacity: 0.08,
+      shadowRadius: 3,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 2,
+    },
+    messageContainer: {
+      marginVertical: 6,
+      width: '100%',
+    },
+    senderLabel: {
+      ...typography.caption,
+      fontSize: 12,
+      color: isDark ? '#888' : colors.textMuted,
+      marginBottom: 4,
+      marginLeft: 12,
+    },
+    bubble: {
+      maxWidth: '80%',
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 20,
+      shadowColor: '#000',
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 1,
+    },
+    aiBubble: {
+      alignSelf: 'flex-start',
+      backgroundColor: isDark ? '#2a2a2a' : '#F3F4F6',
+      borderBottomLeftRadius: 4,
+    },
+    userBubble: {
+      alignSelf: 'flex-end',
+      backgroundColor: colors.primaryBlue,
+      borderBottomRightRadius: 4,
+    },
+    bubbleText: {
+      ...typography.bodyMedium,
+      lineHeight: 22,
+    },
+    aiBubbleText: {
+      color: isDark ? '#fff' : colors.textDark,
+    },
+    userBubbleText: {
+      color: '#FFFFFF',
     },
   });
 

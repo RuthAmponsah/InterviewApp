@@ -188,13 +188,13 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       if (storedRole) {
         setJobRole(storedRole);
         
-        // Initialize AI with user context
-        initializeInterviewChat(storedRole, userName || undefined);
+        // Initialize AI with user context (now async to load questions)
+        await initializeInterviewChat(storedRole, userName || undefined);
         
         greetingText = `Hello${userName ? ' ' + userName : ''}! I'm Aya, your interview coach. I see you're preparing for a ${storedRole} position. Let's practice together! Tell me about yourself and why you're interested in this role.`;
       } else {
         // Fallback if no role is set
-        initializeInterviewChat('your desired position');
+        await initializeInterviewChat('your desired position');
         greetingText = 'Hello! I\'m Aya, your interview coach. Let\'s practice together. Tell me about yourself.';
       }
       
@@ -289,23 +289,34 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
     setIsAiTyping(false);
 
     if (aiResponse) {
+      // Check if Aya is ending the interview
+      const isEndingInterview = aiResponse.includes('[END INTERVIEW]');
+      const cleanResponse = aiResponse.replace('[END INTERVIEW]', '').trim();
+      
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
         from: 'ai',
-        text: aiResponse,
+        text: cleanResponse,
       };
       setMessages((prev) => [...prev, aiMsg]);
 
       // If voice mode, speak the AI response
-      if (mode === 'voice' && aiResponse) {
+      if (mode === 'voice' && cleanResponse) {
         setIsSpeaking(true);
-        await speakText(aiResponse);
+        await speakText(cleanResponse);
         setIsSpeaking(false);
       }
 
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
+      
+      // If Aya ended the interview, auto-navigate to feedback after a short delay
+      if (isEndingInterview) {
+        setTimeout(async () => {
+          await endInterview();
+        }, 2000); // 2 second delay to let user read the message
+      }
     }
   };
 
@@ -351,6 +362,9 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         }
 
         // Save to interview_history (even if no job role, use 'Unknown')
+        // Include transcript of the conversation
+        const transcript = JSON.stringify(messages.map(m => ({ from: m.from, text: m.text })));
+        
         const { data: insertedInterview, error: insertError } = await supabase
           .from('interview_history')
           .insert({
@@ -359,6 +373,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
             mode: mode,
             duration_minutes: durationMinutes,
             date: new Date().toISOString(),
+            transcript: transcript,
           })
           .select()
           .single();

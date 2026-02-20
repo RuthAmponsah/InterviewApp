@@ -90,6 +90,7 @@ export default function QuestionBank({ navigation }: any) {
   const [newCategory, setNewCategory] = useState<QuestionCategory>('Behavioral');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [previousAnswers, setPreviousAnswers] = useState<any[]>([]);
 
   useEffect(() => {
     loadCustomQuestions();
@@ -126,8 +127,57 @@ export default function QuestionBank({ navigation }: any) {
     }
   };
 
+  // Load previous answers for a selected question
+  const loadPreviousAnswers = async (questionId: string) => {
+    try {
+      const user_id = await AsyncStorage.getItem('userId');
+      if (!user_id) return;
+
+      const { data, error } = await supabase
+        .from('question_answers')
+        .select('*')
+        .eq('user_id', user_id)
+        .eq('question_id', questionId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading previous answers:', error);
+      } else if (data) {
+        setPreviousAnswers(data);
+      }
+    } catch (error) {
+      console.error('Error loading previous answers:', error);
+    }
+  };
+
   const loadCustomQuestions = async () => {
     try {
+      // Get user ID from AsyncStorage
+      const user_id = await AsyncStorage.getItem('userId');
+      
+      if (user_id) {
+        const { data, error } = await supabase
+          .from('custom_questions')
+          .select('id, question_text, category')
+          .eq('user_id', user_id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.warn('Error loading from database, trying local storage:', error);
+        } else if (data) {
+          // Convert database format to Question format
+          const dbQuestions: Question[] = data.map((q: any) => ({
+            id: q.id,
+            category: q.category as QuestionCategory,
+            text: q.question_text,
+            isCustom: true,
+          }));
+          setCustomQuestions(dbQuestions);
+          return;
+        }
+      }
+
+      // Fallback to local storage if not logged in or database fails
       const saved = await AsyncStorage.getItem('custom_questions');
       if (saved) {
         setCustomQuestions(JSON.parse(saved));
@@ -139,31 +189,66 @@ export default function QuestionBank({ navigation }: any) {
 
   const saveCustomQuestions = async (questions: Question[]) => {
     try {
-      await AsyncStorage.setItem('custom_questions', JSON.stringify(questions));
+      // Update local state
       setCustomQuestions(questions);
+      // Also save to local storage as backup
+      await AsyncStorage.setItem('custom_questions', JSON.stringify(questions));
     } catch (error) {
-      console.error('Error saving custom questions:', error);
+      console.error('Error saving custom questions locally:', error);
     }
   };
 
-  const addCustomQuestion = () => {
+  const addCustomQuestion = async () => {
     if (!newQuestion.trim()) {
       Alert.alert('Error', 'Please enter a question');
       return;
     }
 
-    const question: Question = {
-      id: `custom_${Date.now()}`,
-      category: newCategory,
-      text: newQuestion.trim(),
-      isCustom: true,
-    };
+    try {
+      // Get user ID from AsyncStorage
+      const user_id = await AsyncStorage.getItem('userId');
+      
+      if (!user_id) {
+        Alert.alert('Error', 'You must be logged in to create custom questions.');
+        return;
+      }
 
-    const updated = [...customQuestions, question];
-    saveCustomQuestions(updated);
-    setNewQuestion('');
-    setShowAddModal(false);
-    Alert.alert('Success', 'Custom question added!');
+      // Save to database first
+      const { data, error } = await supabase
+        .from('custom_questions')
+        .insert([
+          {
+            user_id,
+            question_text: newQuestion.trim(),
+            category: newCategory,
+          },
+        ])
+        .select();
+
+      if (error) {
+        console.error('Database error:', error);
+        Alert.alert('Error', 'Failed to create custom question. Please try again.');
+        return;
+      }
+
+      // Create local question object with database ID
+      const question: Question = {
+        id: data[0].id, // Use database UUID as ID
+        category: newCategory,
+        text: newQuestion.trim(),
+        isCustom: true,
+      };
+
+      // Update local state
+      const updated = [...customQuestions, question];
+      saveCustomQuestions(updated);
+      setNewQuestion('');
+      setShowAddModal(false);
+      Alert.alert('✅ Success', 'Custom question created and saved!');
+    } catch (error) {
+      console.error('Error creating custom question:', error);
+      Alert.alert('Error', 'Failed to create custom question.');
+    }
   };
 
   const deleteCustomQuestion = (id: string) => {
@@ -175,9 +260,36 @@ export default function QuestionBank({ navigation }: any) {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            const updated = customQuestions.filter(q => q.id !== id);
-            saveCustomQuestions(updated);
+          onPress: async () => {
+            try {
+              // Get user ID from AsyncStorage
+              const user_id = await AsyncStorage.getItem('userId');
+              if (!user_id) {
+                Alert.alert('Error', 'You must be logged in to delete questions.');
+                return;
+              }
+
+              // Delete from database (specify user_id for RLS)
+              const { error } = await supabase
+                .from('custom_questions')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', user_id);
+
+              if (error) {
+                console.error('Database error:', error);
+                Alert.alert('Error', 'Failed to delete question.');
+                return;
+              }
+
+              // Delete from local state
+              const updated = customQuestions.filter(q => q.id !== id);
+              saveCustomQuestions(updated);
+              Alert.alert('✅ Deleted', 'Custom question removed.');
+            } catch (error) {
+              console.error('Error deleting question:', error);
+              Alert.alert('Error', 'Failed to delete question.');
+            }
           },
         },
       ]
@@ -201,48 +313,46 @@ export default function QuestionBank({ navigation }: any) {
     );
   }
 
+  // Save answer to Supabase
   const saveAnswer = async () => {
     if (!selectedQuestion || !answer.trim()) {
       Alert.alert('Error', 'Please write an answer first.');
       return;
     }
-
     try {
-      const key = `answer_${selectedQuestion.id}`;
-      await AsyncStorage.setItem(key, answer);
-      Alert.alert('Saved!', 'Your answer has been saved.');
-      setAnswer('');
-      setSelectedQuestion(null);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save answer.');
-    }
-  };
+      // Get user ID from AsyncStorage (most reliable method)
+      const user_id = await AsyncStorage.getItem('userId');
+      console.log('📝 Attempting to save answer - userId:', user_id);
+      
+      if (!user_id) {
+        Alert.alert('Error', 'You must be logged in to save answers.');
+        return;
+      }
 
-  // Save answer to Supabase
-  const saveAnswerToDatabase = async () => {
-    if (!selectedQuestion || !answer.trim()) {
-      Alert.alert('Error', 'Please write an answer first.');
-      return;
-    }
-    try {
-      // You may want to get the user id from auth context or storage
-      const user_id = await AsyncStorage.getItem('user_id');
+      // Determine question type
+      const questionType = selectedQuestion.isCustom ? 'custom' : 'standard';
+
       const { error } = await supabase.from('question_answers').insert([
         {
           user_id,
           question_id: selectedQuestion.id,
-          answer,
-          created_at: new Date().toISOString(),
+          question_text: selectedQuestion.text,
+          answer: answer.trim(),
+          question_type: questionType,
         },
       ]);
+
       if (error) {
-        Alert.alert('Error', 'Failed to save answer to database.');
+        console.error('Database error:', error);
+        Alert.alert('Error', 'Failed to save answer. Please try again.');
         return;
       }
-      Alert.alert('Saved!', 'Your answer has been saved to your account.');
+
+      Alert.alert('✅ Saved!', 'Your answer has been saved to your account.');
       setAnswer('');
       setSelectedQuestion(null);
     } catch (error) {
+      console.error('Error saving answer:', error);
       Alert.alert('Error', 'Failed to save answer.');
     }
   };
@@ -357,7 +467,12 @@ export default function QuestionBank({ navigation }: any) {
                     <View key={question.id} style={styles.questionCard}>
                       <TouchableOpacity
                         style={styles.questionContent}
-                        onPress={() => setSelectedQuestion(question)}
+                        onPress={() => {
+                          setSelectedQuestion(question);
+                          setAnswer('');
+                          setPreviousAnswers([]);
+                          loadPreviousAnswers(question.id);
+                        }}
                       >
                         <View style={styles.questionHeader}>
                           <Text style={styles.categoryBadge}>{question.category}</Text>
@@ -410,7 +525,37 @@ export default function QuestionBank({ navigation }: any) {
                   <Text style={styles.selectedQuestionText}>{selectedQuestion.text}</Text>
                 </View>
 
+                {/* Display Previous Answers */}
+                {previousAnswers.length > 0 && (
+                  <View style={[styles.previousAnswersSection, { borderColor: colors.primaryBlue }]}>
+                    <Text style={styles.previousAnswersTitle}>📋 Your Previous Answers ({previousAnswers.length})</Text>
+                    {previousAnswers.map((prev, index) => (
+                      <View key={index} style={[styles.previousAnswerCard, { backgroundColor: isDark ? '#1a1a1a' : '#f9fafb' }]}>
+                        <Text style={styles.previousAnswerDate}>
+                          {new Date(prev.created_at).toLocaleDateString('en-GB', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </Text>
+                        <Text style={[styles.previousAnswerText, { color: colors.textDark }]}>{prev.answer}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
                 <Text style={styles.answerLabel}>Your Answer (STAR Method)</Text>
+                <View style={styles.keyboardHeader}>
+                  <TouchableOpacity 
+                    style={styles.keyboardDismissButton}
+                    onPress={() => Keyboard.dismiss()}
+                  >
+                    <Ionicons name="chevron-down" size={20} color={colors.primaryBlue} />
+                    <Text style={styles.keyboardDismissText}>Close Keyboard</Text>
+                  </TouchableOpacity>
+                </View>
                 <TextInput
                   style={styles.answerInput}
                   placeholder="Situation: Describe the context...
@@ -426,10 +571,7 @@ Result: What was the outcome?"
                 />
 
                 <TouchableOpacity style={styles.saveButton} onPress={saveAnswer}>
-                  <Text style={styles.saveButtonText}>Save Answer</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.saveButton} onPress={saveAnswerToDatabase}>
-                  <Text style={styles.saveButtonText}>Save Answer to Account</Text>
+                  <Text style={styles.saveButtonText}>💾 Save Answer</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -705,6 +847,58 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: isDark ? '#fff' : colors.textDark,
       fontWeight: '600',
       marginTop: 8,
+    },
+    previousAnswersSection: {
+      backgroundColor: isDark ? '#1a1a1a' : '#f0f9ff',
+      borderRadius: 12,
+      padding: 12,
+      marginVertical: 12,
+      borderLeftWidth: 4,
+    },
+    previousAnswersTitle: {
+      ...typography.bodyMedium,
+      color: colors.primaryBlue,
+      fontWeight: '700',
+      marginBottom: 12,
+    },
+    previousAnswerCard: {
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : colors.border,
+    },
+    previousAnswerDate: {
+      ...typography.caption,
+      color: isDark ? '#999' : '#666',
+      marginBottom: 6,
+      fontWeight: '500',
+    },
+    previousAnswerText: {
+      ...typography.bodySmall,
+      lineHeight: 20,
+    },
+    keyboardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginTop: 8,
+      marginBottom: 8,
+    },
+    keyboardDismissButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? '#222' : '#f0f9ff',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.primaryBlue,
+    },
+    keyboardDismissText: {
+      ...typography.caption,
+      color: colors.primaryBlue,
+      fontWeight: '600',
+      marginLeft: 4,
     },
     answerInput: {
       backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',

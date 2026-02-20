@@ -1,7 +1,7 @@
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, Modal } from 'react-native';
 import PrimaryButton from '../components/PrimaryButton';
 import ConfettiAnimation from '../components/ConfettiAnimation';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
 import { getConversationSummary, clearConversationHistory } from '../services/aiService';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
 type FeedbackRouteProp = RouteProp<RootStackParamList, 'Feedback'>;
@@ -29,6 +30,8 @@ const Feedback: React.FC = () => {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [transcript, setTranscript] = useState<{from: string; text: string}[]>([]);
+  const [showTranscript, setShowTranscript] = useState(false);
 
   useEffect(() => {
     generateFeedback();
@@ -234,6 +237,23 @@ const Feedback: React.FC = () => {
           } else {
             console.log('✅ Feedback saved successfully to database!');
           }
+          
+          // Fetch the transcript for this interview
+          const { data: interviewData } = await supabase
+            .from('interview_history')
+            .select('transcript')
+            .eq('id', interviewId)
+            .single();
+            
+          if (interviewData?.transcript) {
+            try {
+              const parsedTranscript = JSON.parse(interviewData.transcript);
+              setTranscript(parsedTranscript);
+              console.log('✅ Transcript loaded:', parsedTranscript.length, 'messages');
+            } catch (e) {
+              console.log('Could not parse transcript');
+            }
+          }
         } else {
           console.log('Missing userId or interviewId, skipping database save');
           console.log('userId:', userId, 'interviewId:', interviewId);
@@ -302,11 +322,87 @@ const Feedback: React.FC = () => {
               • {improvement}
             </Text>
           ))}
+          
+          {transcript.length > 0 && (
+            <TouchableOpacity 
+              style={styles.transcriptButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowTranscript(true);
+              }}
+            >
+              <Ionicons name="document-text-outline" size={18} color={colors.primaryBlue} />
+              <Text style={styles.transcriptButtonText}>Tap to view transcript</Text>
+              <Ionicons name="chevron-forward" size={18} color={colors.primaryBlue} />
+            </TouchableOpacity>
+          )}
         </View>
       ) : null}
 
       <PrimaryButton title="Back to home" onPress={goHome} />
       </ScrollView>
+      
+      {/* Transcript Modal - Popup bubble style */}
+      <Modal
+        visible={showTranscript}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setShowTranscript(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderLeft}>
+                <Ionicons name="chatbubbles" size={24} color={colors.primaryBlue} />
+                <Text style={styles.modalTitle}>Interview Transcript</Text>
+              </View>
+              <TouchableOpacity 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowTranscript(false);
+                }}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={22} color={isDark ? '#fff' : '#666'} />
+              </TouchableOpacity>
+            </View>
+            
+            {/* Messages - InterviewChat style */}
+            <ScrollView 
+              style={styles.transcriptScroll} 
+              contentContainerStyle={styles.transcriptContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {transcript.map((msg, index) => (
+                <View 
+                  key={index} 
+                  style={styles.messageContainer}
+                >
+                  <Text style={[
+                    styles.senderLabel,
+                    msg.from === 'user' && { textAlign: 'right', marginRight: 12, marginLeft: 0 }
+                  ]}>
+                    {msg.from === 'user' ? 'You' : 'Aya'}
+                  </Text>
+                  <View style={[
+                    styles.bubble,
+                    msg.from === 'user' ? styles.userBubble : styles.aiBubble
+                  ]}>
+                    <Text style={[
+                      styles.bubbleText,
+                      msg.from === 'user' ? styles.userBubbleText : styles.aiBubbleText
+                    ]}>
+                      {msg.text}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 };
@@ -385,6 +481,120 @@ const makeStyles = (colors: any, isDark: boolean) =>
       fontWeight: '700',
       color: colors.primaryBlue,
       lineHeight: 64,
+    },
+    transcriptButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 20,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      backgroundColor: isDark ? 'rgba(0, 122, 255, 0.15)' : 'rgba(0, 122, 255, 0.1)',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(0, 122, 255, 0.3)' : 'rgba(0, 122, 255, 0.2)',
+    },
+    transcriptButtonText: {
+      ...typography.bodyMedium,
+      color: colors.primaryBlue,
+      marginHorizontal: 8,
+      fontWeight: '600',
+    },
+    // Popup modal styles (like PaywallModal)
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 16,
+    },
+    modalContainer: {
+      width: '100%',
+      maxWidth: 400,
+      maxHeight: '85%',
+      backgroundColor: isDark ? '#1a1a1a' : '#fff',
+      borderRadius: 24,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E5E7EB',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? '#333' : colors.border,
+      backgroundColor: isDark ? '#1a1a1a' : '#fff',
+    },
+    modalHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    modalTitle: {
+      ...typography.headingSmall,
+      fontSize: 18,
+      color: isDark ? '#fff' : colors.textDark,
+    },
+    closeButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    transcriptScroll: {
+      flex: 1,
+    },
+    transcriptContent: {
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+    },
+    // InterviewChat style messages
+    messageContainer: {
+      marginVertical: 6,
+      width: '100%',
+    },
+    senderLabel: {
+      ...typography.caption,
+      fontSize: 12,
+      color: isDark ? '#888' : colors.textMuted,
+      marginBottom: 4,
+      marginLeft: 12,
+    },
+    bubble: {
+      maxWidth: '80%',
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 20,
+      shadowColor: '#000',
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 1,
+    },
+    aiBubble: {
+      alignSelf: 'flex-start',
+      backgroundColor: isDark ? '#2a2a2a' : '#F3F4F6',
+      borderBottomLeftRadius: 4,
+    },
+    userBubble: {
+      alignSelf: 'flex-end',
+      backgroundColor: colors.primaryBlue,
+      borderBottomRightRadius: 4,
+    },
+    bubbleText: {
+      ...typography.bodyMedium,
+      lineHeight: 22,
+    },
+    aiBubbleText: {
+      color: isDark ? '#fff' : colors.textDark,
+    },
+    userBubbleText: {
+      color: '#FFFFFF',
     },
   });
 

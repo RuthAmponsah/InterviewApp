@@ -49,7 +49,6 @@ const ViewCV: React.FC = () => {
   const [analyzed, setAnalyzed] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [jobRole, setJobRole] = useState<string>("");
-  const [showTextInput, setShowTextInput] = useState(false);
   const [cvText, setCvText] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [improvedCV, setImprovedCV] = useState<string | null>(null);
@@ -80,9 +79,8 @@ const ViewCV: React.FC = () => {
     if (savedCvText) {
       setCvText(savedCvText);
     } else if (uri && !ReactNativeBlobUtil) {
-      // If no saved text and using Expo Go, show prompt once
+      // If no saved text and using Expo Go
       console.log('CV uploaded but text extraction requires development build');
-      setShowTextInput(true);
     } else if (uri && ReactNativeBlobUtil) {
       // Try to extract text from the uploaded file (development build only)
       await extractTextFromFile(uri);
@@ -146,13 +144,107 @@ const ViewCV: React.FC = () => {
         }
       }
       
-      // If we couldn't extract text, just show the text input (no alert)
+      // If we couldn't extract text
       console.log('Could not extract text automatically - file may be PDF/DOCX');
-      setShowTextInput(true);
     } catch (error) {
       console.error('Error extracting text:', error);
-      // On error, just show the text input (no alert)
-      setShowTextInput(true);
+      // On error, log it
+      console.log('Text extraction failed');
+    }
+  };
+
+  const handleAnalyzeCVDirect = async (textToAnalyze: string) => {
+    if (!textToAnalyze || textToAnalyze.trim().length < 50) {
+      Alert.alert(
+        "CV Content Required",
+        "The CV file was too short to analyze. Please try a different file.",
+        [{ text: "OK" }]
+      );
+      setAnalyzing(false);
+      return;
+    }
+
+    if (!jobRole) {
+      Alert.alert(
+        "Job Role Required",
+        "Please set your target job role in Settings → Job Preferences first so Aya can provide relevant suggestions.",
+        [{ text: "OK" }]
+      );
+      setAnalyzing(false);
+      return;
+    }
+
+    console.log('🔍 Starting CV analysis...');
+    console.log('📝 CV text length:', textToAnalyze.length);
+    console.log('💼 Job role:', jobRole);
+
+    try {
+      // Save CV text for future use
+      await AsyncStorage.setItem("cvText", textToAnalyze);
+      setCvText(textToAnalyze);
+
+      // Call AI service with actual CV content
+      const analysis = await analyzeCVWithAI(textToAnalyze, jobRole);
+      
+      console.log('✅ AI analysis complete, suggestions:', analysis.suggestions?.length);
+      
+      // Save suggestions to database
+      const userId = await AsyncStorage.getItem("userId");
+      console.log('👤 User ID:', userId);
+      
+      if (userId && analysis.suggestions) {
+        // Delete old suggestions
+        await supabase
+          .from('cv_suggestions')
+          .delete()
+          .eq('user_id', userId);
+
+        // Insert new suggestions
+        const suggestionsToInsert = analysis.suggestions.map((s: any) => ({
+          user_id: userId,
+          category: s.category,
+          suggestion: s.suggestion,
+          completed: false,
+        }));
+
+        console.log('💾 Saving suggestions to database:', suggestionsToInsert.length);
+
+        const { data, error } = await supabase
+          .from('cv_suggestions')
+          .insert(suggestionsToInsert)
+          .select();
+
+        if (error) {
+          console.error('❌ Database error:', error);
+        }
+
+        if (data) {
+          const mappedSuggestions = data.map((item: any) => ({
+            id: item.id,
+            category: item.category,
+            suggestion: item.suggestion,
+            completed: item.completed,
+          }));
+          setSuggestions(mappedSuggestions);
+          setAnalyzed(true);
+          Alert.alert("Analysis Complete! ✅", "Aya has reviewed your CV. Check the suggestions below.");
+        }
+      } else if (analysis.suggestions) {
+        const mappedSuggestions = analysis.suggestions.map((s: any, idx: number) => ({
+          id: idx,
+          category: s.category,
+          suggestion: s.suggestion,
+          completed: false,
+        }));
+        setSuggestions(mappedSuggestions);
+        setAnalyzed(true);
+        Alert.alert("Analysis Complete! ✅", "Aya has reviewed your CV. Check the suggestions below.");
+      }
+    } catch (error) {
+      console.error('❌ CV Analysis error:', error);
+      Alert.alert("Analysis Failed", "Something went wrong. Please try again.");
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -353,12 +445,25 @@ const ViewCV: React.FC = () => {
   const handleUploadCV = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'],
+        type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
         copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
+        
+        // Validate file type - only PDF and DOCX/DOC
+        const isPDF = file.mimeType === 'application/pdf' || file.name.endsWith('.pdf');
+        const isDOCX = file.mimeType?.includes('word') || file.mimeType?.includes('document') || file.name.endsWith('.docx') || file.name.endsWith('.doc');
+        
+        if (!isPDF && !isDOCX) {
+          Alert.alert(
+            "Invalid File Type ⚠️",
+            "Only PDF and Word documents (.pdf, .docx, .doc) are supported. Please upload your CV in one of these formats.",
+            [{ text: "OK" }]
+          );
+          return;
+        }
         
         // Save file info
         await AsyncStorage.setItem("cvUri", file.uri);
@@ -367,44 +472,31 @@ const ViewCV: React.FC = () => {
         
         setCvUri(file.uri);
         setCvFileName(file.name);
+        setAnalyzing(true);
         
-        // Try to extract text if possible
-        if (file.mimeType === 'text/plain' || file.name.endsWith('.txt')) {
-          // For text files, read directly
-          try {
-            const response = await fetch(file.uri);
-            const text = await response.text();
-            if (text && text.length > 10) {
-              setCvText(text);
-              await AsyncStorage.setItem('cvText', text);
-              Alert.alert("Success! ✅", "CV uploaded and text extracted. Click 'Analyze with Aya' to get feedback.");
-              return;
-            }
-          } catch (e) {
-            console.log('Could not read text file:', e);
-          }
-        }
+        Alert.alert("Reading your CV...", "Aya is analyzing your document. This may take a moment.");
         
-        // For PDF/DOC files, try to extract text
+        // Try to extract text
         if (ReactNativeBlobUtil) {
           await extractTextFromFile(file.uri);
           const extractedText = await AsyncStorage.getItem('cvText');
           if (extractedText && extractedText.length > 50) {
-            Alert.alert("Success! ✅", "CV uploaded and text extracted. Click 'Analyze with Aya' to get feedback.");
+            // Auto-analyze the extracted text
+            await handleAnalyzeCVDirect(extractedText);
             return;
           }
         }
         
-        // If text extraction didn't work, prompt user to paste
-        setShowTextInput(true);
+        setAnalyzing(false);
         Alert.alert(
-          "CV Uploaded 📄",
-          "Your file has been uploaded, but we couldn't extract the text automatically. Please paste your CV content in the text box below.",
-          [{ text: "OK" }]
+          "Could Not Extract Text",
+          "We couldn't automatically read the text from your file. This may be due to file format or encryption. Please try a different file.",
+          [{ text: "Try Again" }]
         );
       }
     } catch (error) {
       console.error('Error uploading CV:', error);
+      setAnalyzing(false);
       Alert.alert("Error", "Failed to upload CV. Please try again.");
     }
   };
@@ -446,62 +538,21 @@ const ViewCV: React.FC = () => {
 
         {/* Upload CV Button - Coming Soon */}
         <TouchableOpacity
-          style={[styles.uploadButton, { opacity: 0.5 }]}
-          onPress={() => Alert.alert("Coming Soon! 🚀", "Auto-extraction from PDF and DOCX files is coming soon. For now, please paste your CV text in the box below.")}
+          style={styles.uploadButton}
+          onPress={handleUploadCV}
         >
           <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
           <Text style={styles.uploadButtonText}>Upload CV File</Text>
-          <View style={styles.comingSoonPill}>
-            <Text style={styles.comingSoonPillText}>Soon</Text>
-          </View>
         </TouchableOpacity>
         
-        {/* Coming Soon Banner */}
+        {/* File Type Info */}
         <View style={styles.comingSoonBanner}>
-          <Ionicons name="time-outline" size={18} color={isDark ? "#93C5FD" : "#1E40AF"} />
+          <Ionicons name="checkmark-circle" size={18} color={colors.primaryBlue} />
           <Text style={styles.comingSoonText}>
-            Auto-extraction from PDF/DOCX coming soon! For now, please paste your CV text below.
+            Supports PDF and Word documents (.pdf, .docx, .doc)
           </Text>
         </View>
 
-        {/* Text Input for CV Content */}
-        <View style={styles.textInputContainer}>
-          <View style={styles.inputHeader}>
-            <Text style={styles.inputLabel}>
-              📝 Paste your CV text here:
-            </Text>
-            {cvText.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setCvText('')}
-                style={styles.clearButton}
-              >
-                <Ionicons name="close-circle" size={20} color={isDark ? "#666" : "#999"} />
-                <Text style={styles.clearButtonText}>Clear</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          <TextInput
-            style={styles.cvTextInput}
-            multiline
-            numberOfLines={8}
-            placeholder="Paste your CV content here (work experience, skills, education, etc.)..."
-            placeholderTextColor={isDark ? "#666" : "#999"}
-            value={cvText}
-            onChangeText={setCvText}
-            textAlignVertical="top"
-          />
-          <Text style={styles.inputHint}>
-            💡 Tip: Copy text from your CV and paste here. More detail = better suggestions!
-          </Text>
-        </View>
-
-        {!analyzed && (
-          <PrimaryButton
-            title={analyzing ? "Analyzing..." : "🔍 Analyze with Aya"}
-            onPress={handleAnalyzeCV}
-            disabled={analyzing}
-          />
-        )}
 
         {analyzing && (
           <View style={styles.loadingContainer}>
@@ -553,12 +604,15 @@ const ViewCV: React.FC = () => {
                     <Ionicons name="sparkles" size={24} color={colors.primaryBlue} />
                     <Text style={styles.improvedTitle}>Your Improved CV</Text>
                   </View>
-                  <View style={styles.improvedComingSoonBanner}>
-                    <Ionicons name="time-outline" size={20} color={colors.textMuted} />
-                    <Text style={styles.improvedComingSoonText}>
-                      Coming Soon: Download as DOCX file
+                  <TouchableOpacity
+                    style={styles.downloadButton}
+                    onPress={handleCopyImprovedCV}
+                  >
+                    <Ionicons name="download" size={20} color="#fff" />
+                    <Text style={styles.downloadButtonText}>
+                      {copied ? "Copied!" : "Copy Improved CV"}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                   <View style={styles.improvedCVContainer}>
                     <ScrollView 
                       style={styles.improvedCVScroll}
@@ -955,6 +1009,22 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodySmall,
       color: colors.textMuted,
       fontStyle: "italic",
+    },
+    downloadButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      backgroundColor: colors.primaryBlue,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      borderRadius: 12,
+      marginBottom: 16,
+    },
+    downloadButtonText: {
+      ...typography.bodyMedium,
+      color: "#fff",
+      fontWeight: "600",
     },
     improvedCVContainer: {
       backgroundColor: isDark ? "#0f0f0f" : "#F9FAFB",

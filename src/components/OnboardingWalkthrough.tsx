@@ -23,7 +23,7 @@ type OnboardingStep = {
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
-    title: 'Welcome to MY INTERVIEW',
+    title: 'Welcome to My Interview',
     description: 'Practice realistic mock interviews with Aya, your AI interview coach. Build confidence and land your dream job!',
     icon: 'hand-right',
   },
@@ -57,9 +57,26 @@ export default function OnboardingWalkthrough() {
 
   const checkFirstTime = async () => {
     try {
-      const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
+      // Get current user ID
+      const userId = await AsyncStorage.getItem('userId');
+      console.log('🎯 OnboardingWalkthrough: userId from AsyncStorage:', userId ? '✅ Found' : '❌ NOT found');
+      
+      if (!userId) {
+        console.log('🎯 OnboardingWalkthrough: No userId, not showing onboarding');
+        return; // Not logged in
+      }
+
+      // Check if THIS user has seen onboarding (check per-user flag)
+      const hasSeenKey = `hasSeenOnboarding_${userId}`;
+      const hasSeenOnboarding = await AsyncStorage.getItem(hasSeenKey);
+      console.log('🎯 OnboardingWalkthrough: Checking flag:', hasSeenKey, '=', hasSeenOnboarding);
+      
+      // Show onboarding only if flag is NOT set
       if (!hasSeenOnboarding) {
         setVisible(true);
+        console.log('🎯 Showing onboarding for user:', userId);
+      } else {
+        console.log('🎯 User has already seen onboarding, skipping');
       }
     } catch (error) {
       console.error('Error checking onboarding status:', error);
@@ -82,7 +99,14 @@ export default function OnboardingWalkthrough() {
 
   const handleComplete = async () => {
     try {
-      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+      // Get current user ID
+      const userId = await AsyncStorage.getItem('userId');
+      if (userId) {
+        // Mark onboarding as seen for THIS specific user
+        const hasSeenKey = `hasSeenOnboarding_${userId}`;
+        await AsyncStorage.setItem(hasSeenKey, 'true');
+        console.log('✅ Onboarding flag saved:', hasSeenKey);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setVisible(false);
     } catch (error) {

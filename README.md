@@ -57,12 +57,6 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 # Get free API key from: https://console.groq.com/keys
 EXPO_PUBLIC_GROQ_API_KEY=your_groq_api_key
 
-# Resend Email Configuration (REQUIRED for email features)
-# Sign up at: https://resend.com/ (Free tier: 3,000 emails/month)
-EXPO_PUBLIC_RESEND_API_KEY=your_resend_api_key
-EXPO_PUBLIC_FROM_EMAIL=your_verified_email@domain.com
-EXPO_PUBLIC_FROM_NAME=MY INTERVIEW
-
 # Adzuna Job Search API (OPTIONAL - for job search feature)
 # Sign up at: https://developer.adzuna.com/
 EXPO_PUBLIC_ADZUNA_APP_ID=your_adzuna_app_id
@@ -153,17 +147,7 @@ InterviewApp/
   2. Go to API Keys
   3. Create new key → `EXPO_PUBLIC_GROQ_API_KEY`
 
-### 3. **Resend** (REQUIRED for email features)
-- **Purpose**: Password reset and notification emails
-- **Sign up**: https://resend.com
-- **Free tier**: Yes (3,000 emails/month, 100 emails/day)
-- **Setup**:
-  1. Create an account
-  2. Add and verify your domain (or use resend.dev for testing)
-  3. Create API key → `EXPO_PUBLIC_RESEND_API_KEY`
-  4. Set `EXPO_PUBLIC_FROM_EMAIL` to your verified email
-
-### 4. **Adzuna** (OPTIONAL - for job search)
+### 3. **Adzuna** (OPTIONAL - for job search)
 - **Purpose**: Job listing integration
 - **Sign up**: https://developer.adzuna.com
 - **Free tier**: Yes (250 calls/month)
@@ -172,7 +156,7 @@ InterviewApp/
   2. Copy App ID → `EXPO_PUBLIC_ADZUNA_APP_ID`
   3. Copy API Key → `EXPO_PUBLIC_ADZUNA_APP_KEY`
 
-### 5. **RevenueCat** (OPTIONAL - for production subscriptions)
+### 4. **RevenueCat** (OPTIONAL - for production subscriptions)
 - **Purpose**: In-app purchase management
 - **Sign up**: https://app.revenuecat.com
 - **Free tier**: Yes (up to $10k monthly tracked revenue)

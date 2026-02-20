@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Dropdown } from "react-native-element-dropdown";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { speakText, stopSpeaking } from "../services/aiService";
@@ -16,35 +17,9 @@ import { RootStackParamList } from "../navigation/RootNavigator";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "../theme/ThemeContext";
 import { supabase } from "../config/supabase";
+import { JOB_ROLES } from "../constants/jobRoles";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Welcome">;
-
-const JOB_TYPES = [
-  "Software Engineer",
-  "Data Analyst",
-  "Cyber Security",
-  "IT Support",
-  "Project Manager",
-  "Sales",
-  "Customer Service",
-  "Marketing",
-  "Accounting",
-  "Finance",
-  "Human Resources",
-  "Healthcare",
-  "Nursing",
-  "Teaching",
-  "Engineering",
-  "Business Analyst",
-  "Product Manager",
-  "UX/UI Designer",
-  "Graphic Designer",
-  "Operations Manager",
-  "Supply Chain",
-  "Legal",
-  "Architecture",
-  "Consulting",
-];
 
 export default function Welcome() {
   const navigation = useNavigation<Nav>();
@@ -91,17 +66,9 @@ export default function Welcome() {
     const speakIntro = async () => {
       await stopSpeaking();
       await speakText(introText);
-      
-      // Calculate approximate speech duration (average speaking rate is ~150 words per minute)
-      const wordCount = introText.split(' ').length;
-      const estimatedDuration = (wordCount / 150) * 60 * 1000; // Convert to milliseconds
-      const waitTime = estimatedDuration + 2000; // Add 2 seconds buffer
-      
-      console.log(`Waiting ${waitTime}ms for speech to complete...`);
-      
-      // Wait for speech to finish before scrolling
-      setTimeout(async () => {
-        // Scroll to Page 2
+
+      // Scroll shortly after the intro finishes
+      setTimeout(() => {
         scrollRef.current?.scrollTo({ x: width, animated: true });
 
         Animated.timing(page2Anim, {
@@ -110,11 +77,11 @@ export default function Welcome() {
           useNativeDriver: true,
         }).start();
 
-        // Wait for scroll animation to complete, then speak
-        setTimeout(async () => {
-          await speakText("What job role are you applying for?");
-        }, 800);
-      }, waitTime);
+        // Speak as soon as the page finishes switching
+        setTimeout(() => {
+          speakText("What job role are you applying for?");
+        }, 400);
+      }, 200);
     };
     
     speakIntro();
@@ -243,7 +210,7 @@ export default function Welcome() {
           ]}
           placeholderStyle={styles.placeholderStyle}
           selectedTextStyle={styles.selectedTextStyle}
-          data={JOB_TYPES.map((item) => ({ label: item, value: item }))}
+          data={JOB_ROLES.map((item) => ({ label: item, value: item }))}
           labelField="label"
           valueField="value"
           placeholder={!isFocus ? "Choose a job role…" : ""}
@@ -255,6 +222,12 @@ export default function Welcome() {
             setJob(item.value);
             setIsFocus(false);
           }}
+          renderRightIcon={() => (
+            <Ionicons name="chevron-down" size={18} color={isDark ? "#bbb" : colors.textMuted} />
+          )}
+          search
+          searchPlaceholder="Type to search roles..."
+          inputSearchStyle={styles.inputSearchStyle}
         />
 
         {/* Motivational Message */}
@@ -345,6 +318,14 @@ const makeStyles = (colors: any, isDark: boolean) =>
 
     placeholderStyle: { fontSize: 16, color: isDark ? "#bbb" : colors.textMuted },
     selectedTextStyle: { fontSize: 16, color: isDark ? "#fff" : colors.textDark },
+    inputSearchStyle: {
+      fontSize: 14,
+      color: isDark ? "#fff" : colors.textDark,
+      backgroundColor: isDark ? "#1f1f1f" : "#F7F7F7",
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      height: 40,
+    },
 
     motivationWrapper: {
       marginTop: 30,

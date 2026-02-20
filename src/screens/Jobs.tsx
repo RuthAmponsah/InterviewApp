@@ -19,35 +19,9 @@ import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
 import { searchJobs, Job } from "../services/jobService";
+import { JOB_ROLES } from "../constants/jobRoles";
 
-const CATEGORIES = [
-  'All Jobs',
-  'Saved Jobs',
-  'Software Developer',
-  'Data Analyst',
-  'Cyber Security',
-  'IT Support',
-  'Project Manager',
-  'Sales',
-  'Customer Service',
-  'Marketing',
-  'Accounting',
-  'Finance',
-  'Human Resources',
-  'Healthcare',
-  'Nursing',
-  'Teaching',
-  'Engineering',
-  'Business Analyst',
-  'Product Manager',
-  'UX/UI Designer',
-  'Graphic Designer',
-  'Operations',
-  'Supply Chain',
-  'Legal',
-  'Architecture',
-  'Consulting',
-];
+const BASE_CATEGORIES = ['All Jobs', 'Saved Jobs'];
 
 const Jobs: React.FC = () => {
   const { colors, theme } = useTheme();
@@ -55,6 +29,7 @@ const Jobs: React.FC = () => {
   const styles = makeStyles(colors, isDark);
   const [selectedCategory, setSelectedCategory] = useState('All Jobs');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownSearch, setDropdownSearch] = useState('');
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -225,30 +200,52 @@ const Jobs: React.FC = () => {
         </TouchableOpacity>
 
         {dropdownOpen && (
-          <ScrollView style={styles.dropdownMenu} nestedScrollEnabled>
-            {CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                style={styles.dropdownItem}
-                onPress={() => {
-                  setSelectedCategory(cat);
-                  setDropdownOpen(false);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.dropdownItemText,
-                    selectedCategory === cat && styles.selectedDropdownItem,
-                  ]}
+          <View style={styles.dropdownMenu}>
+            <View style={styles.dropdownSearchRow}>
+              <Ionicons name="search" size={16} color={isDark ? '#888' : colors.textMuted} />
+              <TextInput
+                style={styles.dropdownSearchInput}
+                placeholder="Search roles..."
+                placeholderTextColor={isDark ? '#666' : colors.textMuted}
+                value={dropdownSearch}
+                onChangeText={setDropdownSearch}
+              />
+              {dropdownSearch ? (
+                <TouchableOpacity onPress={() => setDropdownSearch('')}>
+                  <Ionicons name="close-circle" size={18} color={colors.primaryBlue} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+            <ScrollView nestedScrollEnabled>
+              {BASE_CATEGORIES.concat(
+                JOB_ROLES.filter((role) =>
+                  role.toLowerCase().includes(dropdownSearch.trim().toLowerCase())
+                )
+              ).map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setSelectedCategory(cat);
+                    setDropdownOpen(false);
+                    setDropdownSearch('');
+                  }}
                 >
-                  {cat}
-                </Text>
-                {selectedCategory === cat && (
-                  <Ionicons name="checkmark" size={18} color={colors.primaryBlue} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      selectedCategory === cat && styles.selectedDropdownItem,
+                    ]}
+                  >
+                    {cat}
+                  </Text>
+                  {selectedCategory === cat && (
+                    <Ionicons name="checkmark" size={18} color={colors.primaryBlue} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
         )}
       </View>
 
@@ -509,6 +506,22 @@ const makeStyles = (colors: any, isDark: boolean) =>
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
     maxHeight: 300,
+    overflow: 'hidden',
+  },
+  dropdownSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomColor: colors.border,
+    borderBottomWidth: 1,
+  },
+  dropdownSearchInput: {
+    ...typography.bodySmall,
+    color: isDark ? '#fff' : colors.textDark,
+    flex: 1,
+    padding: 0,
   },
   dropdownItem: {
     flexDirection: 'row',

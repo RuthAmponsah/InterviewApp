@@ -54,7 +54,6 @@ The voice interview feature uses a cloud-based approach compatible with Expo Go:
 ### 3. Configuration
 - ✅ Supabase URL & Keys configured
 - ✅ Groq API Key configured
-- ✅ Resend Email API configured
 - ✅ Adzuna Job API configured
 - ✅ RevenueCat Test API Keys configured
 
@@ -102,6 +101,8 @@ The voice interview feature uses a cloud-based approach compatible with Expo Go:
 - [x] Add proper app icons ✅
 - [x] Add proper splash screen ✅
 - [x] Add app description and screenshots ✅ (📄 See APP_STORE_LISTING.md)
+- [ ] Update Supabase Auth Redirect URLs to production scheme (e.g., `interviewapp://`)
+- [ ] Set Supabase Auth Site URL to production website (use `https://example.com` as placeholder until live)
 - [ ] Set up App Store Connect listing (use APP_STORE_LISTING.md)
 - [x] Configure privacy policy URL ✅ (documented in APP_STORE_LISTING.md)
 - [x] Configure terms of service URL ✅ (documented in APP_STORE_LISTING.md)

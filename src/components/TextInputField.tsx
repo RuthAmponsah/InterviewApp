@@ -8,14 +8,29 @@ interface InputProps extends TextInputProps {
 }
 
 const TextInputField = ({ label, style, ...rest }: InputProps) => {
-  const { colors } = useTheme();
+  const { colors, theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && (
+        <Text style={[styles.label, { color: isDark ? "#b5b5b5" : "#333" }]}>
+          {label}
+        </Text>
+      )}
 
       <TextInput
-        style={[styles.input, style]}
+        style={[
+          styles.input,
+          {
+            backgroundColor: isDark ? "#1d1d1d" : "#F4F4F4",
+            borderColor: isDark ? "#333" : "#e0e0e0",
+            color: colors.textDark,
+          },
+          style,
+        ]}
         placeholderTextColor={colors.textMuted}
+        selectionColor={colors.primaryBlue}
         {...rest}
       />
     </View>

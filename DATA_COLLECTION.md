@@ -167,16 +167,6 @@ This document details all data collected by MY INTERVIEW, the purpose for collec
 
 ---
 
-### 5. Resend (Email)
-| Field | Value |
-|-------|-------|
-| **Purpose** | Password reset emails, notifications |
-| **Data Sent** | User email address, email content |
-| **Privacy Policy** | https://resend.com/legal/privacy-policy |
-| **Note** | Only triggered by user action (password reset) |
-
----
-
 ## Data Flow Diagram
 
 ```
@@ -196,12 +186,9 @@ User Device (App)
        ├── Subscription ──────────► RevenueCat ◄──► App Store
        │   (user ID, purchase)
        │
-       ├── Job Search ────────────► Adzuna API
-       │   (search query)              │
-       │                               └── Job listings back
-       │
-       └── Password Reset ────────► Resend (Email)
-           (email address)
+       └── Job Search ────────────► Adzuna API
+           (search query)              │
+                                       └── Job listings back
 ```
 
 ---

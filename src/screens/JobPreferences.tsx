@@ -7,39 +7,15 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Dropdown } from "react-native-element-dropdown";
 import BackButton from "../components/BackButton";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
-
-const JOB_TYPES = [
-  "Software Engineer",
-  "Data Analyst",
-  "Cyber Security",
-  "IT Support",
-  "Project Manager",
-  "Sales",
-  "Customer Service",
-  "Marketing",
-  "Accounting",
-  "Finance",
-  "Human Resources",
-  "Healthcare",
-  "Nursing",
-  "Teaching",
-  "Engineering",
-  "Business Analyst",
-  "Product Manager",
-  "UX/UI Designer",
-  "Graphic Designer",
-  "Operations Manager",
-  "Supply Chain",
-  "Legal",
-  "Architecture",
-  "Consulting",
-];
+import { JOB_ROLES } from "../constants/jobRoles";
+import { speakText, stopSpeaking } from "../services/aiService";
 
 const JobPreferences: React.FC = () => {
   const { colors, theme } = useTheme();
@@ -55,6 +31,21 @@ const JobPreferences: React.FC = () => {
       if (stored) setJob(stored);
     };
     load();
+  }, []);
+
+  // Ava speaks the question when page opens
+  useEffect(() => {
+    const speakQuestion = async () => {
+      await stopSpeaking();
+      await speakText("What job role are you applying for");
+    };
+    
+    // Small delay to ensure page is ready
+    const timeout = setTimeout(() => {
+      speakQuestion();
+    }, 300);
+    
+    return () => clearTimeout(timeout);
   }, []);
 
   const handleSave = async () => {
@@ -94,7 +85,7 @@ const JobPreferences: React.FC = () => {
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Primary job focus</Text>
         <Text style={styles.sectionHint}>
-          This is the role Aya will use when generating interview questions.
+          This is the role Aya will use when generating interview questions. Tap the dropdown below to choose or change it.
         </Text>
 
         <View style={styles.currentPill}>
@@ -108,7 +99,7 @@ const JobPreferences: React.FC = () => {
           style={styles.dropdown}
           placeholderStyle={styles.placeholderStyle}
           selectedTextStyle={styles.selectedTextStyle}
-          data={JOB_TYPES.map((item) => ({ label: item, value: item }))}
+          data={JOB_ROLES.map((item) => ({ label: item, value: item }))}
           labelField="label"
           valueField="value"
           placeholder={job ? "Change job role…" : "Choose a job role…"}
@@ -116,6 +107,12 @@ const JobPreferences: React.FC = () => {
           onChange={(item) => {
             setJob(item.value);
           }}
+          renderRightIcon={() => (
+            <Ionicons name="chevron-down" size={18} color={isDark ? "#bbb" : colors.textMuted} />
+          )}
+          search
+          searchPlaceholder="Type to search roles..."
+          inputSearchStyle={styles.inputSearchStyle}
         />
 
         {savedText !== "" && (
@@ -218,6 +215,14 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     placeholderStyle: { ...typography.bodyMedium, color: isDark ? "#bbb" : colors.textMuted },
     selectedTextStyle: { ...typography.bodyMedium, color: isDark ? "#fff" : colors.textDark },
+    inputSearchStyle: {
+      ...typography.bodySmall,
+      color: isDark ? "#fff" : colors.textDark,
+      backgroundColor: isDark ? "#1f1f1f" : "#F7F7F7",
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      height: 40,
+    },
     saveBtn: {
       marginTop: 8,
       backgroundColor: colors.primaryBlue,

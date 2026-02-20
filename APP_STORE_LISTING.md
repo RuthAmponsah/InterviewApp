@@ -254,7 +254,6 @@ Same 6 screenshots resized to: 2048 x 2732 pixels
 - We use Supabase for user authentication and data storage
 - AI interview responses processed by Groq API
 - Job listings from Adzuna API
-- Email notifications via Resend
 - All data encrypted and user-controlled
 
 ---

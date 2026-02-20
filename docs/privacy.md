@@ -110,7 +110,6 @@ We share data with trusted third-party services:
 | **Groq AI** | AI interview feedback & voice transcription | Interview responses, audio (temporary processing only) | [Groq Privacy](https://groq.com/privacy-policy/) |
 | **RevenueCat** | Subscription management | Email, subscription status, device ID | [RevenueCat Privacy](https://www.revenuecat.com/privacy) |
 | **Adzuna** | Job search | Location preferences (no personal data) | [Adzuna Privacy](https://www.adzuna.co.uk/privacy.html) |
-| **Resend** | Email notifications | Email address, name | [Resend Privacy](https://resend.com/legal/privacy-policy) |
 
 **Important:** We do NOT sell your personal data to third parties. Ever.
 

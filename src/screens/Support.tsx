@@ -79,6 +79,20 @@ const Support: React.FC = () => {
           </View>
         </TouchableOpacity>
       </View>
+
+      <View style={styles.chatCard}>
+        <Text style={styles.chatTitle}>Chat with an agent</Text>
+        <Text style={styles.chatSubtitle}>
+          Ask questions about how the app works and get instant guidance.
+        </Text>
+        <TouchableOpacity
+          style={styles.chatButton}
+          onPress={() => navigation.navigate("SupportChat")}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.chatButtonText}>Start chat</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 };
@@ -131,6 +145,39 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.caption,
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginTop: 2,
+    },
+    chatCard: {
+      marginTop: 16,
+      backgroundColor: isDark ? "#1d1d1d" : "#FFFFFF",
+      borderRadius: 20,
+      padding: 16,
+      shadowColor: "#000",
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 2,
+    },
+    chatTitle: {
+      ...typography.bodyMedium,
+      fontWeight: "600",
+      color: isDark ? "#fff" : colors.textDark,
+    },
+    chatSubtitle: {
+      ...typography.caption,
+      color: isDark ? "#b5b5b5" : colors.textMuted,
+      marginTop: 6,
+    },
+    chatButton: {
+      marginTop: 12,
+      backgroundColor: colors.primaryBlue,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: "center",
+    },
+    chatButtonText: {
+      ...typography.label,
+      color: "#fff",
+      fontWeight: "600",
     },
   });
 

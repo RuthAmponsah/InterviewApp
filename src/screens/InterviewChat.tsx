@@ -191,11 +191,11 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         // Initialize AI with user context (now async to load questions)
         await initializeInterviewChat(storedRole, userName || undefined);
         
-        greetingText = `Hello${userName ? ' ' + userName : ''}! I'm Aya, your interview coach. I see you're preparing for a ${storedRole} position. Let's practice together! Tell me about yourself and why you're interested in this role.`;
+        greetingText = `Hello${userName ? ' ' + userName : ''}! I'm Aya, your interview coach. I see you're preparing for a ${storedRole} position. Let's practice together! Feel free to ask me anything during the interview too. If your role is broad (for example, Teaching), you can specify the focus (for example, Maths, English, or Primary). Tell me about yourself and why you're interested in this role.`;
       } else {
         // Fallback if no role is set
         await initializeInterviewChat('your desired position');
-        greetingText = 'Hello! I\'m Aya, your interview coach. Let\'s practice together. Tell me about yourself.';
+        greetingText = "Hello! I'm Aya, your interview coach. Let's practice together. Feel free to ask me anything during the interview too, and if your role is broad you can specify the focus. Tell me about yourself.";
       }
       
       const greeting: Message = {

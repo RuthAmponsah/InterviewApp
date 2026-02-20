@@ -86,13 +86,7 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
         setLoading(false);
         console.error('Supabase Auth failed:', authError.message);
         console.error('Error code:', authError.status);
-        
-        // Check if user exists in auth.users but not verified
-        if (authError.message.includes('Email not confirmed')) {
-          showError('Email Not Verified', 'Please check your email and click the verification link before signing in.');
-        } else {
-          showError('Invalid Credentials', 'The email or password you entered is incorrect. Please try again.');
-        }
+        showError('Invalid Credentials', 'The email or password you entered is incorrect. Please try again.');
         return;
       }
 
@@ -113,8 +107,20 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
         return;
       }
 
-      // Clear previous user data
-      await AsyncStorage.clear();
+      const hasSeenOnboardingGlobal = await AsyncStorage.getItem('hasSeenOnboardingGlobal');
+
+      // DO NOT clear all storage - Supabase manages session in AsyncStorage automatically
+      // Only remove old user-specific data
+      const keysToRemove = [
+        'userName', 'userEmail', 'userId', 'jobRole', 'userProfilePhoto'
+      ];
+      for (const key of keysToRemove) {
+        await AsyncStorage.removeItem(key);
+      }
+
+      if (hasSeenOnboardingGlobal === 'true') {
+        await AsyncStorage.setItem('hasSeenOnboardingGlobal', 'true');
+      }
       
       // Store userId early so onboarding check can access it
       await AsyncStorage.setItem('userId', authData.user.id);

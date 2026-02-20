@@ -57,6 +57,12 @@ export default function OnboardingWalkthrough() {
 
   const checkFirstTime = async () => {
     try {
+      const hasSeenGlobal = await AsyncStorage.getItem('hasSeenOnboardingGlobal');
+      if (hasSeenGlobal === 'true') {
+        console.log('🎯 OnboardingWalkthrough: Global flag set, skipping onboarding');
+        return;
+      }
+
       // Get current user ID
       const userId = await AsyncStorage.getItem('userId');
       console.log('🎯 OnboardingWalkthrough: userId from AsyncStorage:', userId ? '✅ Found' : '❌ NOT found');
@@ -107,6 +113,8 @@ export default function OnboardingWalkthrough() {
         await AsyncStorage.setItem(hasSeenKey, 'true');
         console.log('✅ Onboarding flag saved:', hasSeenKey);
       }
+      await AsyncStorage.setItem('hasSeenOnboardingGlobal', 'true');
+      console.log('✅ Onboarding global flag saved');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setVisible(false);
     } catch (error) {

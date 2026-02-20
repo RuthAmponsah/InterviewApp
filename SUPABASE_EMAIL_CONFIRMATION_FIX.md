@@ -24,7 +24,7 @@ If you want to require email verification in production, you need to:
 
 2. **Update the app** to handle unconfirmed accounts:
    - Show "Please verify your email" message after signup
-   - Add "Resend verification email" button
+   - Add "Send verification email" button
    - Handle the email confirmation flow
 
 ### Current Status:

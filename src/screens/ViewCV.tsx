@@ -8,7 +8,6 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
-  Modal,
   Platform,
   RefreshControl,
 } from "react-native";
@@ -21,15 +20,6 @@ import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
 import { analyzeCVWithAI, improveCV } from "../services/aiService";
 import * as Clipboard from 'expo-clipboard';
-import * as DocumentPicker from 'expo-document-picker';
-
-// Conditional import for native module (only works in development builds, not Expo Go)
-let ReactNativeBlobUtil: any = null;
-try {
-  ReactNativeBlobUtil = require('react-native-blob-util').default;
-} catch (e) {
-  console.log('react-native-blob-util not available (Expo Go mode)');
-}
 
 type Suggestion = {
   id: string;
@@ -43,8 +33,6 @@ const ViewCV: React.FC = () => {
   const isDark = theme === "dark";
   const styles = makeStyles(colors, isDark);
 
-  const [cvFileName, setCvFileName] = useState<string | null>(null);
-  const [cvUri, setCvUri] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzed, setAnalyzed] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -54,6 +42,7 @@ const ViewCV: React.FC = () => {
   const [improvedCV, setImprovedCV] = useState<string | null>(null);
   const [improving, setImproving] = useState(false);
   const [copied, setCopied] = useState(false);
+
 
   useEffect(() => {
     loadCVData();
@@ -66,24 +55,14 @@ const ViewCV: React.FC = () => {
   };
 
   const loadCVData = async () => {
-    const uri = await AsyncStorage.getItem("cvUri");
-    const fileName = await AsyncStorage.getItem("cvFileName");
     const role = await AsyncStorage.getItem("jobRole");
     const savedCvText = await AsyncStorage.getItem("cvText");
     
-    setCvUri(uri);
-    setCvFileName(fileName || "CV.pdf");
     setJobRole(role || "");
     
     // If we have saved text, use it
     if (savedCvText) {
       setCvText(savedCvText);
-    } else if (uri && !ReactNativeBlobUtil) {
-      // If no saved text and using Expo Go
-      console.log('CV uploaded but text extraction requires development build');
-    } else if (uri && ReactNativeBlobUtil) {
-      // Try to extract text from the uploaded file (development build only)
-      await extractTextFromFile(uri);
     }
 
     // Load existing analysis if available
@@ -108,53 +87,9 @@ const ViewCV: React.FC = () => {
     }
   };
 
-  const extractTextFromFile = async (fileUri: string) => {
-    // This function should only be called if ReactNativeBlobUtil is available
-    // (i.e., in a development build, not Expo Go)
-    
-    if (!ReactNativeBlobUtil) {
-      // Should not reach here due to check in loadCVData, but just in case
-      console.log('ReactNativeBlobUtil not available');
-      return;
-    }
 
-    try {
-      console.log('Attempting to extract text from:', fileUri);
-      
-      // Read file using react-native-blob-util
-      const base64Data = await ReactNativeBlobUtil.fs.readFile(fileUri, 'base64');
-      
-      // Try to decode as UTF-8 text using atob (base64 decode)
-      const decodedText = atob(base64Data);
-      
-      // Check if it's readable text (not binary)
-      if (decodedText && decodedText.length > 50 && /[a-zA-Z]/.test(decodedText)) {
-        // Clean up the text (remove null bytes and control characters)
-        const cleanedText = decodedText
-          .replace(/\0/g, '')
-          .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-        
-        if (cleanedText.length > 100) {
-          console.log('Successfully extracted text, length:', cleanedText.length);
-          setCvText(cleanedText);
-          await AsyncStorage.setItem('cvText', cleanedText);
-          return;
-        }
-      }
-      
-      // If we couldn't extract text
-      console.log('Could not extract text automatically - file may be PDF/DOCX');
-    } catch (error) {
-      console.error('Error extracting text:', error);
-      // On error, log it
-      console.log('Text extraction failed');
-    }
-  };
-
-  const handleAnalyzeCVDirect = async (textToAnalyze: string) => {
-    if (!textToAnalyze || textToAnalyze.trim().length < 50) {
+  const handleAnalyzeCVDirect = async (rawText: string) => {
+    if (!rawText || rawText.trim().length < 50) {
       Alert.alert(
         "CV Content Required",
         "The CV file was too short to analyze. Please try a different file.",
@@ -175,16 +110,16 @@ const ViewCV: React.FC = () => {
     }
 
     console.log('🔍 Starting CV analysis...');
-    console.log('📝 CV text length:', textToAnalyze.length);
+    console.log('📝 CV text length:', rawText.length);
     console.log('💼 Job role:', jobRole);
 
     try {
       // Save CV text for future use
-      await AsyncStorage.setItem("cvText", textToAnalyze);
-      setCvText(textToAnalyze);
+      await AsyncStorage.setItem("cvText", rawText);
+      setCvText(rawText);
 
       // Call AI service with actual CV content
-      const analysis = await analyzeCVWithAI(textToAnalyze, jobRole);
+      const analysis = await analyzeCVWithAI(rawText, jobRole);
       
       console.log('✅ AI analysis complete, suggestions:', analysis.suggestions?.length);
       
@@ -249,7 +184,6 @@ const ViewCV: React.FC = () => {
   };
 
   const handleAnalyzeCV = async () => {
-    // Don't require cvUri anymore - just need text
     if (!cvText || cvText.trim().length < 50) {
       Alert.alert(
         "CV Content Required",
@@ -268,80 +202,8 @@ const ViewCV: React.FC = () => {
       return;
     }
 
-    console.log('🔍 Starting CV analysis...');
-    console.log('📝 CV text length:', cvText.length);
-    console.log('💼 Job role:', jobRole);
-
     setAnalyzing(true);
-
-    try {
-      // Save CV text for future use
-      await AsyncStorage.setItem("cvText", cvText);
-
-      // Call AI service with actual CV content
-      const analysis = await analyzeCVWithAI(cvText, jobRole);
-      
-      console.log('✅ AI analysis complete, suggestions:', analysis.suggestions?.length);
-      
-      // Save suggestions to database
-      const userId = await AsyncStorage.getItem("userId");
-      console.log('👤 User ID:', userId);
-      
-      if (userId && analysis.suggestions) {
-        // Delete old suggestions
-        await supabase
-          .from('cv_suggestions')
-          .delete()
-          .eq('user_id', userId);
-
-        // Insert new suggestions
-        const suggestionsToInsert = analysis.suggestions.map((s: any) => ({
-          user_id: userId,
-          category: s.category,
-          suggestion: s.suggestion,
-          completed: false,
-        }));
-
-        console.log('💾 Saving suggestions to database:', suggestionsToInsert.length);
-
-        const { data, error } = await supabase
-          .from('cv_suggestions')
-          .insert(suggestionsToInsert)
-          .select();
-
-        if (error) {
-          console.error('❌ Database error:', error);
-        }
-
-        if (data) {
-          const mappedSuggestions = data.map((item: any) => ({
-            id: item.id,
-            category: item.category,
-            suggestion: item.suggestion,
-            completed: item.completed,
-          }));
-          setSuggestions(mappedSuggestions);
-          setAnalyzed(true);
-          Alert.alert("Analysis Complete! ✅", "Aya has reviewed your CV. Check the suggestions below.");
-        }
-      } else if (analysis.suggestions) {
-        // Fallback if no userId
-        const mappedSuggestions = analysis.suggestions.map((s: any, idx: number) => ({
-          id: idx,
-          category: s.category,
-          suggestion: s.suggestion,
-          completed: false,
-        }));
-        setSuggestions(mappedSuggestions);
-        setAnalyzed(true);
-        Alert.alert("Analysis Complete! ✅", "Aya has reviewed your CV. Check the suggestions below.");
-      }
-    } catch (error) {
-      console.error('❌ CV Analysis error:', error);
-      Alert.alert("Analysis Failed", "Something went wrong. Please try again.");
-    } finally {
-      setAnalyzing(false);
-    }
+    await handleAnalyzeCVDirect(cvText);
   };
 
   const toggleSuggestionComplete = async (id: string) => {
@@ -442,65 +304,6 @@ const ViewCV: React.FC = () => {
     }
   };
 
-  const handleUploadCV = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const file = result.assets[0];
-        
-        // Validate file type - only PDF and DOCX/DOC
-        const isPDF = file.mimeType === 'application/pdf' || file.name.endsWith('.pdf');
-        const isDOCX = file.mimeType?.includes('word') || file.mimeType?.includes('document') || file.name.endsWith('.docx') || file.name.endsWith('.doc');
-        
-        if (!isPDF && !isDOCX) {
-          Alert.alert(
-            "Invalid File Type ⚠️",
-            "Only PDF and Word documents (.pdf, .docx, .doc) are supported. Please upload your CV in one of these formats.",
-            [{ text: "OK" }]
-          );
-          return;
-        }
-        
-        // Save file info
-        await AsyncStorage.setItem("cvUri", file.uri);
-        await AsyncStorage.setItem("cvFileName", file.name);
-        await AsyncStorage.setItem("cvMimeType", file.mimeType || 'application/pdf');
-        
-        setCvUri(file.uri);
-        setCvFileName(file.name);
-        setAnalyzing(true);
-        
-        Alert.alert("Reading your CV...", "Aya is analyzing your document. This may take a moment.");
-        
-        // Try to extract text
-        if (ReactNativeBlobUtil) {
-          await extractTextFromFile(file.uri);
-          const extractedText = await AsyncStorage.getItem('cvText');
-          if (extractedText && extractedText.length > 50) {
-            // Auto-analyze the extracted text
-            await handleAnalyzeCVDirect(extractedText);
-            return;
-          }
-        }
-        
-        setAnalyzing(false);
-        Alert.alert(
-          "Could Not Extract Text",
-          "We couldn't automatically read the text from your file. This may be due to file format or encryption. Please try a different file.",
-          [{ text: "Try Again" }]
-        );
-      }
-    } catch (error) {
-      console.error('Error uploading CV:', error);
-      setAnalyzing(false);
-      Alert.alert("Error", "Failed to upload CV. Please try again.");
-    }
-  };
-
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
@@ -529,17 +332,17 @@ const ViewCV: React.FC = () => {
         <View style={styles.cvHeader}>
           <Ionicons name="document-text" size={40} color={colors.primaryBlue} />
           <View style={{ flex: 1, marginLeft: 16 }}>
-            <Text style={styles.cvFileName}>{cvFileName}</Text>
+            <Text style={styles.cvFileName}>CV Upload (Coming Soon)</Text>
             <Text style={styles.cvSubtext}>
-              {analyzed ? "Analysis complete" : "Ready for analysis"}
+              Paste your CV below to get started
             </Text>
           </View>
         </View>
 
         {/* Upload CV Button - Coming Soon */}
         <TouchableOpacity
-          style={styles.uploadButton}
-          onPress={handleUploadCV}
+          style={styles.uploadButtonDisabled}
+          disabled={true}
         >
           <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
           <Text style={styles.uploadButtonText}>Upload CV File</Text>
@@ -549,9 +352,45 @@ const ViewCV: React.FC = () => {
         <View style={styles.comingSoonBanner}>
           <Ionicons name="checkmark-circle" size={18} color={colors.primaryBlue} />
           <Text style={styles.comingSoonText}>
-            Supports PDF and Word documents (.pdf, .docx, .doc)
+            CV upload is coming soon. For now, paste your CV below.
           </Text>
         </View>
+
+        <View style={styles.textInputContainer}>
+          <View style={styles.inputHeader}>
+            <Text style={styles.inputLabel}>Paste your CV content</Text>
+            {!!cvText && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => {
+                  setCvText("");
+                  AsyncStorage.removeItem("cvText");
+                }}
+              >
+                <Ionicons name="close-circle" size={16} color={isDark ? "#666" : "#999"} />
+                <Text style={styles.clearButtonText}>Clear</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <TextInput
+            style={styles.cvTextInput}
+            value={cvText}
+            onChangeText={(text) => {
+              setCvText(text);
+              AsyncStorage.setItem("cvText", text);
+            }}
+            placeholder="Paste your CV content here..."
+            placeholderTextColor={isDark ? "#666" : "#999"}
+            multiline
+          />
+          <Text style={styles.inputHint}>Minimum 50 characters required for analysis.</Text>
+        </View>
+
+        <PrimaryButton
+          title={analyzing ? "Analyzing..." : "Analyze CV"}
+          onPress={handleAnalyzeCV}
+          loading={analyzing}
+        />
 
 
         {analyzing && (
@@ -771,33 +610,21 @@ const makeStyles = (colors: any, isDark: boolean) =>
       flex: 1,
       lineHeight: 18,
     },
-    uploadButton: {
+    uploadButtonDisabled: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.primaryBlue,
+      backgroundColor: isDark ? "#2a2a2a" : "#D1D5DB",
       borderRadius: 12,
       paddingVertical: 14,
       paddingHorizontal: 20,
       marginBottom: 8,
       gap: 10,
+      opacity: 0.7,
     },
     uploadButtonText: {
       ...typography.bodyMedium,
       fontWeight: "600",
-      color: "#fff",
-    },
-    comingSoonPill: {
-      backgroundColor: "rgba(255,255,255,0.25)",
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      borderRadius: 10,
-      marginLeft: 4,
-    },
-    comingSoonPillText: {
-      ...typography.caption,
-      fontSize: 10,
-      fontWeight: "700",
       color: "#fff",
     },
     uploadHint: {

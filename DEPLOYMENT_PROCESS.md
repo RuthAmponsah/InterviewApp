@@ -30,11 +30,6 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your_prod_anon_key
 # Production Groq AI
 EXPO_PUBLIC_GROQ_API_KEY=your_prod_groq_key
 
-# Production Resend Email
-EXPO_PUBLIC_RESEND_API_KEY=your_prod_resend_key
-EXPO_PUBLIC_FROM_EMAIL=support@myinterviewapp.com
-EXPO_PUBLIC_FROM_NAME=MY INTERVIEW
-
 # Production Adzuna
 EXPO_PUBLIC_ADZUNA_APP_ID=your_prod_app_id
 EXPO_PUBLIC_ADZUNA_APP_KEY=your_prod_app_key

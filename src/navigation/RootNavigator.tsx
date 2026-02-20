@@ -27,6 +27,7 @@ import AppCustomisation from "../screens/AppCustomisation";
 import JobPreferences from "../screens/JobPreferences";
 import PrivacySecurity from "../screens/PrivacySecurity";
 import Support from "../screens/Support";
+import SupportChat from "../screens/SupportChat";
 import AboutUs from "../screens/AboutUs";
 import HelpCentre from "../screens/HelpCentre";
 import ChangePassword from "../screens/ChangePassword";
@@ -62,6 +63,7 @@ export type RootStackParamList = {
   JobPreferences: undefined;
   PrivacySecurity: undefined;
   Support: undefined;
+  SupportChat: undefined;
   AboutUs: undefined;
   HelpCentre: undefined;
   ChangePassword: undefined;
@@ -200,30 +202,24 @@ const RootNavigator = () => {
 
   useEffect(() => {
     const determineInitialRoute = async () => {
-      const userId = await AsyncStorage.getItem("userId");
-      
-      // Restore Supabase session if user is logged in
-      if (userId) {
+      try {
+        // Wait a moment for Supabase to restore session from AsyncStorage
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         const { data: { session } } = await supabase.auth.getSession();
         console.log('📱 App loaded - Supabase session:', session ? 'Active ✅' : 'None ❌');
-        
-        if (!session) {
-          console.log('⚠️ No Supabase session found despite userId. User may need to re-login.');
-        }
-        
-        // Check if THIS user has seen onboarding before
-        const hasSeenKey = `hasSeenOnboarding_${userId}`;
-        const hasSeenOnboarding = await AsyncStorage.getItem(hasSeenKey);
-        
-        if (hasSeenOnboarding === "true") {
-          // User has seen onboarding before, go directly to main app
+
+        if (session) {
+          // Logged in, go to main app
+          console.log('✅ User has valid session, showing MainTabs');
           setInitialRoute("MainTabs");
         } else {
-          // First time this user is logging in, show welcome
-          setInitialRoute("Welcome");
+          // Logged out, show sign in
+          console.log('❌ No session found, showing SignIn');
+          setInitialRoute("SignIn");
         }
-      } else {
-        // User not logged in, go straight to sign in
+      } catch (error) {
+        console.error('Error checking session:', error);
         setInitialRoute("SignIn");
       }
     };
@@ -277,6 +273,7 @@ const RootNavigator = () => {
       <Stack.Screen name="JobPreferences" component={JobPreferences} />
       <Stack.Screen name="PrivacySecurity" component={PrivacySecurity} />
       <Stack.Screen name="Support" component={Support} />
+      <Stack.Screen name="SupportChat" component={SupportChat} />
       <Stack.Screen name="AboutUs" component={AboutUs} />
       <Stack.Screen name="HelpCentre" component={HelpCentre} />
       <Stack.Screen name="InterviewHistory" component={InterviewHistory} />

@@ -24,6 +24,108 @@ interface ChatMessage {
   content: string;
 }
 
+type SupportAgentReply = {
+  answer: string;
+  askClarify?: boolean;
+  clarifyQuestion?: string;
+  refuse?: boolean;
+  suggestedHelp?: string;
+};
+
+const SUPPORT_KB = `APP CONTEXT (My Interview)
+- Core: AI mock interviews with Aya, feedback after sessions.
+- Start interview: Home -> choose mode (text/voice), then questions and feedback.
+- Feedback screen: shows summary and transcript after an interview.
+- Job Preferences: Settings -> Job Preferences, set or change target role.
+- CV: paste CV text -> Analyze CV -> suggestions and improved CV.
+- Jobs: browse jobs, filter by location and work type, save jobs.
+- Interview History: view past sessions, delete entries.
+- Progress Dashboard: stats and milestones.
+- Question Bank: extra practice questions.
+- Success Stories: read and share wins.
+- Profile: Settings -> Edit Profile, update name, photo, bio.
+- App customisation: Settings -> App customisation (Light, Dark, Match system).
+- Privacy & Security: manage account, export/delete data.
+- Notifications: manage app alerts.
+- Subscription: optional upgrades.
+- Support: Help centre FAQs and Contact support (email).
+`;
+
+const parseSupportReply = (text: string): SupportAgentReply | null => {
+  if (!text) return null;
+  let cleaned = text.trim();
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+  } else if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/```\n?/g, '');
+  }
+
+  try {
+    const parsed = JSON.parse(cleaned) as SupportAgentReply;
+    if (!parsed.answer || typeof parsed.answer !== 'string') return null;
+    return parsed;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const getSupportAgentReply = async (userQuestion: string): Promise<SupportAgentReply> => {
+  const prompt = `You are a support agent for the My Interview app.
+You MUST ONLY answer questions about this app. If the question is outside the app, refuse and suggest contacting support.
+
+${SUPPORT_KB}
+
+User question: ${userQuestion}
+
+Return ONLY valid JSON in this exact format:
+{
+  "answer": "string",
+  "askClarify": true|false,
+  "clarifyQuestion": "string",
+  "refuse": true|false,
+  "suggestedHelp": "string"
+}
+
+Rules:
+- If the question is about the app: refuse=false, answer helpfully, and optionally suggest where in the app to find it.
+- If the question is unclear: askClarify=true with a short clarifying question.
+- If the question is outside the app: refuse=true and suggestedHelp should say: "Go back and tap Contact support to email the team."
+`;
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a strict app-only support agent. Only answer questions about My Interview. Respond in JSON only.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.2,
+      max_tokens: 300,
+      response_format: { type: 'json_object' },
+    });
+
+    const responseText = completion.choices[0]?.message?.content || '';
+    const parsed = parseSupportReply(responseText);
+    if (parsed) return parsed;
+  } catch (error) {
+    console.error('Support agent error:', error);
+  }
+
+  return {
+    answer: 'I can help with app features, settings, CV tips, jobs, and interview practice. What part of the app is this about?',
+    askClarify: true,
+    clarifyQuestion: 'Is this about interviews, CVs, jobs, or account settings?',
+    refuse: false,
+    suggestedHelp: 'Go back and tap Contact support to email the team.',
+  };
+};
+
 // Common interview questions by category (most popular first)
 const COMMON_QUESTIONS = {
   opener: "Tell me about yourself and why you're interested in this role.",
@@ -154,6 +256,7 @@ IMPORTANT RULES:
 - You can rephrase questions to sound natural, but cover these topics
 - Add brief encouragement between questions
 - After question 8, wrap up the interview
+- At the end of your FIRST message, add: "Feel free to ask me anything during the interview too. If your role is broad (e.g., Teaching), you can specify the focus (e.g., Maths, English, or Primary)."
 
 FOLLOW-UP QUESTIONS (CRITICAL):
 - If they give a SHORT, VAGUE, or POOR answer (less than 2 sentences, no specific examples, or "I don't know"), ask a follow-up like:
@@ -494,8 +597,8 @@ export const speakText = async (text: string): Promise<boolean> => {
         currentSound = sound;
         console.log(`Audio loaded for chunk ${i + 1}`);
         
-        // Set rate with pitch correction AFTER loading (1.3x speed, same pitch)
-        await sound.setRateAsync(1.3, true, Audio.PitchCorrectionQuality.High);
+        // Set rate with pitch correction AFTER loading (1.0x speed, same pitch)
+        await sound.setRateAsync(1.0, true, Audio.PitchCorrectionQuality.High);
         
         // Play the sound
         console.log(`Playing audio for chunk ${i + 1}...`);
@@ -588,9 +691,130 @@ export const stopSpeaking = async () => {
   }
 };
 
+const MAX_CV_CHUNK_CHARS = 6000;
+
+const splitCvIntoChunks = (text: string) => {
+  const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const chunks: string[] = [];
+  let current = '';
+
+  for (const paragraph of paragraphs) {
+    if ((current + '\n\n' + paragraph).length > MAX_CV_CHUNK_CHARS) {
+      if (current) {
+        chunks.push(current);
+        current = '';
+      }
+      if (paragraph.length > MAX_CV_CHUNK_CHARS) {
+        for (let i = 0; i < paragraph.length; i += MAX_CV_CHUNK_CHARS) {
+          chunks.push(paragraph.slice(i, i + MAX_CV_CHUNK_CHARS));
+        }
+      } else {
+        current = paragraph;
+      }
+    } else {
+      current = current ? `${current}\n\n${paragraph}` : paragraph;
+    }
+  }
+
+  if (current) {
+    chunks.push(current);
+  }
+
+  return chunks;
+};
+
+const analyzeCvChunk = async (cvChunk: string, jobRole: string, index: number, total: number) => {
+  const prompt = `You are Aya, an expert CV/resume consultant. I will provide you with PART ${index + 1} of ${total} of someone's CV content and their target job role. Analyze ONLY this part and provide 2-3 SPECIFIC suggestions based on what you see in this chunk.
+
+Target Job Role: ${jobRole}
+
+CV Content (Part ${index + 1} of ${total}):
+${cvChunk}
+
+You MUST respond with ONLY valid JSON in this EXACT format (no other text):
+{
+  "suggestions": [
+    {"category": "Content", "suggestion": "Your SPECIFIC observation about this chunk and actionable suggestion"}
+  ]
+}
+
+IMPORTANT:
+- Base ALL suggestions on the CV chunk provided above
+- Reference specific parts of their CV in your suggestions
+- Give personalized, actionable advice, NOT generic tips
+- Focus on what's missing, what's weak, and what could be stronger for ${jobRole} roles
+- Suggest specific keywords, skills, or improvements based on their content
+
+Respond with ONLY the JSON object, no markdown, no code blocks, no explanations.`;
+
+  const completion = await groq.chat.completions.create({
+    messages: [
+      {
+        role: 'system',
+        content: 'You are Aya, a professional CV advisor. Analyze the provided CV content and give SPECIFIC feedback. Respond with ONLY valid JSON.',
+      },
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
+    model: 'llama-3.3-70b-versatile',
+    temperature: 0.7,
+    max_tokens: 700,
+    response_format: { type: 'json_object' },
+  });
+
+  const responseText = completion.choices[0]?.message?.content || '{}';
+  let cleanedResponse = responseText.trim();
+  if (cleanedResponse.startsWith('```json')) {
+    cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+  } else if (cleanedResponse.startsWith('```')) {
+    cleanedResponse = cleanedResponse.replace(/```\n?/g, '');
+  }
+
+  const parsed = JSON.parse(cleanedResponse);
+  if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
+    return [] as { category: string; suggestion: string }[];
+  }
+
+  return parsed.suggestions as { category: string; suggestion: string }[];
+};
+
+const mergeSuggestions = (chunks: { category: string; suggestion: string }[][]) => {
+  const flat = chunks.flat();
+  const seen = new Set<string>();
+  const merged: { category: string; suggestion: string }[] = [];
+
+  for (const item of flat) {
+    const key = `${item.category}|${item.suggestion}`.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push(item);
+    }
+    if (merged.length >= 8) break;
+  }
+
+  return merged;
+};
+
 // CV Analysis Function
 export const analyzeCVWithAI = async (cvContent: string, jobRole: string) => {
   try {
+    if (cvContent.length > MAX_CV_CHUNK_CHARS) {
+      const chunks = splitCvIntoChunks(cvContent);
+      const chunkResults: { category: string; suggestion: string }[][] = [];
+
+      for (let i = 0; i < chunks.length; i += 1) {
+        const chunkSuggestions = await analyzeCvChunk(chunks[i], jobRole, i, chunks.length);
+        chunkResults.push(chunkSuggestions);
+      }
+
+      const mergedSuggestions = mergeSuggestions(chunkResults);
+      if (mergedSuggestions.length > 0) {
+        return { suggestions: mergedSuggestions };
+      }
+    }
+
     const prompt = `You are Aya, an expert CV/resume consultant. I will provide you with someone's CV content and their target job role. Analyze their ACTUAL CV and provide 6-8 SPECIFIC suggestions based on what you see in their CV.
 
 Target Job Role: ${jobRole}

@@ -129,12 +129,53 @@ export default function InterviewHistory({ navigation }: any) {
     });
   };
 
+  const getRoleCategory = (role: string) => {
+    const normalized = (role || "").toLowerCase().trim();
+    if (!normalized || normalized === "unknown") return "General";
+
+    const match = (keywords: string[]) => keywords.some((k) => normalized.includes(k));
+
+    if (match(["software", "developer", "engineer", "it", "data", "devops", "qa", "ux", "ui", "web", "mobile", "machine learning"])) {
+      return "Tech";
+    }
+    if (match(["nurse", "health", "therap", "counselor", "paramedic", "pharmacy", "care"])) {
+      return "Healthcare & Therapy";
+    }
+    if (match(["teacher", "tutor", "education", "childcare", "school", "classroom"])) {
+      return "Education & Childcare";
+    }
+    if (match(["retail", "store", "cashier", "customer service", "customer success"])) {
+      return "Retail & Customer Service";
+    }
+    if (match(["chef", "cook", "server", "waiter", "waitress", "bar", "food", "hospitality", "hotel", "housekeeper", "front desk"])) {
+      return "Food & Hospitality";
+    }
+    if (match(["construction", "electrician", "plumber", "welder", "trades", "painter", "maintenance"])) {
+      return "Construction & Trades";
+    }
+    if (match(["warehouse", "logistics", "driver", "delivery", "dispatcher", "supply chain", "loader", "picker"])) {
+      return "Logistics & Warehouse";
+    }
+    if (match(["admin", "assistant", "office", "operations", "project", "coordinator", "manager", "recruiter", "hr"])) {
+      return "Business & Admin";
+    }
+    if (match(["sales", "marketing", "account manager", "business development", "customer", "social media"])) {
+      return "Sales & Marketing";
+    }
+    if (match(["finance", "account", "legal", "compliance", "auditor", "insurance"])) {
+      return "Finance & Legal";
+    }
+
+    return "Other";
+  };
+
   const getTopRoles = () => {
     const roleCounts: { [key: string]: number } = {};
-    interviews.forEach(i => {
-      roleCounts[i.job_role] = (roleCounts[i.job_role] || 0) + 1;
+    interviews.forEach((i) => {
+      const category = getRoleCategory(i.job_role);
+      roleCounts[category] = (roleCounts[category] || 0) + 1;
     });
-    
+
     return Object.entries(roleCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3)
@@ -249,9 +290,9 @@ export default function InterviewHistory({ navigation }: any) {
             </View>
           </View>
 
-          {/* Top Roles */}
+          {/* Top Categories */}
           <View style={styles.analyticsCard}>
-            <Text style={styles.analyticsTitle}>🎯 Most Practiced Roles</Text>
+            <Text style={styles.analyticsTitle}>🎯 Most Practiced Categories</Text>
             {getTopRoles().map((item, index) => {
               const maxCount = Math.max(...getTopRoles().map(r => r.count));
               const widthPercentage = (item.count / maxCount) * 100;

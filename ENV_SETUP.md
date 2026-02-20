@@ -28,13 +28,6 @@ Open the `.env` file and replace all placeholder values with your actual API key
 2. Create a new API key
 3. Copy it to `EXPO_PUBLIC_GROQ_API_KEY`
 
-#### Resend Email
-1. Sign up at https://resend.com/
-2. Verify your domain
-3. Go to API Keys
-4. Create a new key → `EXPO_PUBLIC_RESEND_API_KEY`
-5. Set your verified email → `EXPO_PUBLIC_FROM_EMAIL`
-
 #### Adzuna Jobs API
 1. Sign up at https://developer.adzuna.com/
 2. Create an application

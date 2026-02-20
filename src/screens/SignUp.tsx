@@ -19,7 +19,6 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
-import { sendWelcomeEmail } from "../services/emailService";
 import { supabase } from "../config/supabase";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
@@ -153,31 +152,22 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
 
       const userId = authData.user.id;
 
-      // 2. Check if user profile already exists, if not create it
-      const { data: existingUser } = await supabase
+      // 2. Upsert user profile details (do not rely on auth trigger)
+      const { error: profileError } = await supabase
         .from('users')
-        .select('id')
-        .eq('id', userId)
-        .single();
+        .upsert({
+          id: userId,
+          email: email.toLowerCase(),
+          name: name,
+          gender: upperGender,
+          age: ageNum,
+        }, { onConflict: 'id' });
 
-      if (!existingUser) {
-        // Create user profile in database (password is handled by Supabase Auth, don't store it)
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: userId,
-            email: email.toLowerCase(),
-            name: name,
-            gender: upperGender,
-            age: ageNum,
-          });
-
-        if (profileError) {
-          setLoading(false);
-          showWarning("Account created but profile setup failed. Please contact support.");
-          console.error('Profile creation error:', profileError);
-          return;
-        }
+      if (profileError) {
+        setLoading(false);
+        showWarning("Account created but profile setup failed. Please contact support.");
+        console.error('Profile creation error:', profileError);
+        return;
       }
 
       // 3. Create user preferences (if not exists)
@@ -213,32 +203,30 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         });
       }
 
-      // 5. Clear all previous user data and store new user info in AsyncStorage
-      await AsyncStorage.clear();
-      // NOTE: Do NOT set hasSeenOnboarding here - let new users see the welcome walkthrough on Home screen
-      
-      // Store the session so Supabase can authenticate database operations
+      // 5. Clear old user-specific data but keep Supabase session
+      const keysToRemove = [
+        'userName', 'userEmail', 'userId', 'jobRole', 'userProfilePhoto', 'userGender'
+      ];
+      for (const key of keysToRemove) {
+        await AsyncStorage.removeItem(key);
+      }
+
+      // Store user data for onboarding flow
+      await AsyncStorage.setItem('userId', authData.user.id);
+      await AsyncStorage.setItem('userEmail', email.toLowerCase());
+      await AsyncStorage.setItem('userName', name);
+      await AsyncStorage.setItem('userGender', upperGender);
+      await AsyncStorage.setItem('isLoggedIn', 'true');
+
       if (authData.session) {
         await AsyncStorage.setItem('supabase.session', JSON.stringify(authData.session));
-        console.log('✅ Session stored in AsyncStorage after signup');
+        console.log('✅ Session stored in AsyncStorage');
       }
-      
-      await AsyncStorage.setItem("userName", name);
-      await AsyncStorage.setItem("userEmail", email.toLowerCase());
-      await AsyncStorage.setItem("userId", userId);
-      await AsyncStorage.setItem("isLoggedIn", "true");
-
-      // 6. Welcome email (sent via Resend, not Supabase) - non-blocking
-      sendWelcomeEmail(email, name).catch(err => {
-        console.log('Welcome email failed (non-critical):', err);
-      });
 
       setLoading(false);
-      
-      // Show success message
-      showSuccess(
-        `Welcome ${name}! 🎉\n\nYour account has been created successfully!\n\nYou can now sign in and start your interview preparation journey!`
-      );
+
+      // Show success message and continue onboarding
+      showSuccess(`Welcome ${name}! 🎉\n\nLet’s set up your profile.`);
 
     } catch (error) {
       setLoading(false);

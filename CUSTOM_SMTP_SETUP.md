@@ -39,11 +39,6 @@ Your Supabase email sending has been temporarily restricted due to bounced email
    - Sender email: `your-email@gmail.com`
    - Sender name: `My Interview`
 
-### Option 3: Resend (Developer-friendly)
-1. Sign up at https://resend.com/
-2. Get your API key
-3. Follow Supabase SMTP setup with Resend credentials
-
 ## Re-enable Emails in Code
 
 Once SMTP is set up, uncomment this in `src/screens/SignUp.tsx`:

@@ -39,19 +39,6 @@ Everything below is what's left to do. Tasks are ordered by priority.
 
 ---
 
-## ⏳ EMAIL VERIFICATION (RESEND) - PENDING DNS PROPAGATION
-
-### Domain Verification Status
-- [x] Resend account created
-- [x] Domain added to Resend
-- [x] DNS records added to Squarespace
-- [ ] Wait for DNS propagation (can take up to 48 hours)
-- [ ] Verify domain in Resend dashboard
-- [ ] Update emailService.ts with production FROM email
-
-**Check status:** https://resend.com/domains
-
----
 
 ## 🟡 STEP 2: App Store Connect Setup (AFTER APPLE APPROVAL)
 

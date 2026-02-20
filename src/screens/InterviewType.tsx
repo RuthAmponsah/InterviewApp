@@ -1,13 +1,17 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import PrimaryButton from '../components/PrimaryButton';
+import PaywallModal from '../components/PaywallModal';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import BackButton from "../components/BackButton";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+import { supabase } from '../config/supabase';
+import { syncSubscriptionStatus } from '../services/purchaseService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'InterviewType'>;
 
@@ -20,6 +24,32 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
     quietSpace: false,
     ready: false,
   });
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+
+  useEffect(() => {
+    checkSubscriptionStatus();
+  }, []);
+
+  const checkSubscriptionStatus = async () => {
+    try {
+      await syncSubscriptionStatus();
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) return;
+
+      const { data: prefs } = await supabase
+        .from('user_preferences')
+        .select('subscription_tier')
+        .eq('user_id', userId)
+        .single();
+
+      if (prefs?.subscription_tier === 'monthly' || prefs?.subscription_tier === 'annual') {
+        setIsPremium(true);
+      }
+    } catch (error) {
+      console.log('Error checking subscription:', error);
+    }
+  };
 
   const toggleChecklistItem = (key: keyof typeof checklist) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -28,8 +58,49 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
 
   const allChecked = checklist.quietSpace && checklist.ready;
 
-  const goToChat = (mode: 'text' | 'voice') => {
-    navigation.navigate('InterviewChat', { mode });
+  const checkInterviewLimit = async (): Promise<boolean> => {
+    try {
+      if (isPremium) {
+        return true; // No limit for premium users
+      }
+
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) return false;
+
+      const { data: prefs } = await supabase
+        .from('user_preferences')
+        .select('interviews_this_month, last_interview_date')
+        .eq('user_id', userId)
+        .single();
+
+      if (!prefs) return false;
+
+      // Check if we need to reset monthly count
+      const lastInterview = prefs.last_interview_date ? new Date(prefs.last_interview_date) : null;
+      const now = new Date();
+      const shouldReset = !lastInterview || 
+        (lastInterview.getMonth() !== now.getMonth() || lastInterview.getFullYear() !== now.getFullYear());
+
+      const currentCount = shouldReset ? 0 : (prefs.interviews_this_month || 0);
+
+      // Free tier: 2 interviews per month
+      if (currentCount >= 2) {
+        setShowPaywall(true);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error checking interview limit:', error);
+      return false;
+    }
+  };
+
+  const goToChat = async (mode: 'text' | 'voice') => {
+    const canProceed = await checkInterviewLimit();
+    if (canProceed) {
+      navigation.navigate('InterviewChat', { mode });
+    }
   };
 
   return (
@@ -86,6 +157,15 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
           Tip: Voice interviews use cloud transcription. Make sure you have a good internet connection.
         </Text>
       </View>
+
+      <PaywallModal 
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        onSuccess={() => {
+          setShowPaywall(false);
+          checkSubscriptionStatus();
+        }}
+      />
     </View>
   );
 };

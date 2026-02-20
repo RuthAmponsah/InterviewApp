@@ -307,7 +307,7 @@ Run these SQL files in order in your Supabase SQL Editor:
 ## Data Types & Constraints
 
 ### Subscription Tiers
-- `'free'` - Default tier, 5 interviews/month limit
+- `'free'` - Default tier, 2 interviews/month limit
 - `'monthly'` - £7.99/month, unlimited interviews
 - `'annual'` - £59.99/year, unlimited interviews
 

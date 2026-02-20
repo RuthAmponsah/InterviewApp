@@ -48,7 +48,7 @@ The voice interview feature uses a cloud-based approach compatible with Expo Go:
 - ✅ RevenueCat Integration (Test API key configured)
 - ✅ Subscription Screen (Monthly/Annual plans)
 - ✅ Subscription Status Sync
-- ✅ Free tier limit (5 interviews/month)
+- ✅ Free tier limit (2 interviews/month)
 - ⚠️ Sector Packs (Marked as "Coming Soon")
 
 ### 3. Configuration

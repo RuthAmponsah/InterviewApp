@@ -85,7 +85,7 @@ const Settings = () => {
     if (subscriptionTier === 'annual' || subscriptionTier === 'monthly') {
       return 'Unlimited interviews • Premium features';
     }
-    return '5 interviews per month • Upgrade for unlimited';
+    return '2 interviews per month • Upgrade for unlimited';
   };
 
   const SECTIONS: { emoji: string; label: string; route: SettingsRoute; badge?: string; comingSoon?: boolean }[] = [

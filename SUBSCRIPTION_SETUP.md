@@ -119,7 +119,7 @@ Styled like Flo app:
 
 ## 💡 Tips
 
-- Free users see "5 interviews per month" in Settings
+- Free users see "2 interviews per month" in Settings
 - Premium users see "Unlimited interviews"
 - Sector packs work for both free and premium users
 - Annual plan has 37% discount to encourage commitment

@@ -38,7 +38,7 @@ MY INTERVIEW provides:
 - ✅ Interview tips and best practices
 
 ### Free Tier Limits
-- **5 interviews per month** (resets on 1st of each month)
+- **2 interviews per month** (resets on 1st of each month)
 - Access to basic question bank
 - Limited AI feedback
 

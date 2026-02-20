@@ -11,7 +11,7 @@ A React Native mobile application built with Expo that helps users prepare for j
 - **Job Search**: Integrated Adzuna API for job listings
 - **Success Stories**: Learn from others' interview experiences
 - **Progress Dashboard**: Visualize your improvement with detailed analytics
-- **Subscription Model**: Free tier (5 interviews/month) with premium unlimited access
+- **Subscription Model**: Free tier (2 interviews/month) with premium unlimited access
 - **Dark Mode**: Full theme support for comfortable viewing
 - **Offline Detection**: Works gracefully without internet connection
 

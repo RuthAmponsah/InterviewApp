@@ -141,11 +141,11 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
 
       const currentCount = shouldReset ? 0 : (prefs.interviews_this_month || 0);
 
-      // Free tier: 5 interviews per month
-      if (currentCount >= 5) {
+      // Free tier: 2 interviews per month
+      if (currentCount >= 2) {
         Alert.alert(
           '🔒 Interview Limit Reached',
-          "You've used all 5 free interviews this month.\n\nUpgrade to Premium for unlimited practice!",
+          "You've used all 2 free interviews this month.\n\nUpgrade to Premium for unlimited practice!",
           [
             {
               text: 'Maybe Later',

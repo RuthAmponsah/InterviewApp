@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "InterviewApp",
+    "name": "My Interview",
     "slug": "InterviewApp",
     "scheme": "interviewapp",
     "version": "1.0.0",
@@ -17,6 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.myinterview.app",
       "infoPlist": {
+        "CFBundleDisplayName": "My Interview",
         "NSPhotoLibraryUsageDescription": "MY INTERVIEW needs access to your photo library to let you choose a profile photo.",
         "NSUserNotificationsUsageDescription": "MY INTERVIEW would like to send you interview reminders and progress updates to help you stay consistent with your practice.",
         "NSDocumentsFolderUsageDescription": "MY INTERVIEW needs access to your documents to let you upload your CV for AI analysis.",
@@ -63,6 +64,7 @@
     "extra": {
       "privacyPolicyUrl": "https://ruthamponsah.github.io/InterviewApp/docs/privacy",
       "termsOfServiceUrl": "https://ruthamponsah.github.io/InterviewApp/docs/terms",
+      "supportUrl": "https://ruthamponsah.github.io/InterviewApp/docs/support",
       "eas": {
         "projectId": "5fe21a1b-adb5-4a48-ab5a-6d149d888986"
       }

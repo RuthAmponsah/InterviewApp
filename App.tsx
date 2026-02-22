@@ -14,23 +14,29 @@ export default function App() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontLoadError] = useFonts({
     Poppins_600SemiBold,
   });
   const [showSplash, setShowSplash] = useState(true);
   const [fontError, setFontError] = useState(false);
 
   useEffect(() => {
-    // Set a timeout - if fonts don't load in 10 seconds, show error
-    const timer = setTimeout(() => {
-      if (!fontsLoaded) {
-        console.error('Fonts took too long to load, showing error');
-        setFontError(true);
-      }
-    }, 10000);
+    // Check if fonts failed to load or took too long
+    if (fontLoadError) {
+      console.error('❌ Font load error:', fontLoadError);
+      setFontError(true);
+    } else {
+      // Set a timeout - if fonts don't load in 10 seconds, show error
+      const timer = setTimeout(() => {
+        if (!fontsLoaded) {
+          console.error('⏱️ Fonts took too long to load, showing error');
+          setFontError(true);
+        }
+      }, 10000);
 
-    return () => clearTimeout(timer);
-  }, [fontsLoaded]);
+      return () => clearTimeout(timer);
+    }
+  }, [fontsLoaded, fontLoadError]);
 
   useEffect(() => {
     // Initialize RevenueCat for in-app purchases

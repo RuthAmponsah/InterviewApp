@@ -62,6 +62,8 @@
       ]
     ],
     "extra": {
+      "supabaseUrl": "https://urewxbnmubmkceuplctd.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyZXd4Ym5tdWJta2NldXBsY3RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDI5ODUsImV4cCI6MjA4Njk2Mjk4NX0.-3iTHRL1oMqbZPaDYzBr80NNbw2UL7c8LkyuFWyMz6E",
       "privacyPolicyUrl": "https://ruthamponsah.github.io/InterviewApp/privacy",
       "termsOfServiceUrl": "https://ruthamponsah.github.io/InterviewApp/terms",
       "supportUrl": "https://ruthamponsah.github.io/InterviewApp/support",

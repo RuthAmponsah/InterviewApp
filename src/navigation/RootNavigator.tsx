@@ -205,17 +205,30 @@ const RootNavigator = () => {
   useEffect(() => {
     const determineInitialRoute = async () => {
       try {
-        // Set a timeout - if session check takes >5 seconds, go to SignIn
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Session check timeout')), 5000)
-        );
+        // Create session promise with a timeout
+        let session = null;
+        let timedOut = false;
 
-        const { data: { session } } = await Promise.race([
-          sessionPromise,
-          timeoutPromise,
-        ]) as any;
-        
+        // Start the session check
+        const sessionPromise = supabase.auth.getSession();
+
+        // Create a timeout that marks failure
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          console.warn('⏱️ Session check timed out after 5 seconds');
+        }, 5000);
+
+        // Wait for session or timeout
+        const { data: { session: authSession } } = await sessionPromise;
+        clearTimeout(timeoutId);
+
+        if (timedOut) {
+          console.warn('⚠️ Session check completed but took too long, defaulting to SignIn');
+          setInitialRoute("SignIn");
+          return;
+        }
+
+        session = authSession;
         console.log('📱 App loaded - Supabase session:', session ? 'Active ✅' : 'None ❌');
 
         if (session) {
@@ -228,8 +241,7 @@ const RootNavigator = () => {
           setInitialRoute("SignIn");
         }
       } catch (error) {
-        console.error('Error checking session:', error);
-        // Default to SignIn if anything goes wrong
+        console.error('❌ Error checking session:', error);
         setLoadError(true);
         setInitialRoute("SignIn");
       }

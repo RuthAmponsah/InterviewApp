@@ -211,13 +211,13 @@ We may update this Privacy Policy to reflect:
 ### Data Controller
 
 **My Interview App**  
-Email: privacy@myinterviewapp.com  
-Support: support@myinterviewapp.com
+Email: info@interviewappcom.com  
+Support: info@interviewappcom.com
 
 ### Data Protection Officer (DPO)
 
 For data protection inquiries:  
-Email: dpo@myinterviewapp.com
+Email: info@interviewappcom.com
 
 ### Response Times
 
@@ -245,7 +245,7 @@ You can withdraw your consent at any time by deleting your account via **Setting
 **Questions or Concerns?**
 
 We're here to help. Contact us at:
-- Email: privacy@myinterviewapp.com
+- Email: info@interviewappcom.com
 - In-app: Settings > Help Centre > Contact Support
 
 Thank you for trusting My Interview with your data. Your privacy matters to us.

@@ -252,7 +252,7 @@ These Terms are governed by the laws of **England and Wales**.
 Any disputes shall be resolved in the courts of England and Wales.
 
 ### Alternative Dispute Resolution
-- Before litigation, we encourage informal resolution via support@myinterviewapp.com
+- Before litigation, we encourage informal resolution via info@interviewappcom.com
 - Mediation through an independent mediator (costs shared 50/50)
 - Small claims court for disputes under £10,000
 
@@ -289,14 +289,14 @@ We are not liable for failure to perform due to circumstances beyond our reasona
 ## 18. Contact Information
 
 ### General Inquiries
-Email: support@myinterviewapp.com  
+Email: info@interviewappcom.com  
 Website: https://myinterviewapp.com
 
 ### Legal/Compliance
-Email: legal@myinterviewapp.com
+Email: info@interviewappcom.com
 
 ### Data Protection
-Email: privacy@myinterviewapp.com
+Email: info@interviewappcom.com
 
 ### Response Times
 - General support: 2-3 business days
@@ -316,6 +316,6 @@ By creating an account and using My Interview, you acknowledge that:
 
 **Questions about these Terms?**
 
-Contact us at legal@myinterviewapp.com
+Contact us at info@interviewappcom.com
 
 Thank you for choosing My Interview. Good luck with your interviews! 🚀

@@ -269,7 +269,7 @@ const RootNavigator = () => {
         <Text
           style={{
             fontSize: 16,
-            color: colors.text,
+            color: colors.textDark,
             textAlign: "center",
             marginBottom: 20,
           }}
@@ -279,7 +279,7 @@ const RootNavigator = () => {
         <Text
           style={{
             fontSize: 14,
-            color: colors.gray,
+            color: colors.textMuted,
             textAlign: "center",
           }}
         >

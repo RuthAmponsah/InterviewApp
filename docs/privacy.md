@@ -150,14 +150,14 @@ Contact the UK Information Commissioner's Office (ICO):
 2. Select **Download My Data** or **Delete Account**
 
 ### Email Us
-Contact: privacy@myinterviewapp.com  
+Contact: info@interviewappcom.com  
 Response time: Within 30 days (usually within 7 days)
 
 ## Children's Privacy
 
 MY INTERVIEW is intended for users aged **16 and over**. We do not knowingly collect data from children under 16.
 
-If we discover we've collected data from a child under 16, we will delete it immediately. Parents/guardians can contact us at privacy@myinterviewapp.com.
+If we discover we've collected data from a child under 16, we will delete it immediately. Parents/guardians can contact us at info@interviewappcom.com.
 
 ## Cookies and Tracking
 

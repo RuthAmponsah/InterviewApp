@@ -15,7 +15,11 @@
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "@supabaseUrl",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "@supabaseAnonKey"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "@supabaseAnonKey",
+        "EXPO_PUBLIC_GROQ_API_KEY": "@groqApiKey",
+        "EXPO_PUBLIC_ADZUNA_APP_ID": "@adzunaAppId",
+        "EXPO_PUBLIC_ADZUNA_APP_KEY": "@adzunaAppKey",
+        "EXPO_PUBLIC_ELEVENLABS_API_KEY": "@elevenlabsApiKey"
       }
     }
   },

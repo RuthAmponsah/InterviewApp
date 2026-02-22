@@ -16,7 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import PrimaryButton from '../components/PrimaryButton';
 import TextInputField from '../components/TextInputField';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
@@ -70,7 +69,7 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
     setIsSuccessMessage(true);
   };
 
-  // SAVE USER DATA TO SUPABASE + SEND WELCOME EMAIL + GO TO WELCOME PAGE
+  // CREATE AUTH USER, THEN RETURN TO SIGN IN
   const handleSignUp = async () => {
     if (!name || !email || !password) return;
 
@@ -110,8 +109,7 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
     setLoading(true);
 
     try {
-      // 1. Create auth user in Supabase (NO email verification)
-      // Create Supabase Auth account (no email verification required for testing)
+      // 1. Create auth user in Supabase
       console.log('Creating Supabase Auth account for:', email.toLowerCase());
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.toLowerCase(),
@@ -120,9 +118,9 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
           emailRedirectTo: undefined,
           data: {
             name: name,
+            gender: upperGender,
+            age: ageNum.toString(),
           },
-          // Skip email confirmation for development (requires Supabase dashboard setting)
-          // Go to Authentication > Settings > Enable email confirmations = OFF
         }
       });
 
@@ -150,83 +148,16 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         return;
       }
 
-      const userId = authData.user.id;
-
-      // 2. Upsert user profile details (do not rely on auth trigger)
-      const { error: profileError } = await supabase
-        .from('users')
-        .upsert({
-          id: userId,
-          email: email.toLowerCase(),
-          name: name,
-          gender: upperGender,
-          age: ageNum,
-        }, { onConflict: 'id' });
-
-      if (profileError) {
-        setLoading(false);
-        showWarning("Account created but profile setup failed. Please contact support.");
-        console.error('Profile creation error:', profileError);
-        return;
-      }
-
-      // 3. Create user preferences (if not exists)
-      const { data: existingPrefs } = await supabase
-        .from('user_preferences')
-        .select('id')
-        .eq('user_id', authData.user.id)
-        .single();
-
-      if (!existingPrefs) {
-        await supabase.from('user_preferences').insert({
-          user_id: authData.user.id,
-          theme: 'system',
-          notif_push: true,
-          notif_email: true,
-          notif_practice: true,
-          notif_feedback: true,
-        });
-      }
-
-      // 4. Create user progress (if not exists)
-      const { data: existingProgress } = await supabase
-        .from('user_progress')
-        .select('id')
-        .eq('user_id', userId)
-        .single();
-
-      if (!existingProgress) {
-        await supabase.from('user_progress').insert({
-          user_id: userId,
-          streak: 0,
-          total_interviews: 0,
-        });
-      }
-
-      // 5. Clear old user-specific data but keep Supabase session
-      const keysToRemove = [
-        'userName', 'userEmail', 'userId', 'jobRole', 'userProfilePhoto', 'userGender'
-      ];
-      for (const key of keysToRemove) {
-        await AsyncStorage.removeItem(key);
-      }
-
-      // Store user data for onboarding flow
-      await AsyncStorage.setItem('userId', authData.user.id);
-      await AsyncStorage.setItem('userEmail', email.toLowerCase());
-      await AsyncStorage.setItem('userName', name);
-      await AsyncStorage.setItem('userGender', upperGender);
-      await AsyncStorage.setItem('isLoggedIn', 'true');
-
-      if (authData.session) {
-        await AsyncStorage.setItem('supabase.session', JSON.stringify(authData.session));
-        console.log('✅ Session stored in AsyncStorage');
-      }
-
       setLoading(false);
 
-      // Show success message and continue onboarding
-      showSuccess(`Welcome ${name}! 🎉\n\nLet’s set up your profile.`);
+      if (authData.session) {
+        await supabase.auth.signOut();
+      }
+
+      // Show success message and return to sign in
+      showSuccess(
+        `Account created! Please check your email to confirm, then sign in.`
+      );
 
     } catch (error) {
       setLoading(false);
@@ -351,10 +282,10 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
               style={styles.modalButton}
               onPress={() => {
                 setWarningVisible(false);
-                // Navigate to Welcome screen to continue onboarding
+                // Return to sign in after successful signup
                 if (isSuccessMessage) {
                   setTimeout(() => {
-                    navigation.replace("Welcome");
+                    navigation.replace("SignIn");
                   }, 300);
                 }
               }}

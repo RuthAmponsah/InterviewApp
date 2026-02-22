@@ -38,6 +38,9 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorTitle, setErrorTitle] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [showResend, setShowResend] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(16)).current;
@@ -60,10 +63,52 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
     ]).start();
   }, [fadeAnim, translateY]);
 
-  const showError = (title: string, message: string) => {
+  const showError = (title: string, message: string, allowResend: boolean = false) => {
     setErrorTitle(title);
     setErrorMessage(message);
     setErrorVisible(true);
+    setShowResend(allowResend);
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      showError('Missing Email', 'Please enter your email address first.');
+      return;
+    }
+
+    if (resendCooldown > 0) {
+      return;
+    }
+
+    try {
+      setResendLoading(true);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.toLowerCase(),
+      });
+
+      if (error) {
+        setErrorMessage('Could not resend confirmation email. Please try again.');
+        console.error('Resend confirmation error:', error);
+        return;
+      }
+
+      setErrorMessage('Confirmation email sent. Please check your inbox.');
+      
+      // Start 30-second cooldown
+      setResendCooldown(30);
+      const interval = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } finally {
+      setResendLoading(false);
+    }
   };
 
   const onSignIn = async () => {
@@ -86,6 +131,19 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
         setLoading(false);
         console.error('Supabase Auth failed:', authError.message);
         console.error('Error code:', authError.status);
+        const needsConfirmation = /email\s*not\s*confirmed|confirm\s*your\s*email|email\s*confirmation/i.test(
+          authError.message
+        );
+
+        if (needsConfirmation) {
+          showError(
+            'Email Not Confirmed',
+            'Please confirm your email before signing in.',
+            true
+          );
+          return;
+        }
+
         showError('Invalid Credentials', 'The email or password you entered is incorrect. Please try again.');
         return;
       }
@@ -94,17 +152,36 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       console.log('Auth user ID:', authData.user.id);
 
       // Fetch user profile from database using authenticated user's ID
-      const { data: userData, error: userError } = await supabase
+      let { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', authData.user.id)
         .single();
 
       if (userError || !userData) {
-        setLoading(false);
-        showError('Profile Error', 'Could not load your profile. Please contact support.');
-        console.error('User profile fetch error:', userError);
-        return;
+        const userMeta = authData.user.user_metadata || {};
+        const ageValue = userMeta.age && /^\d+$/.test(userMeta.age) ? parseInt(userMeta.age, 10) : null;
+
+        const { data: createdUser, error: createError } = await supabase
+          .from('users')
+          .upsert({
+            id: authData.user.id,
+            email: (authData.user.email || email).toLowerCase(),
+            name: userMeta.name || 'User',
+            gender: userMeta.gender || null,
+            age: ageValue,
+          }, { onConflict: 'id' })
+          .select('*')
+          .single();
+
+        if (createError || !createdUser) {
+          setLoading(false);
+          showError('Profile Error', 'Could not create your profile. Please contact support.');
+          console.error('User profile create error:', createError || userError);
+          return;
+        }
+
+        userData = createdUser;
       }
 
       const hasSeenOnboardingGlobal = await AsyncStorage.getItem('hasSeenOnboardingGlobal');
@@ -112,7 +189,7 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       // DO NOT clear all storage - Supabase manages session in AsyncStorage automatically
       // Only remove old user-specific data
       const keysToRemove = [
-        'userName', 'userEmail', 'userId', 'jobRole', 'userProfilePhoto'
+        'userName', 'userEmail', 'userId', 'jobRole', 'userProfilePhoto', 'userGender'
       ];
       for (const key of keysToRemove) {
         await AsyncStorage.removeItem(key);
@@ -147,6 +224,9 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       await AsyncStorage.setItem('isLoggedIn', 'true');
       await AsyncStorage.setItem('userEmail', userData.email);
       await AsyncStorage.setItem('userName', userData.name);
+      if (userData.gender) {
+        await AsyncStorage.setItem('userGender', userData.gender);
+      }
       
       if (userData.job_role) {
         await AsyncStorage.setItem('jobRole', userData.job_role);
@@ -170,7 +250,16 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
 
       setLoading(false);
       
-      // Navigate to main app - user has already completed sign up
+      const shouldShowWelcome = !userData.job_role;
+
+      if (shouldShowWelcome) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Welcome' }],
+        });
+        return;
+      }
+
       navigation.reset({
         index: 0,
         routes: [{ name: 'MainTabs' }],
@@ -271,9 +360,28 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.modalWarning}>⚠️ {errorTitle}</Text>
             <Text style={styles.modalText}>{errorMessage}</Text>
 
+            {showResend && (
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalSecondaryButton]}
+                onPress={handleResendConfirmation}
+                disabled={resendLoading || resendCooldown > 0}
+              >
+                <Text style={styles.modalSecondaryButtonText}>
+                  {resendLoading
+                    ? 'Sending...'
+                    : resendCooldown > 0
+                    ? `Resend email (${resendCooldown}s)`
+                    : 'Resend email'}
+                </Text>
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity
               style={styles.modalButton}
-              onPress={() => setErrorVisible(false)}
+              onPress={() => {
+                setErrorVisible(false);
+                setShowResend(false);
+              }}
             >
               <Text style={styles.modalButtonText}>OK</Text>
             </TouchableOpacity>
@@ -392,11 +500,24 @@ const makeStyles = (colors: any, isDark: boolean) =>
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 10,
+    minWidth: 160,
+    alignItems: 'center',
   },
   modalButtonText: {
     ...typography.bodyMedium,
     color: "white",
     fontWeight: "700",
+  },
+  modalSecondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.primaryBlue,
+    marginBottom: 10,
+  },
+  modalSecondaryButtonText: {
+    ...typography.bodyMedium,
+    color: colors.primaryBlue,
+    fontWeight: '700',
   },
 });
 

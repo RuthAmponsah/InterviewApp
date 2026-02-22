@@ -235,7 +235,7 @@ The app will also request permission the first time you use voice interviews.
 - **Secure login** with encrypted passwords
 - **Row-Level Security** ensuring you only access your own data
 
-See our [Privacy Policy](privacy) for full details.
+See our [Privacy Policy](/InterviewApp/privacy) for full details.
 
 ### Are my voice recordings stored?
 
@@ -258,7 +258,7 @@ Only you! We use **Row-Level Security** policies to ensure:
 - **Deleted accounts**: Data permanently deleted within **30 days**
 - **Backups**: Deleted data removed from backups within **90 days**
 
-For full details, see our [Privacy Policy](privacy).
+For full details, see our [Privacy Policy](/InterviewApp/privacy).
 
 ---
 

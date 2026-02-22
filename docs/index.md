@@ -159,9 +159,9 @@ Available on the **App Store** for iPad and iPhone.
 
 ## 📚 Learn More
 
-- [Support & FAQs](support) — Get help with common questions
-- [Privacy Policy](privacy) — See how we protect your data
-- [Terms of Service](terms) — Our complete terms and conditions
+- [Support & FAQs](/InterviewApp/support) — Get help with common questions
+- [Privacy Policy](/InterviewApp/privacy) — See how we protect your data
+- [Terms of Service](/InterviewApp/terms) — Our complete terms and conditions
 
 ---
 

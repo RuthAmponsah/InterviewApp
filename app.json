@@ -62,9 +62,9 @@
       ]
     ],
     "extra": {
-      "privacyPolicyUrl": "https://ruthamponsah.github.io/InterviewApp/docs/privacy",
-      "termsOfServiceUrl": "https://ruthamponsah.github.io/InterviewApp/docs/terms",
-      "supportUrl": "https://ruthamponsah.github.io/InterviewApp/docs/support",
+      "privacyPolicyUrl": "https://ruthamponsah.github.io/InterviewApp/privacy",
+      "termsOfServiceUrl": "https://ruthamponsah.github.io/InterviewApp/terms",
+      "supportUrl": "https://ruthamponsah.github.io/InterviewApp/support",
       "marketingUrl": "https://ruthamponsah.github.io/InterviewApp/",
       "eas": {
         "projectId": "5fe21a1b-adb5-4a48-ab5a-6d149d888986"

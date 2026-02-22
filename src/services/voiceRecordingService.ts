@@ -122,7 +122,6 @@ export const transcribeAudio = async (uri: string): Promise<string | null> => {
   try {
     console.log('🔄 Transcribing audio...');
     console.log('📁 File URI:', uri);
-    console.log('🔑 API Key:', GROQ_API_KEY ? GROQ_API_KEY.substring(0, 10) + '...' : 'MISSING');
     
     if (!GROQ_API_KEY) {
       console.error('❌ Groq API key not configured!');

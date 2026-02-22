@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React, { useState, useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, View, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useTheme } from "../theme/ThemeContext";
@@ -200,14 +200,22 @@ function MainTabs() {
 const RootNavigator = () => {
   const { colors } = useTheme();
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     const determineInitialRoute = async () => {
       try {
-        // Wait a moment for Supabase to restore session from AsyncStorage
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Set a timeout - if session check takes >5 seconds, go to SignIn
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Session check timeout')), 5000)
+        );
+
+        const { data: { session } } = await Promise.race([
+          sessionPromise,
+          timeoutPromise,
+        ]) as any;
         
-        const { data: { session } } = await supabase.auth.getSession();
         console.log('📱 App loaded - Supabase session:', session ? 'Active ✅' : 'None ❌');
 
         if (session) {
@@ -221,6 +229,8 @@ const RootNavigator = () => {
         }
       } catch (error) {
         console.error('Error checking session:', error);
+        // Default to SignIn if anything goes wrong
+        setLoadError(true);
         setInitialRoute("SignIn");
       }
     };
@@ -240,6 +250,41 @@ const RootNavigator = () => {
         }}
       >
         <ActivityIndicator size="large" color={colors.primaryBlue} />
+      </View>
+    );
+  }
+
+  // Show error state if loading failed
+  if (loadError) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.background,
+          paddingHorizontal: 20,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 16,
+            color: colors.text,
+            textAlign: "center",
+            marginBottom: 20,
+          }}
+        >
+          ⚠️ Loading Error
+        </Text>
+        <Text
+          style={{
+            fontSize: 14,
+            color: colors.gray,
+            textAlign: "center",
+          }}
+        >
+          The app encountered an error. Please close and reopen the app.
+        </Text>
       </View>
     );
   }

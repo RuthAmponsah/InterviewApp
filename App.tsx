@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, useColorScheme, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, useColorScheme, ActivityIndicator, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeContext';
@@ -18,6 +18,19 @@ export default function App() {
     Poppins_600SemiBold,
   });
   const [showSplash, setShowSplash] = useState(true);
+  const [fontError, setFontError] = useState(false);
+
+  useEffect(() => {
+    // Set a timeout - if fonts don't load in 10 seconds, show error
+    const timer = setTimeout(() => {
+      if (!fontsLoaded) {
+        console.error('Fonts took too long to load, showing error');
+        setFontError(true);
+      }
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, [fontsLoaded]);
 
   useEffect(() => {
     // Initialize RevenueCat for in-app purchases
@@ -48,10 +61,21 @@ export default function App() {
     }
   };
 
+  if (fontError) {
+    return (
+      <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
+        <Text style={{ color: isDark ? '#ffffff' : '#000000', fontSize: 16, textAlign: 'center', marginHorizontal: 20 }}>
+          ⚠️ Loading Error
+          {'\n\n'}
+          The app is having trouble loading. Please close and reopen the app.
+        </Text>
+      </View>
+    );
+  }
+
   if (!fontsLoaded) {
     return (
-      <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}
-      >
+      <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
         <ActivityIndicator size="large" color={isDark ? '#ffffff' : '#0f0f0f'} />
       </View>
     );

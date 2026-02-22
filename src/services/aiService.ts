@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const GROQ_API_KEY = Constants.expoConfig?.extra?.groqApiKey || process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
 
 // ElevenLabs for Aya's soothing voice (free: 10k chars/month at elevenlabs.io)
-const ELEVENLABS_API_KEY = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY || '';
+const ELEVENLABS_API_KEY = Constants.expoConfig?.extra?.elevenlabsApiKey || process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY || '';
 const ELEVENLABS_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Rachel - warm, calm voice
 
 if (!GROQ_API_KEY) {

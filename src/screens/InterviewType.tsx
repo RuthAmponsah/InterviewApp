@@ -67,13 +67,17 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
       const userId = await AsyncStorage.getItem('userId');
       if (!userId) return false;
 
-      const { data: prefs } = await supabase
+      const { data: prefs, error } = await supabase
         .from('user_preferences')
         .select('interviews_this_month, last_interview_date')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();  // Use maybeSingle instead of single - doesn't throw if no record
 
-      if (!prefs) return false;
+      // If no preferences record exists, allow interview (they have 0 interviews)
+      if (!prefs) {
+        console.log('No preferences record - allowing first interview');
+        return true;
+      }
 
       // Check if we need to reset monthly count
       const lastInterview = prefs.last_interview_date ? new Date(prefs.last_interview_date) : null;

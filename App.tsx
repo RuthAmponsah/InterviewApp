@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, useColorScheme } from 'react-native';
+import { View, StyleSheet, useColorScheme, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeContext';
@@ -49,7 +49,12 @@ export default function App() {
   };
 
   if (!fontsLoaded) {
-    return null;
+    return (
+      <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}
+      >
+        <ActivityIndicator size="large" color={isDark ? '#ffffff' : '#0f0f0f'} />
+      </View>
+    );
   }
 
   return (

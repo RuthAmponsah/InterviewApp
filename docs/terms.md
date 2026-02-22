@@ -1,4 +1,4 @@
-# Terms of Service for My Interview App
+# Terms of Service for My Interview
 
 **Last Updated:** December 27, 2025  
 **Effective Date:** December 27, 2025

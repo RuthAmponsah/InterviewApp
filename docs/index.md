@@ -133,15 +133,15 @@ Review your performance, try again, and watch yourself improve.
 
 ---
 
-## 🔒 Your Privacy Matters
+## 🔒 Security & Privacy You Can Trust
 
 ✅ **Zero data selling**: We never sell or share your personal information  
 ✅ **Military-grade encryption**: AES-256 encryption for all your data  
 ✅ **No voice storage**: Voice recordings are never stored on our servers  
-✅ **Complete control**: Delete your account and data anytime  
+✅ **Your control**: Delete your account and data anytime  
 ✅ **UK GDPR compliant**: Full compliance with UK data protection laws
 
-Read our [Privacy Policy](privacy) for complete details.
+Learn more in our [Privacy Policy](/InterviewApp/privacy).
 
 ---
 

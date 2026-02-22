@@ -1,4 +1,4 @@
-# Support for My Interview App
+# Support for My Interview
 
 **Last Updated:** February 22, 2026
 

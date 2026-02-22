@@ -1,4 +1,4 @@
-# Privacy Policy for My Interview App
+# Privacy Policy for My Interview
 
 **Last Updated:** December 28, 2025  
 **Effective Date:** December 27, 2025

@@ -1,13 +1,13 @@
-# Privacy Policy for MY INTERVIEW App
+# Privacy Policy for My Interview App
 
 **Last Updated:** December 28, 2025  
 **Effective Date:** December 27, 2025
 
 ## Introduction
 
-Welcome to MY INTERVIEW ("we," "our," or "us"). We are committed to protecting your privacy and personal data. This Privacy Policy explains how we collect, use, store, and protect your information when you use our mobile application.
+Welcome to My Interview ("we," "our," or "us"). We are committed to protecting your privacy and personal data. This Privacy Policy explains how we collect, use, store, and protect your information when you use our mobile application.
 
-MY INTERVIEW is designed for users aged 16 and over who are seeking employment and want to practice interview skills.
+My Interview is designed for users aged 16 and over who are seeking employment and want to practice interview skills.
 
 ## Information We Collect
 
@@ -155,7 +155,7 @@ Response time: Within 30 days (usually within 7 days)
 
 ## Children's Privacy
 
-MY INTERVIEW is intended for users aged **16 and over**. We do not knowingly collect data from children under 16.
+My Interview is intended for users aged **16 and over**. We do not knowingly collect data from children under 16.
 
 If we discover we've collected data from a child under 16, we will delete it immediately. Parents/guardians can contact us at info@interviewappcom.com.
 
@@ -210,7 +210,7 @@ We may update this Privacy Policy to reflect:
 
 ### Data Controller
 
-**MY INTERVIEW App**  
+**My Interview App**  
 Email: privacy@myinterviewapp.com  
 Support: support@myinterviewapp.com
 
@@ -236,7 +236,7 @@ This Privacy Policy is governed by:
 
 ## Your Consent
 
-By creating an account and using MY INTERVIEW, you acknowledge that you have read, understood, and agree to this Privacy Policy.
+By creating an account and using My Interview, you acknowledge that you have read, understood, and agree to this Privacy Policy.
 
 You can withdraw your consent at any time by deleting your account via **Settings > Privacy & Security > Delete Account**.
 
@@ -248,4 +248,4 @@ We're here to help. Contact us at:
 - Email: privacy@myinterviewapp.com
 - In-app: Settings > Help Centre > Contact Support
 
-Thank you for trusting MY INTERVIEW with your data. Your privacy matters to us.
+Thank you for trusting My Interview with your data. Your privacy matters to us.

@@ -1,20 +1,20 @@
-# Terms of Service for MY INTERVIEW App
+# Terms of Service for My Interview App
 
 **Last Updated:** December 27, 2025  
 **Effective Date:** December 27, 2025
 
 ## 1. Agreement to Terms
 
-Welcome to MY INTERVIEW ("App," "we," "our," or "us"). By accessing or using our mobile application, you agree to be bound by these Terms of Service ("Terms").
+Welcome to My Interview ("App," "we," "our," or "us"). By accessing or using our mobile application, you agree to be bound by these Terms of Service ("Terms").
 
 **If you do not agree to these Terms, do not use the App.**
 
-These Terms constitute a legally binding agreement between you ("User," "you," or "your") and MY INTERVIEW.
+These Terms constitute a legally binding agreement between you ("User," "you," or "your") and My Interview.
 
 ## 2. Eligibility
 
 ### Age Requirement
-- You must be **16 years or older** to use MY INTERVIEW
+- You must be **16 years or older** to use My Interview
 - If you are under 18, you confirm you have parental/guardian consent
 - We reserve the right to verify age at any time
 
@@ -25,7 +25,7 @@ These Terms constitute a legally binding agreement between you ("User," "you," o
 
 ## 3. Description of Service
 
-MY INTERVIEW provides:
+My Interview provides:
 
 ### Core Features (Free & Paid)
 - ✅ AI-powered interview practice (text and voice modes)
@@ -96,7 +96,7 @@ We may suspend or terminate your account if you:
 - ❌ Create multiple accounts to bypass free tier limits
 - ❌ Reverse engineer or decompile the App
 - ❌ Interfere with the App's operation or security
-- ❌ Impersonate MY INTERVIEW staff or other users
+- ❌ Impersonate My Interview staff or other users
 - ❌ Submit copyrighted material without permission
 
 ## 6. Subscriptions and Payments
@@ -147,7 +147,7 @@ We may suspend or terminate your account if you:
 ## 7. Intellectual Property
 
 ### Our IP Rights
-- The App, including all content, features, and functionality, is owned by MY INTERVIEW
+- The App, including all content, features, and functionality, is owned by My Interview
 - Protected by copyright, trademark, and other intellectual property laws
 - You may not copy, modify, distribute, or create derivative works without permission
 
@@ -180,7 +180,7 @@ We may suspend or terminate your account if you:
 - Use AI feedback as one tool among many in your job search
 
 ### No Guarantees
-- Using MY INTERVIEW does not guarantee job offers or interview success
+- Using My Interview does not guarantee job offers or interview success
 - Results depend on your skills, preparation, and the job market
 
 ## 9. Third-Party Services
@@ -225,7 +225,7 @@ THE APP IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, E
 - We are not liable for service interruptions
 
 ### Limitation of Liability
-TO THE MAXIMUM EXTENT PERMITTED BY LAW, MY INTERVIEW SHALL NOT BE LIABLE FOR:
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, My Interview SHALL NOT BE LIABLE FOR:
 - Indirect, incidental, or consequential damages
 - Lost profits, data, or opportunities
 - Damages exceeding £100 or amount paid in last 12 months (whichever is greater)
@@ -237,7 +237,7 @@ TO THE MAXIMUM EXTENT PERMITTED BY LAW, MY INTERVIEW SHALL NOT BE LIABLE FOR:
 
 ## 12. Indemnification
 
-You agree to indemnify and hold harmless MY INTERVIEW, its officers, employees, and partners from any claims, damages, or expenses arising from:
+You agree to indemnify and hold harmless My Interview, its officers, employees, and partners from any claims, damages, or expenses arising from:
 - Your use of the App
 - Your violation of these Terms
 - Your violation of any third-party rights
@@ -276,7 +276,7 @@ If any provision of these Terms is found to be invalid or unenforceable, the rem
 
 ## 16. Entire Agreement
 
-These Terms, together with the Privacy Policy, constitute the entire agreement between you and MY INTERVIEW regarding the App.
+These Terms, together with the Privacy Policy, constitute the entire agreement between you and My Interview regarding the App.
 
 ## 17. Force Majeure
 
@@ -305,7 +305,7 @@ Email: privacy@myinterviewapp.com
 
 ## 19. Acknowledgment
 
-By creating an account and using MY INTERVIEW, you acknowledge that:
+By creating an account and using My Interview, you acknowledge that:
 1. You have read and understood these Terms
 2. You agree to be bound by these Terms
 3. You are 16 years or older
@@ -318,4 +318,4 @@ By creating an account and using MY INTERVIEW, you acknowledge that:
 
 Contact us at legal@myinterviewapp.com
 
-Thank you for choosing MY INTERVIEW. Good luck with your interviews! 🚀
+Thank you for choosing My Interview. Good luck with your interviews! 🚀

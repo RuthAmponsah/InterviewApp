@@ -1,16 +1,16 @@
-# MY INTERVIEW - Master Interview Skills, Land Your Dream Job
+# My Interview - Master Interview Skills, Land Your Dream Job
 
-**Transform Your Interview Performance in Minutes a Day**
+**Last Updated:** February 22, 2026
 
 ---
 
-## 🎯 Welcome to MY INTERVIEW
+## About My Interview
 
 Stop worrying about interviews. Start mastering them.
 
-MY INTERVIEW is your personal AI-powered interview coach, available 24/7 on your iPad or iPhone. Practice realistic interview questions, get AI-powered feedback, and build confidence before your big moment.
+My Interview is your personal AI-powered interview coach, available 24/7 on your iPad or iPhone. Practice realistic interview questions, get AI-powered feedback, and build confidence before your big moment.
 
-Whether you're a first-time job seeker or a seasoned professional, MY INTERVIEW helps you interview better, faster, and with more confidence.
+Whether you're a first-time job seeker or a seasoned professional, My Interview helps you interview better, faster, and with more confidence.
 
 ---
 
@@ -51,7 +51,7 @@ Practice speaking your answers aloud and get AI feedback on:
 
 ## 📱 Available on iOS
 
-MY INTERVIEW works seamlessly on:
+My Interview works seamlessly on:
 - ✅ **iPad**: Full-screen, optimized tablet experience
 - ✅ **iPhone**: Practice interviews on the go
 - ⏳ **Android**: Coming soon
@@ -81,7 +81,7 @@ MY INTERVIEW works seamlessly on:
 
 ---
 
-## 🚀 Why Choose MY INTERVIEW?
+## 🚀 Why Choose My Interview?
 
 ### Realistic Practice
 Our AI learns from thousands of real interview questions to generate authentic scenarios that match actual interviews.
@@ -96,7 +96,7 @@ Practice on your schedule. Morning, night, weekends—whenever you're ready to p
 Your interview data is completely private. We never store voice recordings, and we use military-grade encryption for all your personal information.
 
 ### Proven Results
-Users of MY INTERVIEW report:
+Users of My Interview report:
 - 40% more confidence in interviews
 - Improved answer structure and clarity
 - Better handling of difficult questions
@@ -147,7 +147,7 @@ Read our [Privacy Policy](privacy) for complete details.
 
 ## 🏆 Ready to Master Your Interviews?
 
-### Download MY INTERVIEW Today
+### Download My Interview Today
 
 Get started with **2 free interviews per month**. No credit card required.
 
@@ -174,6 +174,6 @@ Have questions or feedback? We'd love to hear from you!
 
 ---
 
-**Copyright © 2026 MY INTERVIEW. All rights reserved.**
+**Copyright © 2026 My Interview. All rights reserved.**
 
-*MY INTERVIEW is your interview preparation partner, designed to help you practice, improve, and succeed in your job interviews.*
+*My Interview is your interview preparation partner, designed to help you practice, improve, and succeed in your job interviews.*

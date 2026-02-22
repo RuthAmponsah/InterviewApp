@@ -1,10 +1,10 @@
-# Support for MY INTERVIEW App
+# Support for My Interview App
 
 **Last Updated:** February 22, 2026
 
 ## Introduction
 
-Welcome to the MY INTERVIEW Support Center. We're here to help you get the most out of your interview practice journey. Below you'll find answers to frequently asked questions organized by topic.
+Welcome to the My Interview Support Center. We're here to help you get the most out of your interview practice journey. Below you'll find answers to frequently asked questions organized by topic.
 
 If you can't find what you're looking for, don't hesitate to [contact us](#contact-us).
 
@@ -14,7 +14,7 @@ If you can't find what you're looking for, don't hesitate to [contact us](#conta
 
 ### How do I create an account?
 
-1. Download MY INTERVIEW from the App Store
+1. Download My Interview from the App Store
 2. Tap **Sign Up**
 3. Enter your email and create a password
 4. Complete your profile with your name and job preferences
@@ -22,9 +22,9 @@ If you can't find what you're looking for, don't hesitate to [contact us](#conta
 
 ### Is the app free to use?
 
-✅ **Yes!** MY INTERVIEW offers a free tier with **2 interviews per month**. Upgrade to **Premium** for unlimited interviews, voice practice, and advanced features.
+✅ **Yes!** My Interview offers a free tier with **2 interviews per month**. Upgrade to **Premium** for unlimited interviews, voice practice, and advanced features.
 
-### What devices does MY INTERVIEW support?
+### What devices does My Interview support?
 
 ✅ **iOS devices**: iPad and iPhone (iOS 14+)  
 ⏳ **Android support** is coming soon
@@ -75,7 +75,7 @@ You receive comprehensive feedback including:
 3. Check your inbox for a password reset link (usually arrives within **5 minutes**)
 4. Click the link and create a new password
 
-### Can I use MY INTERVIEW on multiple devices?
+### Can I use My Interview on multiple devices?
 
 ✅ **Yes!** Log in with the same email on any device and your interview history, progress, and settings will sync automatically.
 
@@ -162,7 +162,7 @@ If the problem persists, [contact us](#contact-us).
 **Troubleshooting steps:**
 
 1. **Check microphone permission**
-   - Go to device Settings → **MY INTERVIEW** → **Microphone**
+   - Go to device Settings → **My Interview** → **Microphone**
    - Ensure "Allow" is selected
 
 2. **Test your microphone**
@@ -175,7 +175,7 @@ If the problem persists, [contact us](#contact-us).
    - Avoid background noise
 
 4. **Restart the app**
-   - Force-close MY INTERVIEW
+   - Force-close My Interview
    - Reopen and try again
 
 ### The app won't load or shows a blank screen. What do I do?
@@ -199,14 +199,14 @@ If the problem persists, [contact us](#contact-us).
    - Power cycle your iPad or iPhone
 
 5. **Reinstall the app**
-   - Delete MY INTERVIEW
+   - Delete My Interview
    - Restart your device
    - Reinstall from the App Store
 
 ### How do I grant microphone permission?
 
 1. Go to device **Settings**
-2. Scroll down and tap **MY INTERVIEW**
+2. Scroll down and tap **My Interview**
 3. Tap **Microphone**
 4. Select **Allow**
 
@@ -218,8 +218,8 @@ The app will also request permission the first time you use voice interviews.
 
 - Close other apps running in the background
 - Restart your device
-- Clear the app cache: Settings → MY INTERVIEW → Offload App, then reinstall
-- Check available storage (MY INTERVIEW needs at least 500 MB free)
+- Clear the app cache: Settings → My Interview → Offload App, then reinstall
+- Check available storage (My Interview needs at least 500 MB free)
 - Update to the latest app version
 
 ---
@@ -285,4 +285,4 @@ Use the **Send Feedback** option in the app (Settings → Support → Send Feedb
 
 ---
 
-**Thank you for using MY INTERVIEW! 🎯**
+**Thank you for using My Interview! 🎯**

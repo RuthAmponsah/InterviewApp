@@ -54,7 +54,7 @@ Most interviews take **10-15 minutes**, depending on:
 
 ### Can I practice voice interviews?
 
-✅ **Yes!** Voice interviews are available in **Premium**. You can practice speaking your answers aloud, and our AI provides detailed feedback on your responses.
+✅ **Yes!** Voice interviews are available. You can practice speaking your answers aloud, and our AI provides detailed feedback on your responses.
 
 ### What feedback do I receive after an interview?
 

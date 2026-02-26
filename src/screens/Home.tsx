@@ -405,6 +405,21 @@ const Home: React.FC = () => {
         </TouchableOpacity>
       )}
 
+      <TouchableOpacity
+        style={styles.card}
+        activeOpacity={0.85}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          navigation.navigate('ViewCV');
+        }}
+      >
+        <Text style={styles.cardTitle}>Enhance your CV</Text>
+        <Text style={styles.cardBody}>
+          Paste your CV and get AI suggestions to improve it.
+        </Text>
+        <Text style={styles.tapToViewMore}>Tap to enhance your CV →</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity 
         style={styles.card} 
         activeOpacity={0.85}

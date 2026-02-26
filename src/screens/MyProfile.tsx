@@ -317,28 +317,6 @@ export default function MyProfile() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.cvCard}
-          onPress={() => navigation.navigate("ViewCV")}
-          activeOpacity={0.7}
-        >
-          <View style={styles.cvCardIcon}>
-            <Ionicons name="sparkles" size={20} color="#fff" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.cvCardTitle}>✨ Enhance Your CV</Text>
-            <Text style={styles.cvCardSubtitle}>
-              Upload or paste your CV to get AI-powered suggestions
-            </Text>
-            {cvFileName && (
-              <Text style={styles.cvCardFile}>
-                📄 {cvFileName}
-              </Text>
-            )}
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.primaryBlue} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
           style={styles.row}
           onPress={() => navigation.navigate("ChangePassword")}
         >
@@ -574,47 +552,6 @@ const makeStyles = (colors: any, isDark: boolean) =>
     rowSubtext: {
       ...typography.bodySmall,
       color: isDark ? "#9CA3AF" : "#6B7280",
-    },
-    cvCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.primaryBlue,
-      borderRadius: 16,
-      paddingVertical: 16,
-      paddingHorizontal: 16,
-      marginVertical: 16,
-      marginHorizontal: 0,
-      shadowColor: colors.primaryBlue,
-      shadowOpacity: 0.25,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 4 },
-      elevation: 6,
-      gap: 12,
-    },
-    cvCardIcon: {
-      backgroundColor: 'rgba(255,255,255,0.3)',
-      borderRadius: 12,
-      padding: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    cvCardTitle: {
-      ...typography.bodyMedium,
-      fontWeight: '700',
-      color: '#fff',
-      fontSize: 16,
-      marginBottom: 4,
-    },
-    cvCardSubtitle: {
-      ...typography.caption,
-      color: 'rgba(255,255,255,0.9)',
-      fontSize: 13,
-      marginBottom: 6,
-    },
-    cvCardFile: {
-      ...typography.caption,
-      color: 'rgba(255,255,255,0.7)',
-      fontSize: 12,
     },
     logoutButton: {
       flexDirection: 'row',

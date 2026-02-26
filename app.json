@@ -3,6 +3,7 @@
     "name": "My Interview",
     "slug": "InterviewApp",
     "scheme": "interviewapp",
+    "description": "AI-powered interview practice with instant feedback, progress tracking, and unlimited questions. Premium: unlimited interviews, advanced analytics, and streaks.",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

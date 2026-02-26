@@ -19,7 +19,9 @@
         "EXPO_PUBLIC_GROQ_API_KEY": "@groqApiKey",
         "EXPO_PUBLIC_ADZUNA_APP_ID": "@adzunaAppId",
         "EXPO_PUBLIC_ADZUNA_APP_KEY": "@adzunaAppKey",
-        "EXPO_PUBLIC_ELEVENLABS_API_KEY": "@elevenlabsApiKey"
+        "EXPO_PUBLIC_ELEVENLABS_API_KEY": "@elevenlabsApiKey",
+        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "@revenuecatIosKey",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "@revenuecatAndroidKey"
       }
     }
   },

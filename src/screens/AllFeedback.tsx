@@ -43,6 +43,7 @@ const AllFeedback: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
   const [currentTranscript, setCurrentTranscript] = useState<{from: string; text: string}[]>([]);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
   const [stats, setStats] = useState({
     totalFeedback: 0,
     averageScore: 0,
@@ -52,7 +53,27 @@ const AllFeedback: React.FC = () => {
 
   useEffect(() => {
     loadAllFeedback();
+    loadSubscriptionTier();
   }, []);
+
+  const loadSubscriptionTier = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) return;
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('subscription_tier')
+        .eq('user_id', userId)
+        .single();
+
+      if (data?.subscription_tier) {
+        setSubscriptionTier(data.subscription_tier);
+      }
+    } catch (error) {
+      console.error('Error loading subscription tier:', error);
+    }
+  };
 
   const loadAllFeedback = async () => {
     try {
@@ -316,16 +337,37 @@ const AllFeedback: React.FC = () => {
                 
                 {item.transcript && (
                   <TouchableOpacity 
-                    style={styles.transcriptButton}
+                    style={[styles.transcriptButton, subscriptionTier === 'free' && styles.transcriptButtonDisabled]}
                     onPress={() => {
+                      if (subscriptionTier === 'free') {
+                        Alert.alert(
+                          'Premium Feature',
+                          'View interview transcripts with Premium. Upgrade to see full conversation history!',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Upgrade', onPress: () => navigation.navigate('Subscription') }
+                          ]
+                        );
+                        return;
+                      }
                       console.log('🎬 Transcript button pressed');
                       console.log('📦 Transcript value:', item.transcript?.substring(0, 50));
                       openTranscript(item.transcript);
                     }}
                   >
-                    <Ionicons name="document-text-outline" size={16} color={colors.primaryBlue} />
-                    <Text style={styles.transcriptButtonText}>View transcript</Text>
-                    <Ionicons name="chevron-forward" size={16} color={colors.primaryBlue} />
+                    <Ionicons 
+                      name={subscriptionTier === 'free' ? "lock-closed" : "document-text-outline"} 
+                      size={16} 
+                      color={subscriptionTier === 'free' ? colors.textMuted : colors.primaryBlue} 
+                    />
+                    <Text style={[styles.transcriptButtonText, subscriptionTier === 'free' && styles.transcriptButtonTextDisabled]}>
+                      {subscriptionTier === 'free' ? 'View transcript (Premium)' : 'View transcript'}
+                    </Text>
+                    <Ionicons 
+                      name="chevron-forward" 
+                      size={16} 
+                      color={subscriptionTier === 'free' ? colors.textMuted : colors.primaryBlue} 
+                    />
                   </TouchableOpacity>
                 )}
               </View>
@@ -635,6 +677,13 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: colors.primaryBlue,
       marginHorizontal: 6,
       fontWeight: '600',
+    },
+    transcriptButtonDisabled: {
+      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
+      borderColor: isDark ? 'rgba(120, 120, 120, 0.3)' : 'rgba(200, 200, 200, 0.3)',
+    },
+    transcriptButtonTextDisabled: {
+      color: colors.textMuted,
     },
     // Modal styles
     modalOverlay: {

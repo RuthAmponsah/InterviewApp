@@ -44,6 +44,7 @@ const AllFeedback: React.FC = () => {
   const [showTranscript, setShowTranscript] = useState(false);
   const [currentTranscript, setCurrentTranscript] = useState<{from: string; text: string}[]>([]);
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
+  const [showPaywall, setShowPaywall] = useState(false);
   const [stats, setStats] = useState({
     totalFeedback: 0,
     averageScore: 0,
@@ -59,16 +60,26 @@ const AllFeedback: React.FC = () => {
   const loadSubscriptionTier = async () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
-      if (!userId) return;
+      console.log('📋 Subscription check - userId:', userId);
+      if (!userId) {
+        console.log('⚠️ No userId found');
+        return;
+      }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_preferences')
         .select('subscription_tier')
         .eq('user_id', userId)
         .single();
 
+      console.log('✅ Subscription data:', data);
+      console.log('❌ Subscription error:', error);
+
       if (data?.subscription_tier) {
+        console.log('🎯 Setting subscription tier to:', data.subscription_tier);
         setSubscriptionTier(data.subscription_tier);
+      } else {
+        console.log('⚠️ No subscription_tier in response, staying as:', subscriptionTier);
       }
     } catch (error) {
       console.error('Error loading subscription tier:', error);
@@ -337,20 +348,14 @@ const AllFeedback: React.FC = () => {
                 
                 {item.transcript && (
                   <TouchableOpacity 
+                    disabled={subscriptionTier === 'free'}
                     style={[styles.transcriptButton, subscriptionTier === 'free' && styles.transcriptButtonDisabled]}
                     onPress={() => {
                       if (subscriptionTier === 'free') {
-                        Alert.alert(
-                          'Premium Feature',
-                          'View interview transcripts with Premium. Upgrade to see full conversation history!',
-                          [
-                            { text: 'Cancel', style: 'cancel' },
-                            { text: 'Upgrade', onPress: () => navigation.navigate('Subscription') }
-                          ]
-                        );
+                        setShowPaywall(true);
                         return;
                       }
-                      console.log('🎬 Transcript button pressed');
+                      console.log('🎬 Transcript button pressed - premium user');
                       console.log('📦 Transcript value:', item.transcript?.substring(0, 50));
                       openTranscript(item.transcript);
                     }}
@@ -376,6 +381,84 @@ const AllFeedback: React.FC = () => {
           </>
         )}
       </ScrollView>
+      
+      {/* Premium Paywall Modal */}
+      <Modal
+        visible={showPaywall}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        onRequestClose={() => setShowPaywall(false)}
+      >
+        <View style={styles.paywallOverlay}>
+          <View style={styles.paywallContainer}>
+            <TouchableOpacity 
+              style={styles.paywallCloseButton}
+              onPress={() => setShowPaywall(false)}
+            >
+              <Ionicons name="close" size={24} color={colors.textDark} />
+            </TouchableOpacity>
+
+            <ScrollView contentContainerStyle={styles.paywallContent}>
+              <Ionicons name="lock-closed" size={48} color={colors.primaryBlue} style={{marginBottom: 16}} />
+              <Text style={styles.paywallTitle}>Unlock Premium</Text>
+              <Text style={styles.paywallSubtitle}>Get the full interview experience</Text>
+
+              <View style={styles.benefitsList}>
+                <View style={styles.benefitItem}>
+                  <Ionicons name="infinite" size={20} color={colors.primaryBlue} />
+                  <View style={{flex: 1, marginLeft: 12}}>
+                    <Text style={styles.benefitTitle}>Unlimited Interviews</Text>
+                    <Text style={styles.benefitDesc}>Practice as much as you want, anytime</Text>
+                  </View>
+                </View>
+
+                <View style={styles.benefitItem}>
+                  <Ionicons name="document-text" size={20} color={colors.primaryBlue} />
+                  <View style={{flex: 1, marginLeft: 12}}>
+                    <Text style={styles.benefitTitle}>View Transcripts</Text>
+                    <Text style={styles.benefitDesc}>See full conversation history from every interview</Text>
+                  </View>
+                </View>
+
+                <View style={styles.benefitItem}>
+                  <Ionicons name="chatbubbles" size={20} color={colors.primaryBlue} />
+                  <View style={{flex: 1, marginLeft: 12}}>
+                    <Text style={styles.benefitTitle}>Detailed Feedback</Text>
+                    <Text style={styles.benefitDesc}>In-depth analysis of your interview performance</Text>
+                  </View>
+                </View>
+
+                <View style={styles.benefitItem}>
+                  <Ionicons name="flame" size={20} color={colors.primaryBlue} />
+                  <View style={{flex: 1, marginLeft: 12}}>
+                    <Text style={styles.benefitTitle}>Track Streaks</Text>
+                    <Text style={styles.benefitDesc}>Build daily practice streaks and earn badges</Text>
+                  </View>
+                </View>
+
+                <View style={styles.benefitItem}>
+                  <Ionicons name="mic" size={20} color={colors.primaryBlue} />
+                  <View style={{flex: 1, marginLeft: 12}}>
+                    <Text style={styles.benefitTitle}>Voice Practice</Text>
+                    <Text style={styles.benefitDesc}>Practice speaking your answers aloud</Text>
+                  </View>
+                </View>
+              </View>
+
+              <TouchableOpacity 
+                style={styles.paywallUpgradeButton}
+                onPress={() => {
+                  setShowPaywall(false);
+                  navigation.navigate('Subscription', { showClose: true });
+                }}
+              >
+                <Text style={styles.paywallUpgradeButtonText}>Upgrade to Premium</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
       
       {/* Transcript Modal */}
       <Modal
@@ -806,6 +889,90 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     userBubbleText: {
       color: '#FFFFFF',
+    },
+    paywallOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-end',
+    },
+    paywallContainer: {
+      backgroundColor: isDark ? '#1a1a1a' : '#FFFFFF',
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: 20,
+      maxHeight: '90%',
+    },
+    paywallCloseButton: {
+      position: 'absolute',
+      top: 16,
+      right: 16,
+      zIndex: 10,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    paywallContent: {
+      paddingHorizontal: 24,
+      paddingVertical: 40,
+      paddingTop: 60,
+      paddingBottom: 40,
+    },
+    paywallTitle: {
+        ...typography.heading,
+      fontSize: 32,
+      color: isDark ? '#fff' : colors.textDark,
+      fontWeight: '700',
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    paywallSubtitle: {
+      ...typography.bodyMedium,
+      color: isDark ? '#999' : colors.textMuted,
+      textAlign: 'center',
+      marginBottom: 32,
+      fontSize: 16,
+    },
+    benefitsList: {
+      marginBottom: 32,
+    },
+    benefitItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 20,
+    },
+    benefitTitle: {
+      ...typography.bodyMedium,
+      fontWeight: '600',
+      color: isDark ? '#fff' : colors.textDark,
+      marginBottom: 4,
+    },
+    benefitDesc: {
+      ...typography.bodySmall,
+      color: isDark ? '#999' : colors.textMuted,
+      lineHeight: 18,
+    },
+    paywallUpgradeButton: {
+      backgroundColor: colors.primaryBlue,
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 8,
+      shadowColor: colors.primaryBlue,
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 6,
+    },
+    paywallUpgradeButtonText: {
+      ...typography.bodyMedium,
+      fontWeight: '700',
+      color: '#FFFFFF',
+      fontSize: 16,
     },
   });
 

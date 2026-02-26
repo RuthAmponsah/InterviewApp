@@ -35,7 +35,6 @@ export default function EditProfile({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
-  const [gender, setGender] = useState("");
   const [age, setAge] = useState("");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,7 +49,6 @@ export default function EditProfile({ navigation }: any) {
       const storedEmail = await AsyncStorage.getItem("userEmail");
       const storedPhone = await AsyncStorage.getItem("userPhone");
       const storedBio = await AsyncStorage.getItem("userBio");
-      const storedGender = await AsyncStorage.getItem("userGender");
       const storedAge = await AsyncStorage.getItem("userAge");
       const storedPhoto = await AsyncStorage.getItem("userProfilePhoto");
 
@@ -58,7 +56,6 @@ export default function EditProfile({ navigation }: any) {
       if (storedEmail) setEmail(storedEmail);
       if (storedPhone) setPhone(storedPhone);
       if (storedBio) setBio(storedBio);
-      if (storedGender) setGender(storedGender);
       if (storedAge) setAge(storedAge);
       if (storedPhoto) setProfilePhoto(storedPhoto);
     };
@@ -181,7 +178,6 @@ export default function EditProfile({ navigation }: any) {
             name: name,
             phone: phone || null,
             bio: bio || null,
-            gender: gender || null,
             age: age ? parseInt(age) : null,
           })
           .eq('id', userId);
@@ -200,7 +196,6 @@ export default function EditProfile({ navigation }: any) {
       await AsyncStorage.setItem("userEmail", email);
       await AsyncStorage.setItem("userPhone", phone);
       await AsyncStorage.setItem("userBio", bio);
-      await AsyncStorage.setItem("userGender", gender);
       await AsyncStorage.setItem("userAge", age);
       if (profilePhoto) {
         await AsyncStorage.setItem("userProfilePhoto", profilePhoto);
@@ -282,16 +277,6 @@ export default function EditProfile({ navigation }: any) {
           />
 
           <View style={styles.row}>
-            <View style={styles.rowHalf}>
-              <TextInputField
-                label="Gender (F/M)"
-                placeholder="F or M"
-                value={gender}
-                onChangeText={setGender}
-                maxLength={1}
-                returnKeyType="next"
-              />
-            </View>
 
             <View style={styles.rowHalf}>
               <TextInputField

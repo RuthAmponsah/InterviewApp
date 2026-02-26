@@ -127,7 +127,7 @@ const TUTORIAL_CATEGORIES: TutorialCategory[] = [
       },
       {
         title: 'Edit Profile',
-        description: 'Update your name, email, phone, gender, age, and bio. Add a profile photo!',
+        description: 'Update your name, email, phone, age, and bio. Add a profile photo!',
         image: require('../../assets/tutorial/editprofile.png'),
       },
       {

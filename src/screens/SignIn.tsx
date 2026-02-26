@@ -189,7 +189,7 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       // DO NOT clear all storage - Supabase manages session in AsyncStorage automatically
       // Only remove old user-specific data
       const keysToRemove = [
-        'userName', 'userEmail', 'userId', 'jobRole', 'userProfilePhoto', 'userGender'
+        'userName', 'userEmail', 'userId', 'jobRole', 'userProfilePhoto'
       ];
       for (const key of keysToRemove) {
         await AsyncStorage.removeItem(key);
@@ -224,9 +224,6 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       await AsyncStorage.setItem('isLoggedIn', 'true');
       await AsyncStorage.setItem('userEmail', userData.email);
       await AsyncStorage.setItem('userName', userData.name);
-      if (userData.gender) {
-        await AsyncStorage.setItem('userGender', userData.gender);
-      }
       
       if (userData.job_role) {
         await AsyncStorage.setItem('jobRole', userData.job_role);

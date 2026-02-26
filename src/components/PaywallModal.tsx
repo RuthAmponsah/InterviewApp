@@ -31,12 +31,8 @@ interface PaywallModalProps {
 }
 
 const FEATURES = [
-  { icon: 'infinite', text: 'Unlimited AI mock interviews' },
-  { icon: 'chatbubbles', text: 'Advanced interview scenarios' },
-  { icon: 'analytics', text: 'Detailed performance analytics' },
-  { icon: 'trophy', text: 'Streak rewards & achievements' },
-  { icon: 'download', text: 'Export interview transcripts' },
-  { icon: 'star', text: 'Priority AI responses' },
+  { icon: 'infinite', text: 'Unlimited interviews' },
+  { icon: 'document-text', text: 'Unlock interview transcripts' },
 ];
 
 export default function PaywallModal({ visible, onClose, onSuccess }: PaywallModalProps) {

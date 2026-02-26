@@ -99,12 +99,8 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const features = [
-    { icon: 'infinite', text: 'Unlimited AI mock interviews' },
-    { icon: 'chatbubbles', text: 'Advanced interview scenarios' },
-    { icon: 'analytics', text: 'Detailed performance analytics' },
-    { icon: 'trophy', text: 'Streak rewards & achievements' },
-    { icon: 'download', text: 'Export interview transcripts' },
-    { icon: 'star', text: 'Priority AI responses' },
+    { icon: 'infinite', text: 'Unlimited interviews' },
+    { icon: 'document-text', text: 'Unlock interview transcripts' },
   ];
 
   return (
@@ -126,9 +122,9 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
         )}
 
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Unlock Your Potential</Text>
+          <Text style={styles.headerTitle}>Unlock Premium</Text>
           <Text style={styles.headerSubtitle}>
-            Get unlimited practice to ace any interview
+            Unlimited interviews and full transcripts
           </Text>
         </View>
       </LinearGradient>

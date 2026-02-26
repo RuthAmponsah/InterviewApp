@@ -401,8 +401,8 @@ const AllFeedback: React.FC = () => {
 
             <ScrollView contentContainerStyle={styles.paywallContent}>
               <Ionicons name="lock-closed" size={48} color={colors.primaryBlue} style={{marginBottom: 16}} />
-              <Text style={styles.paywallTitle}>Unlock Premium</Text>
-              <Text style={styles.paywallSubtitle}>Get the full interview experience</Text>
+              <Text style={styles.paywallTitle}>Unlock Premium (DEV)</Text>
+              <Text style={styles.paywallSubtitle}>Premium includes unlimited interviews and full transcripts</Text>
 
               <View style={styles.benefitsList}>
                 <View style={styles.benefitItem}>
@@ -421,29 +421,6 @@ const AllFeedback: React.FC = () => {
                   </View>
                 </View>
 
-                <View style={styles.benefitItem}>
-                  <Ionicons name="chatbubbles" size={20} color={colors.primaryBlue} />
-                  <View style={{flex: 1, marginLeft: 12}}>
-                    <Text style={styles.benefitTitle}>Detailed Feedback</Text>
-                    <Text style={styles.benefitDesc}>In-depth analysis of your interview performance</Text>
-                  </View>
-                </View>
-
-                <View style={styles.benefitItem}>
-                  <Ionicons name="flame" size={20} color={colors.primaryBlue} />
-                  <View style={{flex: 1, marginLeft: 12}}>
-                    <Text style={styles.benefitTitle}>Track Streaks</Text>
-                    <Text style={styles.benefitDesc}>Build daily practice streaks and earn badges</Text>
-                  </View>
-                </View>
-
-                <View style={styles.benefitItem}>
-                  <Ionicons name="mic" size={20} color={colors.primaryBlue} />
-                  <View style={{flex: 1, marginLeft: 12}}>
-                    <Text style={styles.benefitTitle}>Voice Practice</Text>
-                    <Text style={styles.benefitDesc}>Practice speaking your answers aloud</Text>
-                  </View>
-                </View>
               </View>
 
               <TouchableOpacity 

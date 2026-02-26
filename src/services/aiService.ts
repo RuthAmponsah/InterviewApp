@@ -159,6 +159,88 @@ const COMMON_QUESTIONS = {
   ]
 };
 
+// Role-specific scenario questions
+const ROLE_SPECIFIC_SCENARIOS = {
+  'Software Engineer': [
+    'You find a critical bug in production affecting thousands of users. Walk me through how you would approach debugging and fixing it.',
+    'Describe your approach to designing scalable system architecture for a feature that needs to handle millions of requests.',
+    'How would you handle a situation where a teammate\'s code quality is poor and impacting the team\'s velocity?',
+    'Tell me about a time you had to optimize code or database queries. What was the challenge and how did you solve it?',
+  ],
+  'Data Analyst': [
+    'Imagine you discover an unexpected spike in user behavior in your analytics. How would you investigate the root cause?',
+    'Walk me through how you would approach a project to improve customer retention using data analysis.',
+    'Describe a time you had to present complex data findings to non-technical stakeholders. How did you simplify it?',
+    'How would you validate the accuracy of a large dataset before using it for critical business decisions?',
+  ],
+  'Cyber Security': [
+    'You detect unusual network activity that could indicate a security breach. What steps would you take immediately?',
+    'Walk me through your approach to conducting a security audit of a company\'s systems.',
+    'How would you prioritize security issues with limited resources? Give me an example.',
+    'Describe a time you had to explain security risks to management and get approval for expensive security measures.',
+  ],
+  'IT Support': [
+    'A critical system goes down affecting the entire department. Walk me through your troubleshooting process.',
+    'How would you handle an aggressive user frustrated with a technical issue?',
+    'Tell me about a time you solved a complex technical problem that no one else could figure out.',
+    'Describe how you would document a recurring issue and create a knowledge base solution for users.',
+  ],
+  'Project Manager': [
+    'A project is way behind schedule due to unexpected technical issues. How would you get it back on track?',
+    'Walk me through how you would manage competing priorities from multiple stakeholders.',
+    'Tell me about a project failure. What did you learn and how would you prevent it?',
+    'Describe how you would handle scope creep from a demanding client without derailing the timeline.',
+  ],
+  'Sales': [
+    'A prospect says "Your product is too expensive compared to competitors." How do you respond?',
+    'Walk me through your approach to prospecting and building a sales pipeline.',
+    'Tell me about your biggest deal. How did you close it?',
+    'How would you handle a long sales cycle with multiple decision-makers? Give me a specific example.',
+  ],
+  'Customer Service': [
+    'A customer is extremely upset about a product failure. How would you handle this interaction?',
+    'Tell me about a time you went above and beyond to retain a customer.',
+    'Walk me through how you would respond to a negative online review.',
+    'Describe a situation where you had to deny a customer request. How did you handle it professionally?',
+  ],
+  'Marketing': [
+    'You\'re launching a new campaign with a limited budget. Walk me through your strategy.',
+    'Tell me about a marketing campaign you\'re proud of. What were the results?',
+    'How would you measure the success of a marketing initiative? What metrics matter most?',
+    'Describe how you\'d use social media data to optimize a targeted advertising campaign.',
+  ],
+  'Product Manager': [
+    'You\'re prioritizing features for the next product release. How would you make that decision?',
+    'Walk me through how you would approach a feature that has competing user requests.',
+    'Tell me about a product decision you made that didn\'t perform as expected. How did you respond?',
+    'How would you work with engineering and design teams when they disagree on a feature implementation?',
+  ],
+  'Healthcare': [
+    'A patient comes in with unclear symptoms. Walk me through your diagnostic approach.',
+    'Tell me about a time you had to deliver difficult news to a patient. How did you handle it?',
+    'Describe how you would handle a high-stress emergency situation.',
+    'How do you stay current with medical best practices and changes in healthcare?',
+  ],
+  'Teaching': [
+    'You have a disruptive student in class. How would you handle this situation?',
+    'Walk me through how you would design a lesson plan to engage students with different learning styles.',
+    'Tell me about a time a student struggled to understand a concept. How did you help them?',
+    'How do you measure student success and adjust your teaching methods accordingly?',
+  ],
+  'Finance': [
+    'You\'re analyzing a company\'s financial statements and notice concerning trends. What\'s your approach?',
+    'Walk me through how you would build a financial forecast for a new business initiative.',
+    'Tell me about a time you caught a major financial error. How did you handle it?',
+    'Describe your approach to risk assessment and mitigation in financial planning.',
+  ],
+  'Operations Manager': [
+    'You need to reduce operational costs by 20% without impacting quality. How would you approach this?',
+    'Walk me through how you would optimize a broken process.',
+    'Tell me about a time you implemented a major operational change. What were the challenges?',
+    'How would you measure operational efficiency, and what metrics do you track?',
+  ],
+};
+
 // Get questions that haven't been asked recently for this role
 const getQuestionsForRole = async (jobRole: string): Promise<string[]> => {
   try {
@@ -231,7 +313,17 @@ export const initializeInterviewChat = async (jobRole: string, userName?: string
 
   // Get fresh questions for this interview
   const questionsForInterview = await getQuestionsForRole(jobRole);
-  const questionList = questionsForInterview.map((q, i) => `${i + 2}. ${q}`).join('\n');
+  
+  // Get role-specific scenarios if available
+  const roleScenarios = ROLE_SPECIFIC_SCENARIOS[jobRole] || [];
+  
+  // Combine generic questions with role-specific scenarios (2-3 scenarios per interview)
+  const allQuestionsForInterview = [
+    ...questionsForInterview,
+    ...roleScenarios.slice(0, 3) // Add up to 3 role-specific scenarios
+  ];
+  
+  const questionList = allQuestionsForInterview.map((q, i) => `${i + 2}. ${q}`).join('\n');
 
   // Reset conversation history
   conversationHistory = [

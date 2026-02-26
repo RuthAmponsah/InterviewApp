@@ -464,7 +464,7 @@ export default function QuestionBank({ navigation }: any) {
             </Text>
 
             {/* Info banner about custom questions */}
-            <View style={[styles.infoBanner, { backgroundColor: colors.primaryBlue + '08', borderColor: colors.primaryBlue + '30', borderWidth: 1, borderRadius: 8, padding: 12, marginVertical: 12, flexDirection: 'row', alignItems: 'flex-start' }]}>
+            <View style={[styles.infoBanner, { backgroundColor: colors.primaryBlue + '08', borderColor: colors.primaryBlue + '30', borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 16, flexDirection: 'row', alignItems: 'flex-start' }]}>
               <Ionicons name="information-circle" size={16} color={colors.primaryBlue} style={{ marginRight: 8, marginTop: 2 }} />
               <Text style={[styles.infoBannerText, { color: isDark ? '#b5b5b5' : colors.textMuted, fontSize: 12, flex: 1 }]}>
                 Tap <Text style={{ fontWeight: '600', color: colors.primaryBlue }}>Add</Text> at the top right to create your own interview questions
@@ -473,7 +473,7 @@ export default function QuestionBank({ navigation }: any) {
 
             {/* Premium unlock message for role-specific */}
             {subscriptionTier === 'free' && (
-              <View style={[styles.premiumUnlockBanner, { backgroundColor: colors.primaryBlue + '15', borderColor: colors.primaryBlue, borderWidth: 1, borderRadius: 8, padding: 12, marginVertical: 12, flexDirection: 'row', alignItems: 'center' }]}>
+              <View style={[styles.premiumUnlockBanner, { backgroundColor: colors.primaryBlue + '15', borderColor: colors.primaryBlue, borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 20, flexDirection: 'row', alignItems: 'center' }]}>
                 <Ionicons name="lock-closed" size={16} color={colors.primaryBlue} style={{ marginRight: 8 }} />
                 <Text style={[styles.premiumUnlockText, { color: colors.primaryBlue, fontSize: 13 }]}>
                   Unlock role-specific questions with Premium
@@ -778,7 +778,6 @@ const makeStyles = (colors: any, isDark: boolean) =>
       fontWeight: "800",
       color: colors.primaryBlue,
       alignSelf: "center",
-      marginBottom: 28,
     },
     addButton: {
       position: 'absolute',
@@ -788,7 +787,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     title: {
       ...typography.headingMedium,
       color: isDark ? "#fff" : colors.textDark,
-      marginBottom: 4,
+      marginBottom: 8,
     },
     subtitle: {
       ...typography.bodyMedium,
@@ -822,7 +821,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     filterRow: {
       flexDirection: 'row',
-      marginBottom: 20,
+      marginBottom: 24,
     },
     filterChip: {
       paddingHorizontal: 16,

@@ -421,6 +421,14 @@ const AllFeedback: React.FC = () => {
                   </View>
                 </View>
 
+                <View style={styles.benefitItem}>
+                  <Ionicons name="help" size={20} color={colors.primaryBlue} />
+                  <View style={{flex: 1, marginLeft: 12}}>
+                    <Text style={styles.benefitTitle}>Full access to role specific question bank</Text>
+                    <Text style={styles.benefitDesc}>Practice with questions tailored to your job role</Text>
+                  </View>
+                </View>
+
               </View>
 
               <TouchableOpacity 

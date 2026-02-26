@@ -22,13 +22,14 @@ import { typography } from "../theme/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from '../config/supabase';
 
-type QuestionCategory = 'Behavioral' | 'Technical' | 'Situational' | 'Strengths' | 'Custom';
+type QuestionCategory = 'Behavioral' | 'Technical' | 'Situational' | 'Strengths' | 'Role-Specific' | 'Custom';
 
 type Question = {
   id: string;
   category: QuestionCategory;
   text: string;
   isCustom?: boolean;
+  isPremium?: boolean;
 };
 
 const PRACTICE_QUESTIONS: Question[] = [
@@ -71,9 +72,17 @@ const PRACTICE_QUESTIONS: Question[] = [
   { id: '30', category: 'Strengths', text: 'What makes you unique?' },
   { id: '31', category: 'Strengths', text: 'What are you passionate about?' },
   { id: '32', category: 'Strengths', text: 'What is your greatest accomplishment?' },
+  
+  // Role-Specific (Premium)
+  { id: 'rs-1', category: 'Role-Specific', text: '[Premium] You discover a critical issue in your work. How would you handle it?', isPremium: true },
+  { id: 'rs-2', category: 'Role-Specific', text: '[Premium] How do you stay updated with industry best practices?', isPremium: true },
+  { id: 'rs-3', category: 'Role-Specific', text: '[Premium] Describe your approach to quality and attention to detail.', isPremium: true },
+  { id: 'rs-4', category: 'Role-Specific', text: '[Premium] How do you handle feedback and criticism?', isPremium: true },
+  { id: 'rs-5', category: 'Role-Specific', text: '[Premium] What would you do if you were unsure about something at work?', isPremium: true },
+  { id: 'rs-6', category: 'Role-Specific', text: '[Premium] Describe a time you took initiative beyond your job description.', isPremium: true },
 ];
 
-const CATEGORIES: QuestionCategory[] = ['Behavioral', 'Technical', 'Situational', 'Strengths', 'Custom'];
+const CATEGORIES: QuestionCategory[] = ['Behavioral', 'Technical', 'Situational', 'Strengths', 'Role-Specific', 'Custom'];
 
 export default function QuestionBank({ navigation }: any) {
   const { colors, theme } = useTheme();
@@ -91,11 +100,41 @@ export default function QuestionBank({ navigation }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [previousAnswers, setPreviousAnswers] = useState<any[]>([]);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
+  const [jobRole, setJobRole] = useState<string>('');
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     loadCustomQuestions();
     loadFavorites();
+    loadUserData();
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      const jobRoleStored = await AsyncStorage.getItem('jobRole');
+      
+      if (userId) {
+        // Load subscription tier from database
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('subscription_tier')
+          .eq('user_id', userId)
+          .single();
+        
+        if (data) {
+          setSubscriptionTier(data.subscription_tier || 'free');
+        }
+      }
+      
+      if (jobRoleStored) {
+        setJobRole(jobRoleStored);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
 
   const loadFavorites = async () => {
     try {
@@ -399,6 +438,16 @@ export default function QuestionBank({ navigation }: any) {
               Practice answering common interview questions
             </Text>
 
+            {/* Premium unlock message for role-specific */}
+            {subscriptionTier === 'free' && (
+              <View style={[styles.premiumUnlockBanner, { backgroundColor: colors.primaryBlue + '15', borderColor: colors.primaryBlue, borderWidth: 1, borderRadius: 8, padding: 12, marginVertical: 12, flexDirection: 'row', alignItems: 'center' }]}>
+                <Ionicons name="lock-closed" size={16} color={colors.primaryBlue} style={{ marginRight: 8 }} />
+                <Text style={[styles.premiumUnlockText, { color: colors.primaryBlue, fontSize: 13 }]}>
+                  Unlock role-specific questions with Premium
+                </Text>
+              </View>
+            )}
+
             {/* Search Bar */}
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
@@ -464,45 +513,69 @@ export default function QuestionBank({ navigation }: any) {
                   </View>
                 ) : (
                   filteredQuestions.map((question) => (
-                    <View key={question.id} style={styles.questionCard}>
-                      <TouchableOpacity
-                        style={styles.questionContent}
-                        onPress={() => {
-                          setSelectedQuestion(question);
-                          setAnswer('');
-                          setPreviousAnswers([]);
-                          loadPreviousAnswers(question.id);
-                        }}
-                      >
-                        <View style={styles.questionHeader}>
-                          <Text style={styles.categoryBadge}>{question.category}</Text>
-                          {question.isCustom && (
-                            <Text style={styles.customBadge}>Custom</Text>
-                          )}
-                        </View>
-                        <Text style={styles.questionText}>{question.text}</Text>
-                        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-                      </TouchableOpacity>
-                      <View style={styles.actionButtons}>
-                        <TouchableOpacity
-                          style={styles.favoriteButton}
-                          onPress={() => toggleFavorite(question.id)}
-                        >
-                          <Ionicons 
-                            name={favorites.has(question.id) ? "star" : "star-outline"} 
-                            size={20} 
-                            color={favorites.has(question.id) ? "#FFD700" : colors.textMuted}
-                          />
-                        </TouchableOpacity>
-                        {question.isCustom && (
+                    <View key={question.id}>
+                      {question.isPremium && subscriptionTier === 'free' ? (
+                        <View style={[styles.questionCard, { opacity: 0.6 }]}>
+                          <View style={[styles.questionContent, { opacity: 0.7 }]}>
+                            <View style={styles.questionHeader}>
+                              <Text style={styles.categoryBadge}>{question.category}</Text>
+                              <View style={[styles.premiumBadge, { backgroundColor: colors.primaryBlue }]}>
+                                <Ionicons name="lock-closed" size={12} color="#fff" style={{ marginRight: 2 }} />
+                                <Text style={{ color: '#fff', fontSize: 10 }}>Premium</Text>
+                              </View>
+                            </View>
+                            <Text style={[styles.questionText, { color: colors.textMuted }]}>{question.text}</Text>
+                            <Ionicons name="lock-closed" size={20} color={colors.textMuted} />
+                          </View>
                           <TouchableOpacity
-                            style={styles.deleteButton}
-                            onPress={() => deleteCustomQuestion(question.id)}
+                            style={[styles.favoriteButton, { marginTop: 8 }]}
+                            onPress={() => setShowPaywall(true)}
                           >
-                            <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                            <Text style={{ color: colors.primaryBlue, fontSize: 12, fontWeight: '600' }}>Upgrade</Text>
                           </TouchableOpacity>
-                        )}
-                      </View>
+                        </View>
+                      ) : (
+                        <View style={styles.questionCard}>
+                          <TouchableOpacity
+                            style={styles.questionContent}
+                            onPress={() => {
+                              setSelectedQuestion(question);
+                              setAnswer('');
+                              setPreviousAnswers([]);
+                              loadPreviousAnswers(question.id);
+                            }}
+                          >
+                            <View style={styles.questionHeader}>
+                              <Text style={styles.categoryBadge}>{question.category}</Text>
+                              {question.isCustom && (
+                                <Text style={styles.customBadge}>Custom</Text>
+                              )}
+                            </View>
+                            <Text style={styles.questionText}>{question.text}</Text>
+                            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                          </TouchableOpacity>
+                          <View style={styles.actionButtons}>
+                            <TouchableOpacity
+                              style={styles.favoriteButton}
+                              onPress={() => toggleFavorite(question.id)}
+                            >
+                              <Ionicons 
+                                name={favorites.has(question.id) ? "star" : "star-outline"} 
+                                size={20} 
+                                color={favorites.has(question.id) ? "#FFD700" : colors.textMuted}
+                              />
+                            </TouchableOpacity>
+                            {question.isCustom && (
+                              <TouchableOpacity
+                                style={styles.deleteButton}
+                                onPress={() => deleteCustomQuestion(question.id)}
+                              >
+                                <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                              </TouchableOpacity>
+                            )}
+                          </View>
+                        </View>
+                      )}
                     </View>
                   ))
                 )}

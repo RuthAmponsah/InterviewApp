@@ -101,6 +101,7 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
   const features = [
     { icon: 'infinite', text: 'Unlimited interviews' },
     { icon: 'document-text', text: 'Unlock interview transcripts' },
+    { icon: 'help', text: 'Full access to role specific question bank' },
   ];
 
   return (

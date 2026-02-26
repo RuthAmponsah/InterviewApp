@@ -62,7 +62,7 @@ const AllFeedback: React.FC = () => {
       if (!userId) return;
 
       const { data } = await supabase
-        .from('profiles')
+        .from('user_preferences')
         .select('subscription_tier')
         .eq('user_id', userId)
         .single();

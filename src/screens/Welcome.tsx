@@ -31,7 +31,6 @@ export default function Welcome() {
   const { width } = useWindowDimensions();
 
   const [name, setName] = useState("");
-  const [gender, setGender] = useState("F");
   const [job, setJob] = useState("");
   const [isFocus, setIsFocus] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -44,9 +43,7 @@ export default function Welcome() {
   useEffect(() => {
     const loadData = async () => {
       const storedName = await AsyncStorage.getItem("userName");
-      const storedGender = await AsyncStorage.getItem("userGender");
       if (storedName) setName(storedName);
-      if (storedGender) setGender(storedGender);
       setDataLoaded(true);
     };
     loadData();
@@ -96,8 +93,7 @@ export default function Welcome() {
     const speakMotivation = async () => {
       await stopSpeaking();
       
-      const genderWord = gender === "M" ? "boy" : "girl";
-      const motivationalSpeech = `Soon to be part of the ${job} team. You go ${genderWord}!`;
+      const motivationalSpeech = `Soon to be part of the ${job} team. Let's do this!`;
 
       await speakText(motivationalSpeech);
     };
@@ -241,11 +237,7 @@ export default function Welcome() {
             </Text>
 
             <Text style={styles.motivationLine}>
-              {" "}
-            </Text>
-
-            <Text style={styles.motivationLine}>
-              You go {gender === "M" ? "boy" : "girl"}! 🎉
+              Let's do this! 🎉
             </Text>
           </View>
         )}

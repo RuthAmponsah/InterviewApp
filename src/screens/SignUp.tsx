@@ -29,7 +29,6 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -73,13 +72,6 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
   const handleSignUp = async () => {
     if (!name || !email || !password) return;
 
-    // GENDER VALIDATION
-    const upperGender = gender.toUpperCase();
-    if (upperGender !== "F" && upperGender !== "M") {
-      showWarning("Please enter F or M only.");
-      return;
-    }
-
     // AGE VALIDATION
     const ageNum = parseInt(age, 10);
     if (isNaN(ageNum) || ageNum < 16) {
@@ -118,7 +110,6 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
           emailRedirectTo: undefined,
           data: {
             name: name,
-            gender: upperGender,
             age: ageNum.toString(),
           },
         }
@@ -227,27 +218,13 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
             Password must be at least 8 characters and include 1 special character.
           </Text>
 
-          <View style={styles.row}>
-            <View style={styles.rowHalf}>
-              <TextInputField
-                label="F / M"
-                placeholder="F or M"
-                value={gender}
-                onChangeText={setGender}
-                maxLength={1}
-              />
-            </View>
-
-            <View style={styles.rowHalf}>
-              <TextInputField
-                label="Age"
-                placeholder="Your age"
-                value={age}
-                onChangeText={setAge}
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
+          <TextInputField
+            label="Age"
+            placeholder="Your age"
+            value={age}
+            onChangeText={setAge}
+            keyboardType="numeric"
+          />
 
           <PrimaryButton
             title="Sign up"

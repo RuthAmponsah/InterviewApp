@@ -73,13 +73,35 @@ const PRACTICE_QUESTIONS: Question[] = [
   { id: '31', category: 'Strengths', text: 'What are you passionate about?' },
   { id: '32', category: 'Strengths', text: 'What is your greatest accomplishment?' },
   
-  // Role-Specific (Premium)
-  { id: 'rs-1', category: 'Role-Specific', text: '[Premium] You discover a critical issue in your work. How would you handle it?', isPremium: true },
-  { id: 'rs-2', category: 'Role-Specific', text: '[Premium] How do you stay updated with industry best practices?', isPremium: true },
-  { id: 'rs-3', category: 'Role-Specific', text: '[Premium] Describe your approach to quality and attention to detail.', isPremium: true },
-  { id: 'rs-4', category: 'Role-Specific', text: '[Premium] How do you handle feedback and criticism?', isPremium: true },
-  { id: 'rs-5', category: 'Role-Specific', text: '[Premium] What would you do if you were unsure about something at work?', isPremium: true },
-  { id: 'rs-6', category: 'Role-Specific', text: '[Premium] Describe a time you took initiative beyond your job description.', isPremium: true },
+  // Role-Specific (Premium) - Software Engineer
+  { id: 'rs-1', category: 'Role-Specific', text: 'Walk me through your approach to debugging a critical production bug affecting customer transactions.', isPremium: true },
+  { id: 'rs-2', category: 'Role-Specific', text: 'Describe how you would refactor a large, working codebase to improve performance and maintainability.', isPremium: true },
+  { id: 'rs-3', category: 'Role-Specific', text: 'Tell me about your experience designing and implementing a system that scales to handle millions of users.', isPremium: true },
+  { id: 'rs-4', category: 'Role-Specific', text: 'How do you approach code reviews? Give an example of constructive feedback you\'ve given a colleague.', isPremium: true },
+  
+  // Role-Specific (Premium) - Data Analyst
+  { id: 'rs-5', category: 'Role-Specific', text: 'Describe a time when you identified an anomaly in data and how you investigated and resolved it.', isPremium: true },
+  { id: 'rs-6', category: 'Role-Specific', text: 'Walk me through how you would build a dashboard to track key business metrics for executives.', isPremium: true },
+  { id: 'rs-7', category: 'Role-Specific', text: 'Tell me about a time you used data to challenge an existing business assumption or decision.', isPremium: true },
+  { id: 'rs-8', category: 'Role-Specific', text: 'How do you ensure data quality when working with multiple sources and complex datasets?', isPremium: true },
+  
+  // Role-Specific (Premium) - Sales
+  { id: 'rs-9', category: 'Role-Specific', text: 'Describe how you\'ve turned a prospect who initially said "no" into a closed deal.', isPremium: true },
+  { id: 'rs-10', category: 'Role-Specific', text: 'Walk me through your process for understanding a customer\'s pain points and positioning our solution.', isPremium: true },
+  { id: 'rs-11', category: 'Role-Specific', text: 'Tell me about your strategy for managing a pipeline with strict quarterly targets.', isPremium: true },
+  { id: 'rs-12', category: 'Role-Specific', text: 'How do you build long-term relationships with clients and identify upsell opportunities?', isPremium: true },
+  
+  // Role-Specific (Premium) - Project Manager
+  { id: 'rs-13', category: 'Role-Specific', text: 'Describe a project that went off track. How did you identify the issue and get it back on schedule?', isPremium: true },
+  { id: 'rs-14', category: 'Role-Specific', text: 'Walk me through your approach to managing stakeholder expectations across a complex project.', isPremium: true },
+  { id: 'rs-15', category: 'Role-Specific', text: 'Tell me about a time you had to manage conflicting priorities between team members or departments.', isPremium: true },
+  { id: 'rs-16', category: 'Role-Specific', text: 'How do you measure project success and communicate progress to leadership?', isPremium: true },
+  
+  // Role-Specific (Premium) - Marketing
+  { id: 'rs-17', category: 'Role-Specific', text: 'Describe a marketing campaign you created from scratch and how you measured its success.', isPremium: true },
+  { id: 'rs-18', category: 'Role-Specific', text: 'Walk me through your approach to A/B testing and optimizing marketing performance.', isPremium: true },
+  { id: 'rs-19', category: 'Role-Specific', text: 'Tell me about a time you had to pivot a marketing strategy based on data or market changes.', isPremium: true },
+  { id: 'rs-20', category: 'Role-Specific', text: 'How do you collaborate with sales and product teams to ensure aligned messaging and targets?', isPremium: true },
 ];
 
 const CATEGORIES: QuestionCategory[] = ['Behavioral', 'Technical', 'Situational', 'Strengths', 'Role-Specific', 'Custom'];
@@ -426,10 +448,13 @@ export default function QuestionBank({ navigation }: any) {
             <View style={styles.headerRow}>
               <Text style={styles.logoText}>MY INTERVIEW</Text>
               <TouchableOpacity 
-                style={styles.addButton}
+                style={[styles.addButton, { backgroundColor: colors.primaryBlue + '15', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.primaryBlue }]}
                 onPress={() => setShowAddModal(true)}
               >
-                <Ionicons name="add-circle" size={28} color={colors.primaryBlue} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="add-circle" size={20} color={colors.primaryBlue} />
+                  <Text style={{ color: colors.primaryBlue, fontSize: 12, fontWeight: '600' }}>Add</Text>
+                </View>
               </TouchableOpacity>
             </View>
 
@@ -437,6 +462,14 @@ export default function QuestionBank({ navigation }: any) {
             <Text style={styles.subtitle}>
               Practice answering common interview questions
             </Text>
+
+            {/* Info banner about custom questions */}
+            <View style={[styles.infoBanner, { backgroundColor: colors.primaryBlue + '08', borderColor: colors.primaryBlue + '30', borderWidth: 1, borderRadius: 8, padding: 12, marginVertical: 12, flexDirection: 'row', alignItems: 'flex-start' }]}>
+              <Ionicons name="information-circle" size={16} color={colors.primaryBlue} style={{ marginRight: 8, marginTop: 2 }} />
+              <Text style={[styles.infoBannerText, { color: isDark ? '#b5b5b5' : colors.textMuted, fontSize: 12, flex: 1 }]}>
+                Tap <Text style={{ fontWeight: '600', color: colors.primaryBlue }}>Add</Text> at the top right to create your own interview questions
+              </Text>
+            </View>
 
             {/* Premium unlock message for role-specific */}
             {subscriptionTier === 'free' && (
@@ -515,25 +548,29 @@ export default function QuestionBank({ navigation }: any) {
                   filteredQuestions.map((question) => (
                     <View key={question.id}>
                       {question.isPremium && subscriptionTier === 'free' ? (
-                        <View style={[styles.questionCard, { opacity: 0.6 }]}>
-                          <View style={[styles.questionContent, { opacity: 0.7 }]}>
-                            <View style={styles.questionHeader}>
-                              <Text style={styles.categoryBadge}>{question.category}</Text>
-                              <View style={[styles.premiumBadge, { backgroundColor: colors.primaryBlue }]}>
-                                <Ionicons name="lock-closed" size={12} color="#fff" style={{ marginRight: 2 }} />
-                                <Text style={{ color: '#fff', fontSize: 10 }}>Premium</Text>
+                        <TouchableOpacity 
+                          style={[styles.questionCard, { opacity: 0.7, backgroundColor: colors.primaryBlue + '08', borderWidth: 1.5, borderColor: colors.primaryBlue + '30' }]}
+                          onPress={() => setShowPaywall(true)}
+                        >
+                          <View style={styles.lockedQuestionContent}>
+                            <View style={{ flex: 1 }}>
+                              <View style={styles.questionHeader}>
+                                <Text style={styles.categoryBadge}>{question.category}</Text>
+                                <View style={[styles.premiumBadge, { backgroundColor: colors.primaryBlue }]}>
+                                  <Ionicons name="lock-closed" size={11} color="#fff" style={{ marginRight: 3 }} />
+                                  <Text style={{ color: '#fff', fontSize: 9, fontWeight: '600' }}>Premium</Text>
+                                </View>
+                              </View>
+                              <Text style={[styles.questionText, { color: colors.textDark, marginVertical: 8 }]}>{question.text}</Text>
+                            </View>
+                            <View style={{ alignItems: 'flex-end', justifyContent: 'center' }}>
+                              <View style={{ alignItems: 'center', gap: 6 }}>
+                                <Ionicons name="lock-closed" size={24} color={colors.primaryBlue} />
+                                <Text style={{ color: colors.primaryBlue, fontSize: 11, fontWeight: '600' }}>Upgrade</Text>
                               </View>
                             </View>
-                            <Text style={[styles.questionText, { color: colors.textMuted }]}>{question.text}</Text>
-                            <Ionicons name="lock-closed" size={20} color={colors.textMuted} />
                           </View>
-                          <TouchableOpacity
-                            style={[styles.favoriteButton, { marginTop: 8 }]}
-                            onPress={() => setShowPaywall(true)}
-                          >
-                            <Text style={{ color: colors.primaryBlue, fontSize: 12, fontWeight: '600' }}>Upgrade</Text>
-                          </TouchableOpacity>
-                        </View>
+                        </TouchableOpacity>
                       ) : (
                         <View style={styles.questionCard}>
                           <TouchableOpacity
@@ -746,7 +783,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     addButton: {
       position: 'absolute',
       right: 0,
-      padding: 4,
+      padding: 0,
     },
     title: {
       ...typography.headingMedium,
@@ -757,6 +794,12 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodyMedium,
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginBottom: 16,
+    },
+    infoBanner: {
+      gap: 8,
+    },
+    infoBannerText: {
+      ...typography.caption,
     },
     searchContainer: {
       flexDirection: 'row',
@@ -843,6 +886,14 @@ const makeStyles = (colors: any, isDark: boolean) =>
       shadowRadius: 8,
       shadowOffset: { width: 0, height: 2 },
       elevation: 2,
+    },
+    lockedQuestionContent: {
+      flex: 1,
+      padding: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
     },
     questionHeader: {
       marginBottom: 8,

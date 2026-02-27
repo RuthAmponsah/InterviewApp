@@ -17,6 +17,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/colors';
 import BackButton from '../components/BackButton';
+import PaywallModal from '../components/PaywallModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
 import * as Haptics from 'expo-haptics';
@@ -382,68 +383,11 @@ const AllFeedback: React.FC = () => {
         )}
       </ScrollView>
       
-      {/* Premium Paywall Modal */}
-      <Modal
+      <PaywallModal
         visible={showPaywall}
-        transparent
-        animationType="slide"
-        statusBarTranslucent
-        onRequestClose={() => setShowPaywall(false)}
-      >
-        <View style={styles.paywallOverlay}>
-          <View style={styles.paywallContainer}>
-            <TouchableOpacity 
-              style={styles.paywallCloseButton}
-              onPress={() => setShowPaywall(false)}
-            >
-              <Ionicons name="close" size={24} color={colors.textDark} />
-            </TouchableOpacity>
-
-            <ScrollView contentContainerStyle={styles.paywallContent}>
-              <Ionicons name="lock-closed" size={48} color={colors.primaryBlue} style={{marginBottom: 16}} />
-              <Text style={styles.paywallTitle}>Unlock Premium (DEV)</Text>
-              <Text style={styles.paywallSubtitle}>Premium includes unlimited interviews and full transcripts</Text>
-
-              <View style={styles.benefitsList}>
-                <View style={styles.benefitItem}>
-                  <Ionicons name="infinite" size={20} color={colors.primaryBlue} />
-                  <View style={{flex: 1, marginLeft: 12}}>
-                    <Text style={styles.benefitTitle}>Unlimited Interviews</Text>
-                    <Text style={styles.benefitDesc}>Practice as much as you want, anytime</Text>
-                  </View>
-                </View>
-
-                <View style={styles.benefitItem}>
-                  <Ionicons name="document-text" size={20} color={colors.primaryBlue} />
-                  <View style={{flex: 1, marginLeft: 12}}>
-                    <Text style={styles.benefitTitle}>View Transcripts</Text>
-                    <Text style={styles.benefitDesc}>See full conversation history from every interview</Text>
-                  </View>
-                </View>
-
-                <View style={styles.benefitItem}>
-                  <Ionicons name="help" size={20} color={colors.primaryBlue} />
-                  <View style={{flex: 1, marginLeft: 12}}>
-                    <Text style={styles.benefitTitle}>Full access to role specific question bank</Text>
-                    <Text style={styles.benefitDesc}>Practice with questions tailored to your job role</Text>
-                  </View>
-                </View>
-
-              </View>
-
-              <TouchableOpacity 
-                style={styles.paywallUpgradeButton}
-                onPress={() => {
-                  setShowPaywall(false);
-                  navigation.navigate('Subscription', { showClose: true });
-                }}
-              >
-                <Text style={styles.paywallUpgradeButtonText}>Upgrade to Premium</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setShowPaywall(false)}
+        onSuccess={() => loadSubscriptionTier()}
+      />
       
       {/* Transcript Modal */}
       <Modal

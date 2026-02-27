@@ -34,6 +34,7 @@ const FEATURES = [
   { icon: 'infinite', text: 'Unlimited interviews' },
   { icon: 'document-text', text: 'Unlock interview transcripts' },
   { icon: 'help', text: 'Full access to role specific question bank' },
+  { icon: 'sparkles', text: 'Unlimited AI analysis in question bank' },
 ];
 
 export default function PaywallModal({ visible, onClose, onSuccess }: PaywallModalProps) {

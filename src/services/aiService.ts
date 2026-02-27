@@ -474,6 +474,71 @@ Remember: The user is practicing for a REAL interview. Be critical to help them 
   }
 };
 
+export type QuestionAnswerFeedback = {
+  score: number;
+  strengths: string[];
+  improvements: string[];
+  betterAnswer: string;
+};
+
+export const getQuestionAnswerFeedback = async (
+  question: string,
+  answer: string,
+  jobRole?: string
+): Promise<QuestionAnswerFeedback | null> => {
+  try {
+    const roleLine = jobRole ? `Target role: ${jobRole}` : 'Target role: Not specified';
+    const prompt = `You are a strict interview coach. Evaluate the user's answer to the interview question.
+
+${roleLine}
+
+Question: ${question}
+Answer: ${answer}
+
+Return ONLY valid JSON with this exact structure:
+{
+  "score": number, // 0-10
+  "strengths": ["...", "...", "..."],
+  "improvements": ["...", "...", "..."],
+  "betterAnswer": "..."
+}
+
+Rules:
+- Be concise and practical
+- Score harshly for vague or short answers
+- Make the betterAnswer 3-5 sentences, STAR-style if applicable
+`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: 'You are a strict interview coach. Return JSON only.' },
+        { role: 'user', content: prompt },
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.4,
+      max_tokens: 350,
+      response_format: { type: 'json_object' },
+    });
+
+    const content = completion.choices[0]?.message?.content || '';
+    const parsed = JSON.parse(content) as QuestionAnswerFeedback;
+
+    if (!parsed || typeof parsed.score !== 'number') {
+      return null;
+    }
+
+    return {
+      score: Math.max(0, Math.min(10, parsed.score)),
+      strengths: Array.isArray(parsed.strengths) ? parsed.strengths.slice(0, 4) : [],
+      improvements: Array.isArray(parsed.improvements) ? parsed.improvements.slice(0, 4) : [],
+      betterAnswer: parsed.betterAnswer || '',
+    };
+  } catch (error) {
+    console.error('Error generating question feedback:', error);
+    return null;
+  }
+};
+
 export const clearConversationHistory = () => {
   conversationHistory = [];
 };

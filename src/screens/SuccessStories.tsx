@@ -24,7 +24,6 @@ interface Story {
   interview_count: number;
   timeframe: string;
   created_at: string;
-  gender?: string;
 }
 
 const SuccessStories: React.FC = () => {
@@ -120,21 +119,7 @@ const SuccessStories: React.FC = () => {
         {stories.map((story, index) => {
           const isExpanded = expandedId === story.id;
           const previewText = story.story.slice(0, 120) + '...';
-          
-          // Generate avatar based on gender
-          const getAvatar = (gender?: string) => {
-            if (gender === 'male') {
-              const maleAvatars = ['👨‍💼', '👨‍💻', '👨‍🔬', '👨‍🎓'];
-              return maleAvatars[index % maleAvatars.length];
-            } else if (gender === 'female') {
-              const femaleAvatars = ['👩‍💼', '👩‍💻', '👩‍🔬', '👩‍🎓'];
-              return femaleAvatars[index % femaleAvatars.length];
-            } else {
-              return '👤';
-            }
-          };
-          
-          const avatar = getAvatar(story.gender);
+          const avatar = '⭐';
 
           return (
             <TouchableOpacity

@@ -22,6 +22,7 @@ import { supabase } from '../config/supabase';
 import { SkeletonCard } from '../components/Skeleton';
 import OnboardingWalkthrough from '../components/OnboardingWalkthrough';
 import { Modal } from 'react-native';
+import PaywallModal from '../components/PaywallModal';
 
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -37,6 +38,9 @@ const dailyTips = [
   "'I' for personal wins, 'We' for team wins — balance both.",
   "Smile — it naturally boosts your vocal warmth and tone.",
 ];
+
+const PAYWALL_PROMPT_KEY = 'paywall_prompt_last_shown_v1';
+const PAYWALL_PROMPT_CHANCE = 0.2;
 
 const Home: React.FC = () => {
   const navigation = useNavigation<RootNav>();
@@ -54,6 +58,8 @@ const Home: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [streakBroken, setStreakBroken] = useState(false);
   const [canRecoverStreak, setCanRecoverStreak] = useState(false);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
+  const [showPaywall, setShowPaywall] = useState(false);
   
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -230,6 +236,53 @@ const Home: React.FC = () => {
   useEffect(() => {
     loadLatestFeedback();
   }, []);
+
+  useEffect(() => {
+    const loadSubscriptionTier = async () => {
+      try {
+        const userId = await AsyncStorage.getItem('userId');
+        if (!userId) return;
+
+        const { data } = await supabase
+          .from('user_preferences')
+          .select('subscription_tier')
+          .eq('user_id', userId)
+          .single();
+
+        if (data?.subscription_tier) {
+          setSubscriptionTier(data.subscription_tier);
+        }
+      } catch (error) {
+        console.error('Error loading subscription tier:', error);
+      }
+    };
+
+    loadSubscriptionTier();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation?.addListener?.('focus', () => {
+      maybeShowPaywallPrompt();
+    });
+    return unsubscribe;
+  }, [navigation, subscriptionTier]);
+
+  const maybeShowPaywallPrompt = async () => {
+    if (subscriptionTier !== 'free') return;
+
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const lastShown = await AsyncStorage.getItem(PAYWALL_PROMPT_KEY);
+      if (lastShown === today) return;
+
+      if (Math.random() <= PAYWALL_PROMPT_CHANCE) {
+        await AsyncStorage.setItem(PAYWALL_PROMPT_KEY, today);
+        setShowPaywall(true);
+      }
+    } catch (error) {
+      console.error('Error showing paywall prompt:', error);
+    }
+  };
 
   // Trigger entrance animation when loading completes
   useEffect(() => {
@@ -455,6 +508,11 @@ const Home: React.FC = () => {
         </View>
       </View>
     </Modal>
+    <PaywallModal
+      visible={showPaywall}
+      onClose={() => setShowPaywall(false)}
+      onSuccess={() => setSubscriptionTier('premium')}
+    />
     </>
   );
 };

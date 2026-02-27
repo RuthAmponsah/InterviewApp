@@ -31,7 +31,6 @@ const AddStory: React.FC = () => {
   const [interviewCount, setInterviewCount] = useState(0);
   const [timeframe, setTimeframe] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [gender, setGender] = useState<'male' | 'female' | 'other'>('other');
 
   useEffect(() => {
     loadUserData();
@@ -112,7 +111,6 @@ const AddStory: React.FC = () => {
           story: story.trim(),
           interview_count: interviewCount,
           timeframe: timeframe || 'N/A',
-          gender: gender,
         });
 
       if (error) {
@@ -208,32 +206,7 @@ const AddStory: React.FC = () => {
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Gender (for avatar)</Text>
-            <View style={styles.genderContainer}>
-              <TouchableOpacity
-                style={[styles.genderButton, gender === 'male' && styles.genderButtonActive]}
-                onPress={() => setGender('male')}
-              >
-                <Text style={[styles.genderEmoji, gender === 'male' && styles.genderEmojiActive]}>👨‍💼</Text>
-                <Text style={[styles.genderText, gender === 'male' && styles.genderTextActive]}>Male</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.genderButton, gender === 'female' && styles.genderButtonActive]}
-                onPress={() => setGender('female')}
-              >
-                <Text style={[styles.genderEmoji, gender === 'female' && styles.genderEmojiActive]}>👩‍💼</Text>
-                <Text style={[styles.genderText, gender === 'female' && styles.genderTextActive]}>Female</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.genderButton, gender === 'other' && styles.genderButtonActive]}
-                onPress={() => setGender('other')}
-              >
-                <Text style={[styles.genderEmoji, gender === 'other' && styles.genderEmojiActive]}>👤</Text>
-                <Text style={[styles.genderText, gender === 'other' && styles.genderTextActive]}>Other</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Your Story</Text>
@@ -332,40 +305,6 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodyMedium,
       fontWeight: '600',
       color: isDark ? '#fff' : colors.textDark,
-    },
-    genderContainer: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    genderButton: {
-      flex: 1,
-      backgroundColor: isDark ? '#2a2a2a' : '#fff',
-      borderRadius: 12,
-      padding: 16,
-      alignItems: 'center',
-      borderWidth: 2,
-      borderColor: isDark ? '#3a3a3a' : '#E5E7EB',
-    },
-    genderButtonActive: {
-      borderColor: colors.primaryBlue,
-      backgroundColor: isDark ? '#1a3a5a' : '#EFF6FF',
-    },
-    genderEmoji: {
-      fontSize: 32,
-      marginBottom: 8,
-      opacity: 0.5,
-    },
-    genderEmojiActive: {
-      opacity: 1,
-    },
-    genderText: {
-      ...typography.bodySmall,
-      color: colors.textMuted,
-      fontWeight: '500',
-    },
-    genderTextActive: {
-      color: colors.primaryBlue,
-      fontWeight: '600',
     },
     helper: {
       ...typography.bodySmall,

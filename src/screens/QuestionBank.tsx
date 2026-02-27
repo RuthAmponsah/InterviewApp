@@ -21,6 +21,8 @@ import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from '../config/supabase';
+import { getQuestionAnswerFeedback, type QuestionAnswerFeedback } from "../services/aiService";
+import PaywallModal from "../components/PaywallModal";
 
 type QuestionCategory = 'Behavioral' | 'Technical' | 'Situational' | 'Strengths' | 'Role-Specific' | 'Custom';
 
@@ -104,6 +106,9 @@ const PRACTICE_QUESTIONS: Question[] = [
   { id: 'rs-20', category: 'Role-Specific', text: 'How do you collaborate with sales and product teams to ensure aligned messaging and targets?', isPremium: true },
 ];
 
+const AI_FREE_LIMIT = 2;
+const AI_USAGE_KEY = 'question_bank_ai_usage_v1';
+
 const CATEGORIES: QuestionCategory[] = ['Behavioral', 'Technical', 'Situational', 'Strengths', 'Role-Specific', 'Custom'];
 
 export default function QuestionBank({ navigation }: any) {
@@ -124,13 +129,47 @@ export default function QuestionBank({ navigation }: any) {
   const [previousAnswers, setPreviousAnswers] = useState<any[]>([]);
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
   const [jobRole, setJobRole] = useState<string>('');
+  const [aiFeedback, setAiFeedback] = useState<QuestionAnswerFeedback | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiUsageCount, setAiUsageCount] = useState(0);
   const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     loadCustomQuestions();
     loadFavorites();
     loadUserData();
+    loadAiUsage();
   }, []);
+
+
+  const loadAiUsage = async () => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const stored = await AsyncStorage.getItem(AI_USAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as { date: string; count: number };
+        if (parsed.date === today) {
+          setAiUsageCount(parsed.count || 0);
+          return;
+        }
+      }
+      await AsyncStorage.setItem(AI_USAGE_KEY, JSON.stringify({ date: today, count: 0 }));
+      setAiUsageCount(0);
+    } catch (error) {
+      console.error('Error loading AI usage:', error);
+    }
+  };
+
+  const incrementAiUsage = async () => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const nextCount = aiUsageCount + 1;
+      await AsyncStorage.setItem(AI_USAGE_KEY, JSON.stringify({ date: today, count: nextCount }));
+      setAiUsageCount(nextCount);
+    } catch (error) {
+      console.error('Error saving AI usage:', error);
+    }
+  };
 
   const loadUserData = async () => {
     try {
@@ -418,6 +457,50 @@ export default function QuestionBank({ navigation }: any) {
     }
   };
 
+  const handleGetAiFeedback = async () => {
+    if (!selectedQuestion || !answer.trim()) {
+      Alert.alert('Error', 'Please write an answer first.');
+      return;
+    }
+
+    if (subscriptionTier === 'free' && aiUsageCount >= AI_FREE_LIMIT) {
+      Alert.alert(
+        'AI Feedback Limit Reached',
+        'You have used your 2 free AI feedback requests for today. Upgrade for unlimited feedback.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => setShowPaywall(true) },
+        ]
+      );
+      return;
+    }
+
+    try {
+      setAiLoading(true);
+      const feedback = await getQuestionAnswerFeedback(
+        selectedQuestion.text,
+        answer.trim(),
+        jobRole || undefined
+      );
+
+      if (!feedback) {
+        Alert.alert('Error', 'Unable to generate feedback right now. Please try again.');
+        return;
+      }
+
+      setAiFeedback(feedback);
+
+      if (subscriptionTier === 'free') {
+        await incrementAiUsage();
+      }
+    } catch (error) {
+      console.error('Error generating AI feedback:', error);
+      Alert.alert('Error', 'Unable to generate feedback right now.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadCustomQuestions();
@@ -447,6 +530,10 @@ export default function QuestionBank({ navigation }: any) {
             
             <View style={styles.headerRow}>
               <Text style={styles.logoText}>MY INTERVIEW</Text>
+            </View>
+
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>Question Bank</Text>
               <TouchableOpacity 
                 style={[styles.addButton, { backgroundColor: colors.primaryBlue + '15', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.primaryBlue }]}
                 onPress={() => setShowAddModal(true)}
@@ -457,8 +544,6 @@ export default function QuestionBank({ navigation }: any) {
                 </View>
               </TouchableOpacity>
             </View>
-
-            <Text style={styles.title}>Question Bank</Text>
             <Text style={styles.subtitle}>
               Practice answering common interview questions
             </Text>
@@ -467,7 +552,7 @@ export default function QuestionBank({ navigation }: any) {
             <View style={[styles.infoBanner, { backgroundColor: colors.primaryBlue + '08', borderColor: colors.primaryBlue + '30', borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 16, flexDirection: 'row', alignItems: 'flex-start' }]}>
               <Ionicons name="information-circle" size={16} color={colors.primaryBlue} style={{ marginRight: 8, marginTop: 2 }} />
               <Text style={[styles.infoBannerText, { color: isDark ? '#b5b5b5' : colors.textMuted, fontSize: 12, flex: 1 }]}>
-                Tap <Text style={{ fontWeight: '600', color: colors.primaryBlue }}>Add</Text> at the top right to create your own interview questions
+                Use the <Text style={{ fontWeight: '600', color: colors.primaryBlue }}>Add</Text> button to create your own interview questions
               </Text>
             </View>
 
@@ -549,24 +634,34 @@ export default function QuestionBank({ navigation }: any) {
                     <View key={question.id}>
                       {question.isPremium && subscriptionTier === 'free' ? (
                         <TouchableOpacity 
-                          style={[styles.questionCard, { opacity: 0.7, backgroundColor: colors.primaryBlue + '08', borderWidth: 1.5, borderColor: colors.primaryBlue + '30' }]}
+                          style={[styles.questionCard, { backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF', borderWidth: 1, borderColor: isDark ? '#333' : '#E5E7EB' }]}
                           onPress={() => setShowPaywall(true)}
                         >
                           <View style={styles.lockedQuestionContent}>
-                            <View style={{ flex: 1 }}>
+                            <View style={{ flex: 1, position: 'relative' }}>
                               <View style={styles.questionHeader}>
-                                <Text style={styles.categoryBadge}>{question.category}</Text>
-                                <View style={[styles.premiumBadge, { backgroundColor: colors.primaryBlue }]}>
-                                  <Ionicons name="lock-closed" size={11} color="#fff" style={{ marginRight: 3 }} />
-                                  <Text style={{ color: '#fff', fontSize: 9, fontWeight: '600' }}>Premium</Text>
-                                </View>
+                                <Text style={[styles.categoryBadge, { opacity: 0.4 }]}>{question.category}</Text>
                               </View>
-                              <Text style={[styles.questionText, { color: colors.textDark, marginVertical: 8 }]}>{question.text}</Text>
-                            </View>
-                            <View style={{ alignItems: 'flex-end', justifyContent: 'center' }}>
-                              <View style={{ alignItems: 'center', gap: 6 }}>
-                                <Ionicons name="lock-closed" size={24} color={colors.primaryBlue} />
-                                <Text style={{ color: colors.primaryBlue, fontSize: 11, fontWeight: '600' }}>Upgrade</Text>
+                              <View style={{ position: 'relative', marginVertical: 8 }}>
+                                <Text style={[styles.questionText, { color: colors.textDark, marginVertical: 8, opacity: 0 }]}>{question.text}</Text>
+                                <View style={{ 
+                                  position: 'absolute', 
+                                  top: 0, 
+                                  left: 0, 
+                                  right: 0, 
+                                  bottom: 0,
+                                  backgroundColor: isDark ? '#2a2a2a' : '#F0F0F0',
+                                  borderRadius: 6,
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  opacity: 0.85
+                                }}>
+                                  <View style={{ alignItems: 'center', gap: 8 }}>
+                                    <Ionicons name="lock-closed" size={20} color={colors.textMuted} />
+                                    <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: '500' }}>Premium content</Text>
+                                    <Text style={{ color: colors.textMuted, fontSize: 10 }}>Tap to unlock</Text>
+                                  </View>
+                                </View>
                               </View>
                             </View>
                           </View>
@@ -578,6 +673,7 @@ export default function QuestionBank({ navigation }: any) {
                             onPress={() => {
                               setSelectedQuestion(question);
                               setAnswer('');
+                              setAiFeedback(null);
                               setPreviousAnswers([]);
                               loadPreviousAnswers(question.id);
                             }}
@@ -674,7 +770,10 @@ Action: What did you do?
 Result: What was the outcome?"
                   placeholderTextColor={isDark ? '#666' : '#999'}
                   value={answer}
-                  onChangeText={setAnswer}
+                  onChangeText={(text) => {
+                    setAnswer(text);
+                    setAiFeedback(null);
+                  }}
                   multiline
                   numberOfLines={12}
                   textAlignVertical="top"
@@ -683,9 +782,55 @@ Result: What was the outcome?"
                 <TouchableOpacity style={styles.saveButton} onPress={saveAnswer}>
                   <Text style={styles.saveButtonText}>💾 Save Answer</Text>
                 </TouchableOpacity>
+
+                <View style={styles.aiSection}>
+                  {subscriptionTier === 'free' && (
+                    <Text style={styles.aiUsageText}>
+                      Free AI feedback left today: {Math.max(0, AI_FREE_LIMIT - aiUsageCount)}
+                    </Text>
+                  )}
+                  <TouchableOpacity
+                    style={[styles.aiButton, aiLoading && { opacity: 0.6 }]}
+                    onPress={handleGetAiFeedback}
+                    disabled={aiLoading}
+                  >
+                    <Text style={styles.aiButtonText}>
+                      {aiLoading ? 'Analyzing...' : 'Get AI Feedback'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {aiFeedback && (
+                    <View style={styles.aiFeedbackCard}>
+                      <View style={styles.aiFeedbackHeader}>
+                        <Text style={styles.aiFeedbackTitle}>AI Feedback</Text>
+                        <View style={styles.aiScoreBadge}>
+                          <Text style={styles.aiScoreText}>{aiFeedback.score}/10</Text>
+                        </View>
+                      </View>
+
+                      <Text style={styles.aiSectionLabel}>Strengths</Text>
+                      {aiFeedback.strengths.map((item, index) => (
+                        <Text key={`s-${index}`} style={styles.aiFeedbackItem}>• {item}</Text>
+                      ))}
+
+                      <Text style={styles.aiSectionLabel}>Improvements</Text>
+                      {aiFeedback.improvements.map((item, index) => (
+                        <Text key={`i-${index}`} style={styles.aiFeedbackItem}>• {item}</Text>
+                      ))}
+
+                      <Text style={styles.aiSectionLabel}>Better Answer</Text>
+                      <Text style={styles.aiFeedbackText}>{aiFeedback.betterAnswer}</Text>
+                    </View>
+                  )}
+                </View>
               </View>
             )}
           </ScrollView>
+          <PaywallModal
+            visible={showPaywall}
+            onClose={() => setShowPaywall(false)}
+            onSuccess={() => loadUserData()}
+          />
           {/* Add Custom Question Modal */}
           <Modal
             visible={showAddModal}
@@ -779,20 +924,23 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: colors.primaryBlue,
       alignSelf: "center",
     },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
     addButton: {
-      position: 'absolute',
-      right: 0,
       padding: 0,
     },
     title: {
       ...typography.headingMedium,
       color: isDark ? "#fff" : colors.textDark,
-      marginBottom: 8,
     },
     subtitle: {
       ...typography.bodyMedium,
       color: isDark ? "#b5b5b5" : colors.textMuted,
-      marginBottom: 16,
+      marginBottom: 20,
     },
     infoBanner: {
       gap: 8,
@@ -1043,6 +1191,69 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodyMedium,
       color: '#FFFFFF',
       fontWeight: '600',
+    },
+    aiSection: {
+      marginTop: 16,
+      gap: 12,
+    },
+    aiUsageText: {
+      ...typography.caption,
+      color: isDark ? '#b5b5b5' : colors.textMuted,
+    },
+    aiButton: {
+      backgroundColor: isDark ? '#111827' : '#111827',
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+    aiButtonText: {
+      ...typography.bodyMedium,
+      color: '#FFFFFF',
+      fontWeight: '600',
+    },
+    aiFeedbackCard: {
+      backgroundColor: isDark ? '#1a1a1a' : '#F9FAFB',
+      borderRadius: 14,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : colors.border,
+      gap: 8,
+    },
+    aiFeedbackHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    aiFeedbackTitle: {
+      ...typography.bodyMedium,
+      color: isDark ? '#fff' : colors.textDark,
+      fontWeight: '700',
+    },
+    aiScoreBadge: {
+      backgroundColor: colors.primaryBlue + '20',
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    },
+    aiScoreText: {
+      ...typography.caption,
+      color: colors.primaryBlue,
+      fontWeight: '700',
+    },
+    aiSectionLabel: {
+      ...typography.caption,
+      color: isDark ? '#b5b5b5' : colors.textMuted,
+      fontWeight: '600',
+      marginTop: 4,
+    },
+    aiFeedbackItem: {
+      ...typography.bodySmall,
+      color: isDark ? '#fff' : colors.textDark,
+    },
+    aiFeedbackText: {
+      ...typography.bodySmall,
+      color: isDark ? '#fff' : colors.textDark,
+      lineHeight: 18,
     },
     modalOverlay: {
       flex: 1,

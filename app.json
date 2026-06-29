@@ -60,7 +60,8 @@
         {
           "microphonePermission": "Allow MY INTERVIEW to access your microphone for voice recording during interview practice."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "extra": {
       "supabaseUrl": "https://urewxbnmubmkceuplctd.supabase.co",
@@ -73,6 +74,8 @@
       "termsOfServiceUrl": "https://ruthamponsah.github.io/InterviewApp/terms",
       "supportUrl": "https://ruthamponsah.github.io/InterviewApp/support",
       "marketingUrl": "https://ruthamponsah.github.io/InterviewApp/",
+      "revenuecatIosKey": "appl_jGQGIhcHQsDHAtvVInxxhCzanNY",
+
       "eas": {
         "projectId": "5fe21a1b-adb5-4a48-ab5a-6d149d888986"
       }

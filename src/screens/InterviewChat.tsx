@@ -45,9 +45,14 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const flatListRef = React.useRef<FlatList>(null);
+  const messagesRef = React.useRef<Message[]>([]);
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [jobRole, setJobRole] = useState('');
+
+  React.useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   React.useEffect(() => {
     ensureSupabaseSession();
@@ -70,37 +75,17 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const ensureSupabaseSession = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        console.log('⚠️ No session found on InterviewChat load');
-        console.log('Attempting to restore session from AsyncStorage...');
-        
-        // Try to get the manually stored session
-        const storedSession = await AsyncStorage.getItem('supabase.session');
-        
-        if (storedSession) {
-          const parsedSession = JSON.parse(storedSession);
-          console.log('Found stored session, restoring...');
-          
-          const { data, error } = await supabase.auth.setSession({
-            access_token: parsedSession.access_token,
-            refresh_token: parsedSession.refresh_token,
-          });
-          
-          if (error) {
-            console.error('❌ Failed to restore session:', error);
-            console.log('User needs to log out and log back in');
-          } else {
-            console.log('✅ Session restored successfully!');
-            console.log('Session user ID:', data.session?.user.id);
-          }
-        } else {
-          console.error('❌ No stored session found in AsyncStorage');
-          console.log('User needs to log out and log back in');
-        }
-      } else {
+      if (session) {
         console.log('✅ Active session found on InterviewChat load');
         console.log('Session user ID:', session.user.id);
+      } else {
+        console.error('❌ No active session found. Redirecting to SignIn.');
+        Alert.alert('Session expired', 'Please sign in again to continue.', [
+          {
+            text: 'OK',
+            onPress: () => navigation.replace('SignIn'),
+          },
+        ]);
       }
     } catch (error) {
       console.error('Error checking session:', error);
@@ -111,13 +96,6 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
     try {
       const userId = await AsyncStorage.getItem('userId');
       if (!userId) return;
-
-      // Check if user is ruth@gmail.com (dev/test account - unlimited access)
-      const userEmail = await AsyncStorage.getItem('userEmail');
-      if (userEmail === 'ruth@gmail.com') {
-        console.log('✅ Developer account - unlimited interviews');
-        return;
-      }
 
       // Get user preferences
       const { data: prefs } = await supabase
@@ -204,6 +182,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         text: greetingText,
       };
       setMessages([greeting]);
+      messagesRef.current = [greeting];
       
       // Speak the greeting in voice mode
       if (mode === 'voice') {
@@ -274,7 +253,11 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       text: text.trim(),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => {
+      const next = [...prev, userMsg];
+      messagesRef.current = next;
+      return next;
+    });
     const userInput = text.trim();
     setInput('');
 
@@ -298,7 +281,11 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         from: 'ai',
         text: cleanResponse,
       };
-      setMessages((prev) => [...prev, aiMsg]);
+      setMessages((prev) => {
+        const next = [...prev, aiMsg];
+        messagesRef.current = next;
+        return next;
+      });
 
       // If voice mode, speak the AI response
       if (mode === 'voice' && cleanResponse) {
@@ -329,6 +316,8 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
     try {
       // Stop any speaking immediately
       await stopSpeaking();
+
+      const latestMessages = messagesRef.current;
       
       const userId = await AsyncStorage.getItem("userId");
       
@@ -336,7 +325,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         // Calculate duration in minutes
         const durationMs = Date.now() - startTime;
         const durationMinutes = Math.round(durationMs / 60000);
-        const userMessageCount = messages.filter(m => m.from === 'user').length;
+        const userMessageCount = latestMessages.filter(m => m.from === 'user').length;
         const hasNoResponses = userMessageCount === 0;
 
         console.log('Saving interview to database...');
@@ -363,7 +352,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
 
         // Save to interview_history (even if no job role, use 'Unknown')
         // Include transcript of the conversation
-        const transcript = JSON.stringify(messages.map(m => ({ from: m.from, text: m.text })));
+        const transcript = JSON.stringify(latestMessages.map(m => ({ from: m.from, text: m.text })));
         
         const { data: insertedInterview, error: insertError } = await supabase
           .from('interview_history')

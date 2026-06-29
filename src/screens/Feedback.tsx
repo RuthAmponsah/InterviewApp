@@ -55,7 +55,7 @@ const Feedback: React.FC = () => {
       console.log('Has no responses:', hasNoResponses);
       
       // If user ended without submitting anything, give score 0
-      if (hasNoResponses || messageCount === 0) {
+      if (hasNoResponses && messageCount === 0) {
         console.log('User ended interview without submitting any responses');
         const noResponseFeedback = {
           strengths: ['You started the interview, which shows initiative.'],
@@ -345,9 +345,8 @@ const Feedback: React.FC = () => {
       {/* Transcript Modal - Popup bubble style */}
       <Modal
         visible={showTranscript}
-        transparent
+        transparent={true}
         animationType="fade"
-        statusBarTranslucent
         onRequestClose={() => setShowTranscript(false)}
       >
         <View style={styles.modalOverlay}>
@@ -416,7 +415,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     content: {
       paddingHorizontal: 24,
       paddingTop: 70,
-      paddingBottom: 24,
+      paddingBottom: 100,
     },
     logoText: {
       ...typography.heading,
@@ -512,6 +511,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
       width: '100%',
       maxWidth: 400,
       maxHeight: '85%',
+        height: '85%',
       backgroundColor: isDark ? '#1a1a1a' : '#fff',
       borderRadius: 24,
       overflow: 'hidden',

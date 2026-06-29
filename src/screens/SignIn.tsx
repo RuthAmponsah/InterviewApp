@@ -215,12 +215,6 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       }
       // Otherwise, let them see the walkthrough (new account or never did interviews)
       
-      // Store the session explicitly in AsyncStorage AFTER clearing old data
-      if (authData.session) {
-        await AsyncStorage.setItem('supabase.session', JSON.stringify(authData.session));
-        console.log('✅ Session stored in AsyncStorage');
-      }
-      
       await AsyncStorage.setItem('isLoggedIn', 'true');
       await AsyncStorage.setItem('userEmail', userData.email);
       await AsyncStorage.setItem('userName', userData.name);

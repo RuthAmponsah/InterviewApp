@@ -141,7 +141,7 @@ const Notifications: React.FC = () => {
 
       <Text style={styles.title}>Notifications</Text>
       <Text style={styles.subtitle}>
-        Manage how you'd like to be notified about your interview progress.
+        Manage your notification preferences
       </Text>
 
       {/* General Notifications */}
@@ -150,9 +150,9 @@ const Notifications: React.FC = () => {
 
         <View style={styles.row}>
           <View style={styles.rowTextContainer}>
-            <Text style={styles.rowTitle}>Push notifications</Text>
+            <Text style={styles.rowTitle}>Push Notifications</Text>
             <Text style={styles.rowSubtitle}>
-              Receive alerts on your device.
+              Receive push notifications for important updates
             </Text>
           </View>
           <Switch
@@ -167,9 +167,9 @@ const Notifications: React.FC = () => {
 
         <View style={styles.row}>
           <View style={styles.rowTextContainer}>
-            <Text style={styles.rowTitle}>Email notifications</Text>
+            <Text style={styles.rowTitle}>Email Notifications</Text>
             <Text style={styles.rowSubtitle}>
-              Get updates sent to your inbox.
+              Receive email notifications for feedback and updates
             </Text>
           </View>
           <Switch
@@ -185,13 +185,13 @@ const Notifications: React.FC = () => {
 
       {/* Practice Reminders */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Practice reminders</Text>
+        <Text style={styles.sectionTitle}>Practice Reminders</Text>
 
         <View style={styles.row}>
           <View style={styles.rowTextContainer}>
-            <Text style={styles.rowTitle}>Daily practice reminders</Text>
+            <Text style={styles.rowTitle}>Daily Practice Reminders</Text>
             <Text style={styles.rowSubtitle}>
-              Get a nudge to keep your streak going.
+              Get reminded to practice interviews daily
             </Text>
           </View>
           <Switch
@@ -209,16 +209,16 @@ const Notifications: React.FC = () => {
             style={styles.timeRow}
             onPress={() => setShowTimePicker(true)}
           >
-            <Text style={styles.timeLabel}>Reminder time</Text>
+            <Text style={styles.timeLabel}>Reminder Time</Text>
             <Text style={styles.timeValue}>{formatTime(reminderTime.hour, reminderTime.minute)}</Text>
           </TouchableOpacity>
         )}
 
         <View style={styles.row}>
           <View style={styles.rowTextContainer}>
-            <Text style={styles.rowTitle}>Feedback alerts</Text>
+            <Text style={styles.rowTitle}>Feedback Alerts</Text>
             <Text style={styles.rowSubtitle}>
-              Know when new feedback is available.
+              Receive notifications when new feedback is available
             </Text>
           </View>
           <Switch

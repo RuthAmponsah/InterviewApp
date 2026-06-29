@@ -333,11 +333,11 @@ const Home: React.FC = () => {
       </Text>
 
       <View style={styles.greetingRow}>
-        <Text style={styles.subGreeting}>
-          Ready to practice and move one step closer to your next role?
-        </Text>
+      <Text style={styles.subGreeting}>
+        Ready to ace your next interview?
+      </Text>
         {lastActive && (
-          <Text style={styles.lastActive}>Last interview: {lastActive}</Text>
+          <Text style={styles.lastActive}>Last active: {lastActive}</Text>
         )}
       </View>
 
@@ -357,9 +357,9 @@ const Home: React.FC = () => {
             end={{ x: 1, y: 1 }}
             style={[styles.card, styles.primaryCard]}
           >
-            <Text style={styles.cardTitlePrimary}>🎤  Start interview</Text>
+            <Text style={styles.cardTitlePrimary}>Start Interview</Text>
             <Text style={styles.cardBodyPrimary}>
-              Get a realistic mock interview tailored to your target role.
+              Practice with AI-powered interviews tailored to your role
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -374,14 +374,14 @@ const Home: React.FC = () => {
         >
           <Text style={styles.cardTag}>Practice 📝</Text>
           <Text style={styles.cardTitle}>Question Bank</Text>
-          <Text style={styles.cardBody}>32 common questions</Text>
-          <Text style={styles.tapHint}>Tap to view →</Text>
+          <Text style={styles.cardBody}>Browse and practice common interview questions</Text>
+          <Text style={styles.tapHint}>Tap to view</Text>
         </TouchableOpacity>
 
         <View style={[styles.card, styles.smallCard]}>
-          <Text style={styles.cardTag}>Streak 🔥</Text>
+          <Text style={styles.cardTag}>Streak</Text>
           <Text style={styles.cardTitle}>{streak} day streak</Text>
-          <Text style={styles.cardBody}>Consistency builds confidence.</Text>
+          <Text style={styles.cardBody}>Keep practicing to build your streak!</Text>
         </View>
       </View>
 
@@ -390,8 +390,8 @@ const Home: React.FC = () => {
         <SkeletonCard />
       ) : (
         <View style={styles.card}>
-          <Text style={styles.cardTag}>Daily tip</Text>
-          <Text style={styles.cardTitle}>Tip of the day</Text>
+          <Text style={styles.cardTag}>Daily Tip</Text>
+          <Text style={styles.cardTitle}>Tip of the Day</Text>
           <Text style={styles.cardBody}>{tipOfTheDay}</Text>
         </View>
       )}
@@ -408,7 +408,7 @@ const Home: React.FC = () => {
             navigation.navigate('AllFeedback');
           }}
         >
-          <Text style={styles.cardTitle}>Latest feedback</Text>
+          <Text style={styles.cardTitle}>Latest Feedback</Text>
           {hasInterviews && latestFeedback ? (
             (() => {
               // Parse the feedback text
@@ -430,7 +430,7 @@ const Home: React.FC = () => {
                   
                   {strengths && (
                     <View style={styles.feedbackSection}>
-                      <Text style={styles.feedbackSectionTitle}>✅ What you did well</Text>
+                      <Text style={styles.feedbackSectionTitle}>What you did well</Text>
                       <Text style={styles.feedbackSectionText} numberOfLines={3}>
                         {strengths}
                       </Text>
@@ -439,20 +439,20 @@ const Home: React.FC = () => {
                   
                   {improvements && (
                     <View style={styles.feedbackSection}>
-                      <Text style={styles.feedbackSectionTitle}>💡 How to improve</Text>
+                      <Text style={styles.feedbackSectionTitle}>How to improve</Text>
                       <Text style={styles.feedbackSectionText} numberOfLines={3}>
                         {improvements}
                       </Text>
                     </View>
                   )}
                   
-                  <Text style={styles.tapToViewMore}>Tap to view all feedback →</Text>
+                  <Text style={styles.tapToViewMore}>Tap to view all feedback</Text>
                 </>
               );
             })()
           ) : (
             <Text style={styles.cardBody}>
-              You haven't completed any interviews yet. Come back soon after you do an interview!
+              No interviews completed yet. Start your first practice session!
             </Text>
           )}
         </TouchableOpacity>
@@ -466,11 +466,11 @@ const Home: React.FC = () => {
           navigation.navigate('ViewCV');
         }}
       >
-        <Text style={styles.cardTitle}>Enhance your CV</Text>
+        <Text style={styles.cardTitle}>Enhance CV</Text>
         <Text style={styles.cardBody}>
           Paste your CV and get AI suggestions to improve it.
         </Text>
-        <Text style={styles.tapToViewMore}>Tap to enhance your CV →</Text>
+        <Text style={styles.tapToViewMore}>Tap to enhance CV</Text>
       </TouchableOpacity>
 
       <TouchableOpacity 
@@ -481,7 +481,7 @@ const Home: React.FC = () => {
           navigation.navigate('SuccessStories');
         }}
       >
-        <Text style={styles.cardTitle}>Success stories</Text>
+        <Text style={styles.cardTitle}>Success Stories</Text>
         <Text style={styles.cardBody}>
           Read how other learners went from nervous to hired after practicing with Aya.
         </Text>

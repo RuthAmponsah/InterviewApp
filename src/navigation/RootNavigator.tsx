@@ -14,6 +14,7 @@ import SignIn from "../screens/SignIn";
 import SignUp from "../screens/SignUp";
 import ForgotPassword from "../screens/ForgotPassword";
 import ResetPassword from "../screens/ResetPassword";
+import ResetPasswordViaEmail from "../screens/ResetPasswordViaEmail";
 import Welcome from "../screens/Welcome";
 import Home from "../screens/Home";
 import Jobs from "../screens/Jobs";
@@ -52,6 +53,7 @@ export type RootStackParamList = {
   SignUp: undefined;
   ForgotPassword: undefined;
   ResetPassword: undefined;
+  ResetPasswordViaEmail: { token: string } | undefined;
   Welcome: undefined;
   MainTabs: undefined;
   InterviewType: undefined;
@@ -202,6 +204,51 @@ const RootNavigator = () => {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
 
+  const syncUserContextFromSession = async (session: any) => {
+    const userId = session?.user?.id;
+    const userEmail = session?.user?.email;
+
+    if (!userId) return;
+
+    await AsyncStorage.setItem('userId', userId);
+    if (userEmail) {
+      await AsyncStorage.setItem('userEmail', userEmail.toLowerCase());
+    }
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('name, email, job_role, profile_photo')
+      .eq('id', userId)
+      .single();
+
+    if (userData?.name) {
+      await AsyncStorage.setItem('userName', userData.name);
+    }
+    if (userData?.email) {
+      await AsyncStorage.setItem('userEmail', userData.email.toLowerCase());
+    }
+    if (userData?.job_role) {
+      await AsyncStorage.setItem('jobRole', userData.job_role);
+    } else {
+      await AsyncStorage.removeItem('jobRole');
+    }
+    if (userData?.profile_photo) {
+      await AsyncStorage.setItem('userProfilePhoto', userData.profile_photo);
+    } else {
+      await AsyncStorage.removeItem('userProfilePhoto');
+    }
+
+    await AsyncStorage.setItem('isLoggedIn', 'true');
+  };
+
+  const clearLocalAuthContext = async () => {
+    const keysToRemove = ['userId', 'userEmail', 'userName', 'jobRole', 'userProfilePhoto', 'supabase.session'];
+    for (const key of keysToRemove) {
+      await AsyncStorage.removeItem(key);
+    }
+    await AsyncStorage.setItem('isLoggedIn', 'false');
+  };
+
   useEffect(() => {
     const determineInitialRoute = async () => {
       try {
@@ -232,10 +279,12 @@ const RootNavigator = () => {
         console.log('📱 App loaded - Supabase session:', session ? 'Active ✅' : 'None ❌');
 
         if (session) {
+          await syncUserContextFromSession(session);
           // Logged in, go to main app
           console.log('✅ User has valid session, showing MainTabs');
           setInitialRoute("MainTabs");
         } else {
+          await clearLocalAuthContext();
           // Logged out, show sign in
           console.log('❌ No session found, showing SignIn');
           setInitialRoute("SignIn");
@@ -316,6 +365,7 @@ const RootNavigator = () => {
       <Stack.Screen name="SignUp" component={SignUp} />
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
+      <Stack.Screen name="ResetPasswordViaEmail" component={ResetPasswordViaEmail} />
 
       {/* Intro */}
       <Stack.Screen name="Welcome" component={Welcome} />

@@ -53,13 +53,6 @@ const Settings = () => {
       const userId = await AsyncStorage.getItem('userId');
       if (!userId) return;
 
-      // Check if user is ruth@gmail.com (dev/test account - treat as premium)
-      const userEmail = await AsyncStorage.getItem('userEmail');
-      if (userEmail === 'ruth@gmail.com') {
-        setSubscriptionTier('annual');
-        return;
-      }
-
       const { data } = await supabase
         .from('user_preferences')
         .select('subscription_tier')

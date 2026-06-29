@@ -219,6 +219,28 @@ const AllFeedback: React.FC = () => {
     }
   };
 
+  const parseFeedbackContent = (feedbackText: string) => {
+    const scoreMatch = feedbackText.match(/Score:\s*(\d+)\/100/i);
+    const score = scoreMatch ? parseInt(scoreMatch[1], 10) : null;
+
+    const strengthsMatch = feedbackText.match(/Strengths?:\s*([\s\S]*?)(?:Areas?\s*(?:to\s*improve|for\s*improvement):|$)/i);
+    const improvementsMatch = feedbackText.match(/Areas?\s*(?:to\s*improve|for\s*improvement):\s*([\s\S]*)$/i);
+
+    const strengths = strengthsMatch ? strengthsMatch[1].trim() : '';
+    const improvements = improvementsMatch ? improvementsMatch[1].trim() : '';
+
+    let fallback = '';
+    if (!strengths && !improvements) {
+      fallback = feedbackText
+        .replace(/Score:\s*\d+\/100\.?/i, '')
+        .replace(/Strengths?:/i, '')
+        .replace(/Areas?\s*(?:to\s*improve|for\s*improvement):/i, '')
+        .trim();
+    }
+
+    return { score, strengths, improvements, fallback };
+  };
+
   return (
     <View style={styles.container}>
       <BackButton />
@@ -303,14 +325,7 @@ const AllFeedback: React.FC = () => {
               </View>
             )}
             {feedbackList.map((item) => {
-            // Parse the feedback text to extract score, strengths, and improvements
-            const scoreMatch = item.feedback.match(/Score:\s*(\d+)\/100/);
-            const strengthsMatch = item.feedback.match(/Strengths:\s*(.+?)\s*Areas to improve:/s);
-            const improvementsMatch = item.feedback.match(/Areas to improve:\s*(.+)$/s);
-            
-            const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
-            const strengths = strengthsMatch ? strengthsMatch[1].trim() : '';
-            const improvements = improvementsMatch ? improvementsMatch[1].trim() : '';
+            const { score, strengths, improvements, fallback } = parseFeedbackContent(item.feedback || '');
             
             return (
               <View key={item.id} style={styles.card}>
@@ -344,6 +359,13 @@ const AllFeedback: React.FC = () => {
                   <View style={styles.section}>
                     <Text style={styles.sectionTitle}>💡 How to improve</Text>
                     <Text style={styles.sectionText}>{improvements}</Text>
+                  </View>
+                )}
+
+                {!strengths && !improvements && !!fallback && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>📝 Feedback</Text>
+                    <Text style={styles.sectionText}>{fallback}</Text>
                   </View>
                 )}
                 

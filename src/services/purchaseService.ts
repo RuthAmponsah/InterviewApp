@@ -5,11 +5,17 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 // RevenueCat API Keys
-const REVENUECAT_IOS_KEY = Constants.expoConfig?.extra?.revenuecatIosKey || process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
-const REVENUECAT_ANDROID_KEY = Constants.expoConfig?.extra?.revenuecatAndroidKey || process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';
+const envExtra = ((Constants.expoConfig as any)?.extra || (Constants.manifest as any)?.extra || {}) as Record<string, any>;
+const REVENUECAT_IOS_KEY = envExtra.revenuecatIosKey || process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || 'appl_jGQGIhcHQsDHAtvVInxxhCzanNY';
+const REVENUECAT_ANDROID_KEY = envExtra.revenuecatAndroidKey || process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';
 
 if (!REVENUECAT_IOS_KEY || !REVENUECAT_ANDROID_KEY) {
   console.warn('⚠️ RevenueCat API keys not found. Subscription functionality will be limited.');
+} else {
+  console.log('✅ RevenueCat keys loaded:', {
+    ios: Boolean(REVENUECAT_IOS_KEY),
+    android: Boolean(REVENUECAT_ANDROID_KEY),
+  });
 }
 
 /**
@@ -18,8 +24,20 @@ if (!REVENUECAT_IOS_KEY || !REVENUECAT_ANDROID_KEY) {
  */
 export const initializePurchases = async () => {
   try {
-    const apiKey = Platform.OS === 'ios' ? REVENUECAT_IOS_KEY : REVENUECAT_ANDROID_KEY;
-    
+    const isIos = Platform.OS === 'ios';
+    const apiKey = isIos ? REVENUECAT_IOS_KEY : REVENUECAT_ANDROID_KEY;
+
+    console.log(`RevenueCat initialize on ${Platform.OS}`, {
+      apiKeyPresent: Boolean(apiKey),
+      expectedPrefix: isIos ? 'appl_' : 'goog_',
+      keySample: apiKey ? apiKey.slice(0, 5) : null,
+    });
+
+    if (!apiKey) {
+      console.warn('⚠️ RevenueCat API key is missing for this platform.');
+      return false;
+    }
+
     if (apiKey.includes('YOUR_')) {
       console.log('⚠️ RevenueCat not configured - Using mock purchases');
       return false;

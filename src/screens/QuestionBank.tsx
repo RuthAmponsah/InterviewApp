@@ -948,6 +948,13 @@ const makeStyles = (colors: any, isDark: boolean) =>
     infoBannerText: {
       ...typography.caption,
     },
+    premiumUnlockBanner: {
+      gap: 8,
+    },
+    premiumUnlockText: {
+      ...typography.bodySmall,
+      fontWeight: '600',
+    },
     searchContainer: {
       flexDirection: 'row',
       alignItems: 'center',

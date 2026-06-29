@@ -160,7 +160,7 @@ const COMMON_QUESTIONS = {
 };
 
 // Role-specific scenario questions
-const ROLE_SPECIFIC_SCENARIOS = {
+const ROLE_SPECIFIC_SCENARIOS: Record<string, string[]> = {
   'Software Engineer': [
     'You find a critical bug in production affecting thousands of users. Walk me through how you would approach debugging and fixing it.',
     'Describe your approach to designing scalable system architecture for a feature that needs to handle millions of requests.',

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React, { useState, useEffect } from "react";
-import { ActivityIndicator, View, Text } from "react-native";
+import { ActivityIndicator, View, Text, Linking } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useTheme } from "../theme/ThemeContext";
@@ -248,6 +248,21 @@ const RootNavigator = () => {
     }
     await AsyncStorage.setItem('isLoggedIn', 'false');
   };
+
+  useEffect(() => {
+    // Handle deep links for password reset
+    const handleDeepLink = (url: string | null) => {
+      if (!url) return;
+      if (url.includes('reset-password')) {
+        const token = url.split('token=')[1]?.split('&')[0];
+        setInitialRoute('ResetPasswordViaEmail');
+      }
+    };
+
+    Linking.getInitialURL().then(handleDeepLink);
+    const sub = Linking.addEventListener('url', ({ url }) => handleDeepLink(url));
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     const determineInitialRoute = async () => {

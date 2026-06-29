@@ -120,16 +120,6 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const handlePurchase = (pack: SectorPack) => {
-    // TODO: Integrate with payment provider
-    // For now, mock the purchase
-    console.log(`Purchasing pack: ${pack.id}`);
-    
-    alert(`🎉 Success!\n\nYou've purchased the ${pack.title}.\n\nNew questions are now available in your interview practice!`);
-    
-    setPurchasedPacks([...purchasedPacks, pack.id]);
-  };
-
   const isPurchased = (packId: string) => purchasedPacks.includes(packId);
 
   return (

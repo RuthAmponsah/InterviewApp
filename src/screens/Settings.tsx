@@ -91,7 +91,7 @@ const Settings = () => {
     { emoji: "🎨", label: "App customisation", route: "AppCustomisation" },
     { emoji: "🎯", label: "Interview experience", route: "InterviewExperience", badge: "COMING SOON", comingSoon: true },
     { emoji: "💼", label: "Job preferences", route: "JobPreferences" },
-    { emoji: "📚", label: "Sector Packs", route: "SectorPacks", badge: "COMING SOON", comingSoon: true },
+    { emoji: "📚", label: "Sector Packs", route: "SectorPacks" },
     { emoji: "🔒", label: "Privacy and security", route: "PrivacySecurity" },
     { emoji: "💬", label: "Support", route: "Support" },
     { emoji: "ℹ️", label: "About us", route: "AboutUs" },

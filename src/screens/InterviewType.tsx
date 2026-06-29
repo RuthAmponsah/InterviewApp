@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import PrimaryButton from '../components/PrimaryButton';
 import PaywallModal from '../components/PaywallModal';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from '../config/supabase';
@@ -109,8 +109,7 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={styles.root}>
-      <BackButton />
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <ScreenHeader />
 
       {/* Prep Checklist */}
       <View style={styles.checklistCard}>
@@ -180,14 +179,10 @@ const makeStyles = (colors: any, isDark: boolean) =>
       flex: 1,
       backgroundColor: isDark ? '#0f0f0f' : colors.background,
       paddingHorizontal: 24,
-      paddingTop: 70,
-    },
+          },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     card: {
       backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',

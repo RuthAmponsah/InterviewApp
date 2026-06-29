@@ -19,7 +19,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { decode } from "base64-arraybuffer";
 import PrimaryButton from "../components/PrimaryButton";
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import TextInputField from "../components/TextInputField";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
@@ -223,9 +223,7 @@ export default function EditProfile({ navigation }: any) {
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
           >
-        <BackButton />
-
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
+        <ScreenHeader />
 
         <Text style={styles.title}>Edit profile</Text>
         <Text style={styles.subtitle}>
@@ -334,23 +332,21 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-      paddingTop: 70,
-      paddingBottom: 32,
+            paddingBottom: 32,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: '800',
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: 'center',
-      marginBottom: 28,
     },
     title: {
       ...typography.heading,
+      textAlign: 'center',
       color: isDark ? '#fff' : colors.textDark,
       marginBottom: 8,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: colors.textMuted,
       marginBottom: 24,
       lineHeight: 22,

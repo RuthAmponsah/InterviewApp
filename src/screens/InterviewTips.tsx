@@ -8,7 +8,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 
@@ -29,42 +29,42 @@ const TIPS: Tip[] = [
     category: 'Before',
     title: 'Research the Company',
     description: 'Learn about the company\'s mission, values, recent news, and culture. This shows genuine interest and helps you tailor your answers.',
-    icon: '🔍',
+    icon: 'search-outline',
   },
   {
     id: '2',
     category: 'Before',
     title: 'Prepare Your Stories',
     description: 'Have 5-7 specific examples ready from your experience that demonstrate key skills. Use the STAR method for structure.',
-    icon: '📚',
+    icon: 'book-outline',
   },
   {
     id: '3',
     category: 'Before',
     title: 'Practice Out Loud',
     description: 'Rehearse answering common questions aloud. This helps you sound more natural and confident during the actual interview.',
-    icon: '🗣️',
+    icon: 'chatbubbles-outline',
   },
   {
     id: '4',
     category: 'Before',
     title: 'Prepare Questions',
     description: 'Have 3-5 thoughtful questions ready to ask the interviewer. This shows engagement and helps you evaluate if the role is right for you.',
-    icon: '❓',
+    icon: 'help-circle-outline',
   },
   {
     id: '21',
     category: 'Before',
     title: 'Test Your Tech',
     description: 'If your interview is virtual, test your internet, camera, and microphone in advance. Make sure your environment is quiet and well-lit.',
-    icon: '💻',
+    icon: 'desktop-outline',
   },
   {
     id: '22',
     category: 'Before',
     title: 'Plan Your Route',
     description: 'If in-person, plan your route and allow extra time for travel. Arriving late can create a bad first impression.',
-    icon: '🗺️',
+    icon: 'map-outline',
   },
 
   // During Interview
@@ -73,49 +73,49 @@ const TIPS: Tip[] = [
     category: 'During',
     title: 'Make Strong First Impression',
     description: 'Arrive early, dress appropriately, maintain eye contact, offer a firm handshake, and smile. First impressions matter.',
-    icon: '👔',
+    icon: 'shirt-outline',
   },
   {
     id: '6',
     category: 'During',
     title: 'Listen Carefully',
     description: 'Pay close attention to the question being asked. It\'s okay to pause and think before answering. Clarify if you\'re unsure.',
-    icon: '👂',
+    icon: 'ear-outline',
   },
   {
     id: '7',
     category: 'During',
     title: 'Be Specific and Quantify',
     description: 'Use specific examples and numbers when possible. "Increased sales by 30%" is more impactful than "improved sales."',
-    icon: '📊',
+    icon: 'bar-chart-outline',
   },
   {
     id: '8',
     category: 'During',
     title: 'Show Enthusiasm',
     description: 'Let your passion for the role and company shine through. Energy and enthusiasm are contagious and memorable.',
-    icon: '⚡',
+    icon: 'flash-outline',
   },
   {
     id: '9',
     category: 'During',
     title: 'Body Language Matters',
     description: 'Sit up straight, lean slightly forward to show engagement, avoid fidgeting, and maintain appropriate eye contact.',
-    icon: '🤝',
+    icon: 'people-outline',
   },
   {
     id: '23',
     category: 'During',
     title: 'Take Notes',
     description: 'Bring a notebook and jot down key points or questions. It shows you are engaged and helps you remember details.',
-    icon: '📝',
+    icon: 'create-outline',
   },
   {
     id: '24',
     category: 'During',
     title: 'Pause Before Answering',
     description: 'It’s okay to take a moment to think before you answer. This helps you give more thoughtful responses.',
-    icon: '⏸️',
+    icon: 'pause-circle-outline',
   },
 
   // After Interview
@@ -124,28 +124,28 @@ const TIPS: Tip[] = [
     category: 'After',
     title: 'Send Thank You Email',
     description: 'Within 24 hours, send a personalized thank you email. Reference specific topics discussed and reiterate your interest.',
-    icon: '✉️',
+    icon: 'mail-outline',
   },
   {
     id: '11',
     category: 'After',
     title: 'Reflect and Learn',
     description: 'Write down what went well and what you\'d improve. This helps you perform better in future interviews.',
-    icon: '📝',
+    icon: 'create-outline',
   },
   {
     id: '12',
     category: 'After',
     title: 'Follow Up Appropriately',
     description: 'If you haven\'t heard back in the expected timeframe, it\'s appropriate to send a polite follow-up email.',
-    icon: '📅',
+    icon: 'calendar-outline',
   },
   {
     id: '25',
     category: 'After',
     title: 'Connect on LinkedIn',
     description: 'If appropriate, connect with your interviewer on LinkedIn with a short, polite message. It helps you stay on their radar.',
-    icon: '🔗',
+    icon: 'link-outline',
   },
 
   // STAR Method
@@ -154,35 +154,35 @@ const TIPS: Tip[] = [
     category: 'STAR',
     title: 'Situation',
     description: 'Set the context. Describe the situation or challenge you faced. Be specific about when and where this happened.',
-    icon: '🎬',
+    icon: 'film-outline',
   },
   {
     id: '14',
     category: 'STAR',
     title: 'Task',
     description: 'Explain your responsibility. What was your role? What needed to be accomplished? What was at stake?',
-    icon: '🎯',
+    icon: 'flag-outline',
   },
   {
     id: '15',
     category: 'STAR',
     title: 'Action',
     description: 'Detail the specific actions YOU took. Focus on your contributions, not the team\'s. What steps did you take?',
-    icon: '⚙️',
+    icon: 'settings-outline',
   },
   {
     id: '16',
     category: 'STAR',
     title: 'Result',
     description: 'Share the outcome. Quantify results when possible. What was the impact? What did you learn?',
-    icon: '🏆',
+    icon: 'trophy-outline',
   },
   {
     id: '26',
     category: 'STAR',
     title: 'Keep STAR Concise',
     description: 'Keep each STAR story to 1-2 minutes. Focus on the most relevant details for the job you want.',
-    icon: '⏱️',
+    icon: 'timer-outline',
   },
 
   // Common Questions
@@ -191,35 +191,35 @@ const TIPS: Tip[] = [
     category: 'Questions',
     title: 'Tell Me About Yourself',
     description: 'Keep it to 2 minutes. Cover present (current role), past (relevant experience), and future (why this role). End with enthusiasm for the opportunity.',
-    icon: '👤',
+    icon: 'person-outline',
   },
   {
     id: '18',
     category: 'Questions',
     title: 'What\'s Your Weakness?',
     description: 'Choose a real weakness you\'re actively working to improve. Show self-awareness and growth mindset. Avoid clichés.',
-    icon: '💭',
+    icon: 'chatbubble-ellipses-outline',
   },
   {
     id: '19',
     category: 'Questions',
     title: 'Why This Company?',
     description: 'Show you\'ve done research. Connect your values and career goals to the company\'s mission. Be specific and authentic.',
-    icon: '🏢',
+    icon: 'business-outline',
   },
   {
     id: '20',
     category: 'Questions',
     title: 'Why Should We Hire You?',
     description: 'Highlight 2-3 key strengths that match the job requirements. Use specific examples. Show confidence but not arrogance.',
-    icon: '✨',
+    icon: 'star-outline',
   },
   {
     id: '27',
     category: 'Questions',
     title: 'Ask About Next Steps',
     description: 'At the end, ask about the next steps in the process. It shows you are interested and helps you plan.',
-    icon: '➡️',
+    icon: 'arrow-forward-outline',
   },
 ];
 
@@ -267,9 +267,7 @@ export default function InterviewTips() {
           />
         }
       >
-        <BackButton />
-        
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
+        <ScreenHeader />
 
         <Text style={styles.title}>Interview Tips</Text>
         <Text style={styles.subtitle}>
@@ -314,7 +312,9 @@ export default function InterviewTips() {
                 activeOpacity={0.7}
               >
                 <View style={styles.tipHeader}>
-                  <Text style={styles.tipIcon}>{tip.icon}</Text>
+                  <View style={styles.tipIconCircle}>
+                    <Ionicons name={tip.icon as any} size={16} color={colors.primaryBlue} />
+                  </View>
                   <Text style={styles.tipTitle}>{tip.title}</Text>
                   <Ionicons 
                     name={isExpanded ? "chevron-up" : "chevron-down"} 
@@ -342,23 +342,21 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 24,
-      paddingTop: 70,
-      paddingBottom: 32,
+            paddingBottom: 32,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? "#fff" : colors.textDark,
       marginBottom: 4,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginBottom: 20,
     },
@@ -403,8 +401,13 @@ const makeStyles = (colors: any, isDark: boolean) =>
       alignItems: 'center',
       gap: 12,
     },
-    tipIcon: {
-      fontSize: 24,
+    tipIconCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: isDark ? '#1a2a4a' : '#E8F0FE',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     tipTitle: {
       ...typography.bodyMedium,
@@ -416,7 +419,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodySmall,
       color: isDark ? '#b5b5b5' : colors.textMuted,
       marginTop: 12,
-      paddingLeft: 36,
+      paddingLeft: 44,
       lineHeight: 20,
     },
   });

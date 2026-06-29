@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Dropdown } from "react-native-element-dropdown";
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
@@ -74,8 +74,7 @@ const JobPreferences: React.FC = () => {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <BackButton />
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <ScreenHeader />
 
       <Text style={styles.title}>Job preferences</Text>
       <Text style={styles.subtitle}>
@@ -139,22 +138,20 @@ const makeStyles = (colors: any, isDark: boolean) =>
     root: { flex: 1, backgroundColor: isDark ? "#0f0f0f" : "#F3F4F6" },
     content: {
       paddingHorizontal: 20,
-      paddingTop: 70,
-      paddingBottom: 32,
+            paddingBottom: 32,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? "#fff" : colors.textDark,
     },
     subtitle: {
       ...typography.bodySmall,
+      textAlign: 'center',
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginTop: 4,
       marginBottom: 16,

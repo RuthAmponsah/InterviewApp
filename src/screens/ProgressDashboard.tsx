@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, Dimensions, RefreshControl, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
@@ -122,9 +122,7 @@ export default function ProgressDashboard() {
         />
       }
     >
-      <BackButton />
-      
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <ScreenHeader />
 
       <Text style={styles.title}>Progress Dashboard</Text>
       <Text style={styles.subtitle}>
@@ -205,11 +203,14 @@ export default function ProgressDashboard() {
 
       {/* Milestones */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>🎯 Next Milestones</Text>
+        <View style={styles.cardTitleRow}>
+          <Ionicons name="flag-outline" size={18} color={colors.primaryBlue} />
+          <Text style={styles.cardTitle}>Next Milestones</Text>
+        </View>
         {[
-          { target: 10, label: 'Complete 10 interviews', icon: '💪' },
-          { target: 20, label: 'Reach Advanced level', icon: '⭐' },
-          { target: 50, label: 'Become an Expert', icon: '🏆' },
+          { target: 10, label: 'Complete 10 interviews', icon: 'barbell-outline' },
+          { target: 20, label: 'Reach Advanced level',   icon: 'star-outline' },
+          { target: 50, label: 'Become an Expert',       icon: 'trophy-outline' },
         ]
           .filter(m => stats.totalInterviews < m.target)
           .slice(0, 3)
@@ -217,7 +218,9 @@ export default function ProgressDashboard() {
             const progress = (stats.totalInterviews / milestone.target) * 100;
             return (
               <View key={index} style={styles.milestone}>
-                <Text style={styles.milestoneIcon}>{milestone.icon}</Text>
+                <View style={styles.milestoneIconCircle}>
+                  <Ionicons name={milestone.icon as any} size={16} color={colors.primaryBlue} />
+                </View>
                 <View style={styles.milestoneInfo}>
                   <Text style={styles.milestoneLabel}>{milestone.label}</Text>
                   <View style={styles.progressBarBg}>
@@ -245,23 +248,21 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 24,
-      paddingTop: 70,
-      paddingBottom: 32,
+            paddingBottom: 32,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? "#fff" : colors.textDark,
       marginBottom: 4,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginBottom: 20,
     },
@@ -346,7 +347,6 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodyMedium,
       fontWeight: '700',
       color: isDark ? '#fff' : colors.textDark,
-      marginBottom: 16,
     },
     weeklyStats: {
       flexDirection: 'row',
@@ -388,6 +388,20 @@ const makeStyles = (colors: any, isDark: boolean) =>
       alignItems: 'center',
       marginBottom: 16,
       gap: 12,
+    },
+    cardTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 16,
+    },
+    milestoneIconCircle: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: isDark ? '#1a2a4a' : '#E8F0FE',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     milestoneIcon: {
       fontSize: 24,

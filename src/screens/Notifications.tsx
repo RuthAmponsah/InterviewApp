@@ -11,7 +11,7 @@ import {
   RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { 
@@ -135,9 +135,7 @@ const Notifications: React.FC = () => {
         />
       }
     >
-      <BackButton />
-
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <ScreenHeader />
 
       <Text style={styles.title}>Notifications</Text>
       <Text style={styles.subtitle}>
@@ -311,22 +309,20 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-      paddingTop: 70,
-      paddingBottom: 32,
+            paddingBottom: 32,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? "#fff" : colors.textDark,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginTop: 4,
       marginBottom: 16,

@@ -9,6 +9,8 @@ import { RootStackParamList } from "../navigation/RootNavigator";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import BackButton from "../components/BackButton";
 import { useTheme } from "../theme/ThemeContext";
+import AppHeader from "../components/AppHeader";
+import ScreenHeader from "../components/ScreenHeader";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
 
@@ -194,9 +196,7 @@ export default function MyProfile() {
 
   return (
     <View style={styles.container}>
-      <BackButton />
-      
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+      {navigation.canGoBack() ? <ScreenHeader /> : <AppHeader />}
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -215,24 +215,38 @@ export default function MyProfile() {
           />
         }
       >
-        {/* Profile Completion - Only show if not complete */}
+        {/* Avatar + Name */}
+        <View style={styles.header}>
+          <View style={styles.avatar}>
+            {profilePhoto ? (
+              <Image 
+                source={{ uri: profilePhoto }} 
+                style={styles.avatarImage}
+                onError={(e) => console.log('Profile photo load error:', e.nativeEvent.error)}
+              />
+            ) : (
+              <Text style={styles.avatarInitial}>{name.charAt(0).toUpperCase()}</Text>
+            )}
+          </View>
+          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.email}>{email}</Text>
+        </View>
+
+        {/* Profile Completion */}
         {profileCompletion < 100 && (
         <TouchableOpacity 
           style={styles.completionCard}
           activeOpacity={0.85}
           onPress={() => {
-            // Navigate to the first missing item's screen
             if (missingItems.some(item => item.includes('Job role'))) {
               navigation.navigate('JobPreferences');
-            } else if (missingItems.includes('Profile photo')) {
-              navigation.navigate('EditProfile');
             } else {
               navigation.navigate('EditProfile');
             }
           }}
         >
         <View style={styles.completionHeader}>
-          <Text style={styles.completionTitle}>Profile Completion</Text>
+          <Text style={styles.completionTitle}>Profile completion</Text>
           <Text style={styles.completionPercentage}>{profileCompletion}%</Text>
         </View>
         <View style={styles.progressBarContainer}>
@@ -240,111 +254,78 @@ export default function MyProfile() {
         </View>
         {missingItems.length > 0 && (
           <Text style={styles.completionHint}>
-            Missing: {missingItems.join(', ')}
+            {missingItems[0]}
           </Text>
         )}
-        <Text style={styles.tapHint}>Tap to complete →</Text>
-      </TouchableOpacity>
+        </TouchableOpacity>
         )}
 
-      {/* Header Section */}
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          {profilePhoto ? (
-            <Image 
-              source={{ uri: profilePhoto }} 
-              style={styles.avatarImage}
-              onError={(e) => console.log('Profile photo load error:', e.nativeEvent.error)}
-            />
-          ) : (
-            <Ionicons name="person" size={50} color={colors.textMuted} />
-          )}
-        </View>
-        <Text style={styles.name}>{name}</Text>
-        <Text style={styles.email}>{email}</Text>
-      </View>
-
-      {/* Achievements Card */}
-      <View style={styles.achievementsCard}>
-        <View style={styles.achievementsHeader}>
-          <Text style={styles.achievementsTitle}>🏆 Achievements</Text>
-          <Text style={styles.achievementsSubtitle}>Unlock badges by practicing regularly</Text>
-        </View>
-        <View style={styles.badgesContainer}>
-          <View style={[styles.badge, achievements.streak7 && styles.badgeUnlocked]}>
-            <View style={styles.badgeIconContainer}>
-              <Text style={styles.badgeIcon}>{achievements.streak7 ? "🔥" : "🔒"}</Text>
+        {/* Achievements 2x2 grid */}
+        <View style={styles.achievementsCard}>
+          <Text style={styles.achievementsTitle}>Achievements</Text>
+          <View style={styles.badgesGrid}>
+            <View style={[styles.badge, achievements.streak7 && styles.badgeUnlocked]}>
+              <View style={[styles.badgeIconContainer, achievements.streak7 && styles.badgeIconUnlocked]}>
+                <Ionicons name="flame-outline" size={22} color={achievements.streak7 ? '#fff' : (isDark ? '#666' : '#9CA3AF')} />
+              </View>
+              <Text style={[styles.badgeLabel, achievements.streak7 && styles.badgeLabelUnlocked]}>7-day streak</Text>
+              <Text style={[styles.badgeSubLabel, achievements.streak7 && styles.badgeStatusUnlocked]}>{achievements.streak7 ? 'Earned' : 'Locked'}</Text>
             </View>
-            <Text style={[styles.badgeLabel, achievements.streak7 && styles.badgeLabelUnlocked]}>
-              7-Day
-            </Text>
-            <Text style={[styles.badgeSubLabel, achievements.streak7 && styles.badgeLabelUnlocked]}>
-              Streak
-            </Text>
-          </View>
-          <View style={[styles.badge, achievements.interviews10 && styles.badgeUnlocked]}>
-            <View style={styles.badgeIconContainer}>
-              <Text style={styles.badgeIcon}>{achievements.interviews10 ? "🎯" : "🔒"}</Text>
+            <View style={[styles.badge, achievements.interviews10 && styles.badgeUnlocked]}>
+              <View style={[styles.badgeIconContainer, achievements.interviews10 && styles.badgeIconUnlocked]}>
+                <Ionicons name="mic-outline" size={22} color={achievements.interviews10 ? '#fff' : (isDark ? '#666' : '#9CA3AF')} />
+              </View>
+              <Text style={[styles.badgeLabel, achievements.interviews10 && styles.badgeLabelUnlocked]}>10 interviews</Text>
+              <Text style={[styles.badgeSubLabel, achievements.interviews10 && styles.badgeStatusUnlocked]}>{achievements.interviews10 ? 'Earned' : 'Locked'}</Text>
             </View>
-            <Text style={[styles.badgeLabel, achievements.interviews10 && styles.badgeLabelUnlocked]}>
-              10 Mock
-            </Text>
-            <Text style={[styles.badgeSubLabel, achievements.interviews10 && styles.badgeLabelUnlocked]}>
-              Interviews
-            </Text>
-          </View>
-          <View style={[styles.badge, achievements.questions20 && styles.badgeUnlocked]}>
-            <View style={styles.badgeIconContainer}>
-              <Text style={styles.badgeIcon}>{achievements.questions20 ? "📚" : "🔒"}</Text>
+            <View style={[styles.badge, achievements.questions20 && styles.badgeUnlocked]}>
+              <View style={[styles.badgeIconContainer, achievements.questions20 && styles.badgeIconUnlocked]}>
+                <Ionicons name="list-outline" size={22} color={achievements.questions20 ? '#fff' : (isDark ? '#666' : '#9CA3AF')} />
+              </View>
+              <Text style={[styles.badgeLabel, achievements.questions20 && styles.badgeLabelUnlocked]}>20 questions</Text>
+              <Text style={[styles.badgeSubLabel, achievements.questions20 && styles.badgeStatusUnlocked]}>{achievements.questions20 ? 'Earned' : 'Locked'}</Text>
             </View>
-            <Text style={[styles.badgeLabel, achievements.questions20 && styles.badgeLabelUnlocked]}>
-              20 Custom
-            </Text>
-            <Text style={[styles.badgeSubLabel, achievements.questions20 && styles.badgeLabelUnlocked]}>
-              Questions
-            </Text>
+            <View style={[styles.badge, styles.badgeUnlocked]}>
+              <View style={[styles.badgeIconContainer, styles.badgeIconUnlocked]}>
+                <Ionicons name="star-outline" size={22} color="#fff" />
+              </View>
+              <Text style={[styles.badgeLabel, styles.badgeLabelUnlocked]}>First session</Text>
+              <Text style={[styles.badgeSubLabel, styles.badgeStatusUnlocked]}>Earned</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Options Section */}
-      <View style={styles.card}>
+        {/* Options */}
+        <View style={styles.card}>
+          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('EditProfile')}>
+            <View style={styles.rowIconBox}><Ionicons name="pencil-outline" size={16} color={colors.primaryBlue} /></View>
+            <Text style={styles.rowText}>Edit profile</Text>
+            <Ionicons name="chevron-forward" size={16} color={isDark ? '#555' : '#C7C7CC'} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('ChangePassword')}>
+            <View style={styles.rowIconBox}><Ionicons name="lock-closed-outline" size={16} color={colors.primaryBlue} /></View>
+            <Text style={styles.rowText}>Change password</Text>
+            <Ionicons name="chevron-forward" size={16} color={isDark ? '#555' : '#C7C7CC'} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.row, { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('Notifications')}>
+            <View style={styles.rowIconBox}><Ionicons name="notifications-outline" size={16} color={colors.primaryBlue} /></View>
+            <Text style={styles.rowText}>Notifications</Text>
+            <Ionicons name="chevron-forward" size={16} color={isDark ? '#555' : '#C7C7CC'} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Logout */}
         <TouchableOpacity
-          style={styles.row}
-          onPress={() => navigation.navigate("EditProfile")}
+          style={styles.logoutButton}
+          onPress={async () => {
+            await supabase.auth.signOut();
+            await AsyncStorage.setItem('isLoggedIn', 'false');
+            navigation.replace('SignIn');
+          }}
         >
-          <Text style={styles.rowText}>Edit Profile</Text>
+          <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
+          <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() => navigation.navigate("ChangePassword")}
-        >
-          <Text style={styles.rowText}>Change Password</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() => navigation.navigate("Notifications")}
-        >
-          <Text style={styles.rowText}>Notifications</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Logout Button */}
-      <TouchableOpacity
-        style={styles.logoutButton}
-        onPress={async () => {
-          // Sign out from Supabase
-          await supabase.auth.signOut();
-          // Clear local storage
-          await AsyncStorage.setItem("isLoggedIn", "false");
-          navigation.replace("SignIn");
-        }}
-      >
-        <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
-        <Text style={styles.logoutText}>Log out</Text>
-      </TouchableOpacity>
       </ScrollView>
       )}
     </View>
@@ -356,15 +337,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     container: {
       flex: 1,
       paddingHorizontal: 22,
-      paddingTop: 70,
       backgroundColor: isDark ? "#0f0f0f" : "#F2F4F7",
-    },
-    logoText: {
-      ...typography.heading,
-      fontWeight: "800",
-      color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     scrollContent: {
       paddingBottom: 40,
@@ -406,161 +379,152 @@ const makeStyles = (colors: any, isDark: boolean) =>
       borderRadius: 4,
     },
     completionHint: {
-      ...typography.bodySmall,
-      color: colors.textMuted,
-      lineHeight: 18,
-    },
-    tapHint: {
       ...typography.caption,
-      color: colors.primaryBlue,
-      fontWeight: '600',
-      marginTop: 10,
+      color: colors.textMuted,
+      marginTop: 4,
     },
 
     /* Header */
     header: {
-      alignItems: "center",
-      marginBottom: 30,
+      alignItems: 'center',
+      paddingVertical: 20,
     },
     avatar: {
-      width: 110,
-      height: 110,
-      borderRadius: 55,
+      width: 90,
+      height: 90,
+      borderRadius: 45,
       marginBottom: 12,
-      backgroundColor: isDark ? "#2a2a2a" : "#E5E7EB",
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 2,
-      borderColor: isDark ? "#444" : "#D1D5DB",
-      overflow: "hidden",
+      backgroundColor: '#1E3A6E',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
     },
     avatarImage: {
-      width: 110,
-      height: 110,
+      width: 90,
+      height: 90,
+    },
+    avatarInitial: {
+      fontSize: 36,
+      fontWeight: '700',
+      color: '#fff',
     },
     name: {
-      ...typography.headingMedium,
-      marginBottom: 4,
-      color: isDark ? "#fff" : "#111",
+      ...typography.headingSmall,
+      fontWeight: '700',
+      marginBottom: 2,
+      color: isDark ? '#fff' : '#111',
     },
     email: {
-      ...typography.label,
-      color: isDark ? "#b5b5b5" : "#666",
+      ...typography.bodySmall,
+      color: isDark ? '#888' : '#6B7280',
     },
 
     /* Achievements Card */
     achievementsCard: {
-      backgroundColor: isDark ? "#1d1d1d" : "#fff",
+      backgroundColor: isDark ? '#1d1d1d' : '#fff',
       borderRadius: 20,
-      paddingHorizontal: 20,
-      paddingVertical: 24,
-      marginBottom: 25,
-      shadowColor: "#000",
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 4,
+      padding: 20,
+      marginBottom: 16,
       borderWidth: 1,
-      borderColor: isDark ? "#333" : "#E6E6E6",
-    },
-    achievementsHeader: {
-      marginBottom: 20,
+      borderColor: isDark ? '#333' : '#E5E7EB',
     },
     achievementsTitle: {
-      ...typography.headingMedium,
-      fontWeight: "700",
-      color: isDark ? "#fff" : "#111",
-      marginBottom: 4,
+      ...typography.bodyMedium,
+      fontWeight: '700',
+      color: isDark ? '#fff' : '#111',
+      marginBottom: 14,
     },
-    achievementsSubtitle: {
-      ...typography.bodySmall,
-      color: isDark ? "#9CA3AF" : "#6B7280",
-    },
-    badgesContainer: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      gap: 12,
+    badgesGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
     },
     badge: {
-      flex: 1,
-      alignItems: "center",
-      paddingVertical: 20,
-      paddingHorizontal: 12,
-      borderRadius: 16,
-      backgroundColor: isDark ? "#2a2a2a" : "#F9FAFB",
-      borderWidth: 2,
-      borderColor: isDark ? "#444" : "#E5E7EB",
+      width: '47%',
+      alignItems: 'center',
+      paddingVertical: 18,
+      borderRadius: 14,
+      backgroundColor: isDark ? '#2a2a2a' : '#F9FAFB',
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E5E7EB',
     },
     badgeUnlocked: {
-      backgroundColor: isDark ? "#1e3a5f" : "#EFF6FF",
+      backgroundColor: isDark ? '#1e3a5f' : '#EFF6FF',
       borderColor: colors.primaryBlue,
-      borderWidth: 2,
     },
     badgeIconContainer: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: isDark ? "#333" : "#F3F4F6",
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 12,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: isDark ? '#444' : '#E5E7EB',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
     },
-    badgeIcon: {
-      fontSize: 32,
+    badgeIconUnlocked: {
+      backgroundColor: colors.primaryBlue,
     },
     badgeLabel: {
       fontSize: 13,
-      fontWeight: "700",
-      textAlign: "center",
-      color: isDark ? "#9CA3AF" : "#6B7280",
+      fontWeight: '600',
+      textAlign: 'center',
+      color: isDark ? '#9CA3AF' : '#374151',
       marginBottom: 2,
+    },
+    badgeLabelUnlocked: {
+      color: isDark ? '#fff' : colors.primaryBlue,
+      fontWeight: '700',
     },
     badgeSubLabel: {
       fontSize: 11,
-      fontWeight: "500",
-      textAlign: "center",
-      color: isDark ? "#6B7280" : "#9CA3AF",
+      textAlign: 'center',
+      color: isDark ? '#666' : '#9CA3AF',
     },
-    badgeLabelUnlocked: {
-      color: colors.primaryBlue,
-      fontWeight: "700",
+    badgeStatusUnlocked: {
+      color: isDark ? '#93C5FD' : colors.primaryBlue,
+      fontWeight: '600',
     },
 
     /* Options Card */
     card: {
-      backgroundColor: isDark ? "#1d1d1d" : "#fff",
+      backgroundColor: isDark ? '#1d1d1d' : '#fff',
       borderRadius: 20,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      marginBottom: 25,
-      shadowColor: "#000",
-      shadowOpacity: 0.05,
-      shadowRadius: 10,
-      elevation: 3,
+      marginBottom: 16,
       borderWidth: 1,
-      borderColor: isDark ? "#333" : "#E6E6E6",
+      borderColor: isDark ? '#333' : '#E5E7EB',
+      overflow: 'hidden',
     },
-
     row: {
-      paddingVertical: 16,
-      borderBottomColor: isDark ? "#333" : "#E6E6E6",
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 15,
+      paddingHorizontal: 16,
       borderBottomWidth: 1,
+      borderBottomColor: isDark ? '#2a2a2a' : '#F3F4F6',
+      gap: 12,
+    },
+    rowIconBox: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: isDark ? '#2a2a2a' : '#E8F0FE',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     rowText: {
-      ...typography.bodyMedium,
-      color: isDark ? "#fff" : "#111",
-    },
-    rowSubtext: {
-      ...typography.bodySmall,
-      color: isDark ? "#9CA3AF" : "#6B7280",
+      ...typography.label,
+      color: isDark ? '#fff' : '#111',
+      flex: 1,
     },
     logoutButton: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
-      backgroundColor: isDark ? '#222' : '#FFF',
-      borderRadius: 12,
+      backgroundColor: isDark ? '#222' : '#fff',
+      borderRadius: 14,
       paddingVertical: 14,
+      marginBottom: 30,
       borderWidth: 1,
       borderColor: '#FF3B30',
     },

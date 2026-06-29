@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../theme/ThemeContext";
@@ -17,6 +17,8 @@ import { supabase } from "../config/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import AppTutorial from "../components/AppTutorial";
 import PaywallModal from "../components/PaywallModal";
+import { syncSubscriptionStatus } from "../services/purchaseService";
+import AppHeader from "../components/AppHeader";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -44,14 +46,20 @@ const Settings = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  useEffect(() => {
-    fetchSubscriptionStatus();
-  }, []);
+  // Re-sync subscription every time Settings comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchSubscriptionStatus();
+    }, [])
+  );
 
   const fetchSubscriptionStatus = async () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
       if (!userId) return;
+
+      // Sync from RevenueCat first to ensure DB is up-to-date
+      await syncSubscriptionStatus();
 
       const { data } = await supabase
         .from('user_preferences')
@@ -81,25 +89,25 @@ const Settings = () => {
     return '2 interviews per month • Upgrade for unlimited';
   };
 
-  const SECTIONS: { emoji: string; label: string; route: SettingsRoute; badge?: string; comingSoon?: boolean }[] = [
-    { emoji: "👤", label: "Account", route: "MyProfile" },
-    { emoji: "⭐", label: "Subscription", route: "Subscription", badge: getSubscriptionBadge() },
-    { emoji: "📋", label: "Interview history", route: "InterviewHistory" },
-    { emoji: "📊", label: "Progress dashboard", route: "ProgressDashboard" },
-    { emoji: "💬", label: "Question bank", route: "QuestionBank" },
-    { emoji: "💡", label: "Interview tips", route: "InterviewTips" },
-    { emoji: "🎨", label: "App customisation", route: "AppCustomisation" },
-    { emoji: "🎯", label: "Interview experience", route: "InterviewExperience", badge: "COMING SOON", comingSoon: true },
-    { emoji: "💼", label: "Job preferences", route: "JobPreferences" },
-    { emoji: "📚", label: "Sector Packs", route: "SectorPacks", badge: "COMING SOON", comingSoon: true },
-    { emoji: "🔒", label: "Privacy and security", route: "PrivacySecurity" },
-    { emoji: "💬", label: "Support", route: "Support" },
-    { emoji: "ℹ️", label: "About us", route: "AboutUs" },
+  const SECTIONS: { icon: string; iconBg: string; label: string; route: SettingsRoute; badge?: string; comingSoon?: boolean }[] = [
+    { icon: 'person-outline',       iconBg: '#E8F0FE', label: 'Account',              route: 'MyProfile' },
+    { icon: 'star-outline',         iconBg: '#FFF8E1', label: 'Subscription',         route: 'Subscription', badge: getSubscriptionBadge() },
+    { icon: 'time-outline',         iconBg: '#E8F0FE', label: 'Interview history',    route: 'InterviewHistory' },
+    { icon: 'bar-chart-outline',    iconBg: '#E8F5E9', label: 'Progress dashboard',   route: 'ProgressDashboard' },
+    { icon: 'chatbubble-outline',   iconBg: '#E8F0FE', label: 'Question bank',        route: 'QuestionBank' },
+    { icon: 'bulb-outline',         iconBg: '#FFF8E1', label: 'Interview tips',       route: 'InterviewTips' },
+    { icon: 'color-palette-outline',iconBg: '#F3E8FF', label: 'App customisation',    route: 'AppCustomisation' },
+    { icon: 'mic-outline',          iconBg: '#E8F0FE', label: 'Interview experience', route: 'InterviewExperience', badge: 'COMING SOON', comingSoon: true },
+    { icon: 'briefcase-outline',    iconBg: '#E8F0FE', label: 'Job preferences',      route: 'JobPreferences' },
+    { icon: 'layers-outline',       iconBg: '#FFF3E0', label: 'Sector Packs',         route: 'SectorPacks' },
+    { icon: 'lock-closed-outline',  iconBg: '#E8F0FE', label: 'Privacy and security', route: 'PrivacySecurity' },
+    { icon: 'headset-outline',      iconBg: '#E8F0FE', label: 'Support',              route: 'Support' },
+    { icon: 'information-circle-outline', iconBg: '#E8F0FE', label: 'About us',       route: 'AboutUs' },
   ];
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <AppHeader />
 
       <Text style={styles.title}>Settings</Text>
       <Text style={styles.subtitle}>Manage your preferences</Text>
@@ -109,18 +117,18 @@ const Settings = () => {
         style={styles.tutorialButton}
         onPress={() => setShowTutorial(true)}
       >
-        <View style={styles.tutorialContent}>
-          <Text style={styles.tutorialEmoji}>📖</Text>
-          <View style={styles.tutorialTextContainer}>
-            <Text style={styles.tutorialTitle}>How to use the app</Text>
-            <Text style={styles.tutorialSubtitle}>Learn all features with screenshots</Text>
-          </View>
+        <View style={styles.tutorialIconBox}>
+          <Ionicons name="book-outline" size={22} color="#fff" />
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.primaryBlue} />
+        <View style={styles.tutorialTextContainer}>
+          <Text style={styles.tutorialTitle}>How to use the app</Text>
+          <Text style={styles.tutorialSubtitle}>Learn all features with screenshots</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={colors.primaryBlue} />
       </TouchableOpacity>
 
       <View style={styles.card}>
-        {SECTIONS.map(({ emoji, label, route, badge, comingSoon }) => (
+        {SECTIONS.map(({ icon, iconBg, label, route, badge, comingSoon }) => (
           <TouchableOpacity
             key={label}
             style={[styles.row, comingSoon && { opacity: 0.6 }]}
@@ -134,36 +142,32 @@ const Settings = () => {
             }}
             disabled={comingSoon}
           >
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.rowEmoji}>{emoji}</Text>
-                <View style={styles.separator} />
+            <View style={[styles.iconCircle, { backgroundColor: isDark ? '#2a2a2a' : iconBg }]}>
+              <Ionicons name={icon as any} size={18} color={
+                label === 'Subscription' ? '#F59E0B' :
+                label === 'Interview tips' ? '#F59E0B' :
+                label === 'App customisation' ? '#8B5CF6' :
+                label === 'Sector Packs' ? '#F97316' :
+                colors.primaryBlue
+              } />
+            </View>
+            <View style={styles.rowContent}>
+              <View style={styles.rowLabelRow}>
                 <Text style={styles.rowText}>{label}</Text>
                 {badge && (
-                  <View style={[styles.badge, { backgroundColor: comingSoon ? '#999' : colors.primaryBlue }]}>
-                    <Text style={styles.badgeText}>{badge}</Text>
+                  <View style={[styles.badge, { backgroundColor: comingSoon ? '#9CA3AF' : badge === 'FREE' ? '#E5E7EB' : colors.primaryBlue }]}>
+                    <Text style={[styles.badgeText, { color: comingSoon ? '#fff' : badge === 'FREE' ? '#6B7280' : '#fff' }]}>{badge}</Text>
                   </View>
                 )}
               </View>
-
-              {label === "Interview experience" && (
-                <Text style={[styles.rowHelper, { marginLeft: 30 }]}>
-                  AI voice, avatar, difficulty, and more.
-                </Text>
+              {label === 'Subscription' && (
+                <Text style={styles.rowHelper}>{getSubscriptionHelper()}</Text>
               )}
-              {label === "Subscription" && (
-                <Text style={[styles.rowHelper, { marginLeft: 30 }]}>
-                  {getSubscriptionHelper()}
-                </Text>
-              )}
-              {label === "Sector Packs" && (
-                <Text style={[styles.rowHelper, { marginLeft: 30 }]}>
-                  NHS, Graduate, Retail & more
-                </Text>
+              {label === 'Sector Packs' && (
+                <Text style={styles.rowHelper}>NHS, Graduate, Retail & more</Text>
               )}
             </View>
-
-            <Text style={styles.chevron}>›</Text>
+            <Ionicons name="chevron-forward" size={16} color={isDark ? '#555' : '#C7C7CC'} />
           </TouchableOpacity>
         ))}
       </View>
@@ -217,7 +221,7 @@ const Settings = () => {
 const makeStyles = (colors: any, isDark: boolean) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: isDark ? '#0f0f0f' : '#F3F4F6' },
-    content: { paddingHorizontal: 20, paddingTop: 70, paddingBottom: 24 },
+    content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
     logoText: {
       ...typography.heading,
       fontWeight: "800",
@@ -230,22 +234,21 @@ const makeStyles = (colors: any, isDark: boolean) =>
     tutorialButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       backgroundColor: isDark ? '#1a2a4a' : '#E8F0FE',
       borderRadius: 16,
-      padding: 16,
+      padding: 14,
       marginBottom: 16,
+      gap: 12,
       borderWidth: 1,
       borderColor: isDark ? '#2a4a7a' : colors.primaryBlue + '30',
     },
-    tutorialContent: {
-      flexDirection: 'row',
+    tutorialIconBox: {
+      width: 42,
+      height: 42,
+      borderRadius: 12,
+      backgroundColor: colors.primaryBlue,
       alignItems: 'center',
-      flex: 1,
-    },
-    tutorialEmoji: {
-      fontSize: 28,
-      marginRight: 12,
+      justifyContent: 'center',
     },
     tutorialTextContainer: {
       flex: 1,
@@ -265,7 +268,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
       borderRadius: 20,
       borderWidth: 1,
       borderColor: isDark ? '#333' : colors.border,
-      overflow: "hidden",
+      overflow: 'hidden',
       shadowColor: '#000',
       shadowOpacity: 0.05,
       shadowRadius: 10,
@@ -273,26 +276,41 @@ const makeStyles = (colors: any, isDark: boolean) =>
       elevation: 3,
     },
     row: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      paddingVertical: 14,
-      paddingHorizontal: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 13,
+      paddingHorizontal: 16,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: isDark ? '#2a2a2a' : '#F3F4F6',
+      gap: 12,
     },
-    rowEmoji: {
-      fontSize: 18,
-      marginRight: 8,
+    iconCircle: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    separator: {
-      width: 1,
-      height: 18,
-      backgroundColor: colors.border,
-      marginRight: 12,
+    rowContent: {
+      flex: 1,
+    },
+    rowLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
     },
     rowText: { ...typography.label, color: isDark ? '#fff' : colors.textDark },
-    rowHelper: { ...typography.caption, color: isDark ? '#aaa' : colors.textMuted },
-    chevron: { fontSize: 20, color: isDark ? '#666' : colors.textMuted },
+    rowHelper: { ...typography.caption, color: isDark ? '#888' : colors.textMuted, marginTop: 2 },
+    badge: {
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderRadius: 6,
+    },
+    badgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 0.3,
+    },
     logoutButton: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -309,18 +327,6 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodyMedium,
       color: '#FF3B30',
       fontWeight: '600',
-    },
-    badge: {
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      borderRadius: 8,
-      marginLeft: 8,
-    },
-    badgeText: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: '#fff',
-      letterSpacing: 0.5,
     },
     footer: { marginTop: 20, alignItems: "center" },
     footerText: { ...typography.caption, color: isDark ? '#aaa' : colors.textMuted },

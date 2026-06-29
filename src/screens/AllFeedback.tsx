@@ -16,7 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/colors';
-import BackButton from '../components/BackButton';
+import ScreenHeader from "../components/ScreenHeader";
 import PaywallModal from '../components/PaywallModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
@@ -243,7 +243,7 @@ const AllFeedback: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <BackButton />
+      <ScreenHeader />
       
       <ScrollView
         style={styles.scrollView}
@@ -257,7 +257,6 @@ const AllFeedback: React.FC = () => {
           />
         }
       >
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
         <Text style={styles.title}>All Feedback</Text>
         <Text style={styles.subtitle}>
           Review your feedback history from past interviews
@@ -489,23 +488,21 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-      paddingTop: 70,
-      paddingBottom: 40,
+            paddingBottom: 40,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: '800',
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: 'center',
-      marginBottom: 28,
     },
     title: {
       ...typography.headingSmall,
+      textAlign: 'center',
       color: isDark ? '#fff' : colors.textDark,
       marginBottom: 8,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: colors.textMuted,
       marginBottom: 24,
       lineHeight: 22,
@@ -868,8 +865,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     paywallContent: {
       paddingHorizontal: 24,
       paddingVertical: 40,
-      paddingTop: 60,
-      paddingBottom: 40,
+            paddingBottom: 40,
     },
     paywallTitle: {
         ...typography.heading,

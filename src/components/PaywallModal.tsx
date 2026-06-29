@@ -57,13 +57,14 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
     const offerings = await getSubscriptionOfferings();
     if (offerings?.availablePackages) {
       const monthly = offerings.availablePackages.find(pkg =>
-        pkg.identifier.includes('monthly')
+        pkg.packageType === 'MONTHLY' || pkg.identifier.toLowerCase().includes('monthly')
       );
       const annual = offerings.availablePackages.find(pkg =>
-        pkg.identifier.includes('annual')
+        pkg.packageType === 'ANNUAL' || pkg.identifier.toLowerCase().includes('annual')
       );
       setMonthlyPackage(monthly || null);
       setAnnualPackage(annual || null);
+      console.log('PaywallModal packages loaded - monthly:', monthly?.identifier, 'annual:', annual?.identifier);
     }
   };
 

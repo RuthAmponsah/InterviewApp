@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ActivityIndicator, View, Text, Linking } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -53,7 +53,13 @@ export type RootStackParamList = {
   SignUp: undefined;
   ForgotPassword: undefined;
   ResetPassword: undefined;
-  ResetPasswordViaEmail: { token: string } | undefined;
+  ResetPasswordViaEmail: {
+    token?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    tokenHash?: string;
+    type?: string;
+  } | undefined;
   Welcome: undefined;
   MainTabs: undefined;
   InterviewType: undefined;
@@ -203,6 +209,34 @@ const RootNavigator = () => {
   const { colors } = useTheme();
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [resetPasswordParams, setResetPasswordParams] =
+    useState<RootStackParamList['ResetPasswordViaEmail']>(undefined);
+  const resetLinkHandledRef = useRef(false);
+
+  const parseResetPasswordLink = (url: string): RootStackParamList['ResetPasswordViaEmail'] => {
+    if (!url.includes('reset-password') && !url.includes('type=recovery')) {
+      return undefined;
+    }
+
+    const parsedParams: Record<string, string> = {};
+    const fragments = url.split(/[?#]/).slice(1);
+
+    for (const fragment of fragments) {
+      for (const pair of fragment.split('&')) {
+        const [rawKey, rawValue] = pair.split('=');
+        if (!rawKey || !rawValue) continue;
+        parsedParams[decodeURIComponent(rawKey)] = decodeURIComponent(rawValue);
+      }
+    }
+
+    return {
+      token: parsedParams.token,
+      accessToken: parsedParams.access_token,
+      refreshToken: parsedParams.refresh_token,
+      tokenHash: parsedParams.token_hash,
+      type: parsedParams.type,
+    };
+  };
 
   const syncUserContextFromSession = async (session: any) => {
     const userId = session?.user?.id;
@@ -253,8 +287,10 @@ const RootNavigator = () => {
     // Handle deep links for password reset
     const handleDeepLink = (url: string | null) => {
       if (!url) return;
-      if (url.includes('reset-password')) {
-        const token = url.split('token=')[1]?.split('&')[0];
+      const params = parseResetPasswordLink(url);
+      if (params) {
+        resetLinkHandledRef.current = true;
+        setResetPasswordParams(params);
         setInitialRoute('ResetPasswordViaEmail');
       }
     };
@@ -283,6 +319,10 @@ const RootNavigator = () => {
         // Wait for session or timeout
         const { data: { session: authSession } } = await sessionPromise;
         clearTimeout(timeoutId);
+
+        if (resetLinkHandledRef.current) {
+          return;
+        }
 
         if (timedOut) {
           console.warn('⚠️ Session check completed but took too long, defaulting to SignIn');
@@ -368,6 +408,7 @@ const RootNavigator = () => {
   return (
     <>
       <Stack.Navigator
+        key={initialRoute === 'ResetPasswordViaEmail' ? `reset-${JSON.stringify(resetPasswordParams)}` : 'root'}
         id="RootStack"
         initialRouteName={initialRoute as any}
         screenOptions={{
@@ -380,7 +421,11 @@ const RootNavigator = () => {
       <Stack.Screen name="SignUp" component={SignUp} />
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
-      <Stack.Screen name="ResetPasswordViaEmail" component={ResetPasswordViaEmail} />
+      <Stack.Screen
+        name="ResetPasswordViaEmail"
+        component={ResetPasswordViaEmail}
+        initialParams={resetPasswordParams}
+      />
 
       {/* Intro */}
       <Stack.Screen name="Welcome" component={Welcome} />

@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from 'expo-haptics';
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -526,10 +526,9 @@ export default function QuestionBank({ navigation }: any) {
               />
             }
           >
-            <BackButton />
+            <ScreenHeader />
             
             <View style={styles.headerRow}>
-              <Text style={styles.logoText}>MY INTERVIEW</Text>
             </View>
 
             <View style={styles.titleRow}>
@@ -908,8 +907,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 24,
-      paddingTop: 70,
-      paddingBottom: 32,
+            paddingBottom: 32,
     },
     headerRow: {
       flexDirection: 'row',
@@ -919,10 +917,8 @@ const makeStyles = (colors: any, isDark: boolean) =>
       position: 'relative',
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
     },
     titleRow: {
       flexDirection: 'row',
@@ -935,10 +931,12 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? "#fff" : colors.textDark,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginBottom: 20,
     },

@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 
 // RevenueCat API Keys
 const envExtra = ((Constants.expoConfig as any)?.extra || (Constants.manifest as any)?.extra || {}) as Record<string, any>;
-const REVENUECAT_IOS_KEY = envExtra.revenuecatIosKey || process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || 'appl_jGQGIhcHQsDHAtvVInxxhCzanNY';
+const REVENUECAT_IOS_KEY = envExtra.revenuecatIosKey || process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
 const REVENUECAT_ANDROID_KEY = envExtra.revenuecatAndroidKey || process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';
 
 if (!REVENUECAT_IOS_KEY || !REVENUECAT_ANDROID_KEY) {
@@ -160,10 +160,10 @@ export const purchaseSubscription = async (
 
 // Maps internal pack IDs to App Store / Google Play product IDs
 const SECTOR_PACK_PRODUCT_IDS: Record<string, string> = {
-  'nhs-care':   'nhs_care_pack',
-  'graduate':   'graduate_pack',
-  'retail':     'retail_pack',
-  'management': 'management_pack',
+  'nhs-care':   'myinterview_nhs_care_v2',
+  'graduate':   'myinterview_graduate_v2',
+  'retail':     'myinterview_retail_v2',
+  'management': 'myinterview_management_v2',
 };
 
 /**

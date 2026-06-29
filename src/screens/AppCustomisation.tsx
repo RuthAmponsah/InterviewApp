@@ -8,7 +8,7 @@ import {
   useColorScheme,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 
@@ -34,16 +34,7 @@ const AppCustomisation: React.FC = () => {
       style={styles.root}
       contentContainerStyle={styles.content}
     >
-      <BackButton />
-
-      <Text
-        style={[
-          styles.logoText,
-          { color: isDark ? "#4C9EFF" : colors.primaryBlue },
-        ]}
-      >
-        MY INTERVIEW
-      </Text>
+      <ScreenHeader />
 
       <Text style={[styles.title, { color: isDark ? "#fff" : colors.textDark }]}>
         App customisation
@@ -145,20 +136,19 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-      paddingTop: 70,
-      paddingBottom: 32,
+            paddingBottom: 32,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
-      alignSelf: "center",
-      marginBottom: 28,
+      ...typography.brandMark,
+      color: colors.primaryBlue,
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
     },
     subtitle: {
       ...typography.bodySmall,
+      textAlign: 'center',
       marginTop: 4,
       marginBottom: 16,
     },

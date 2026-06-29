@@ -44,14 +44,15 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
   const loadOfferings = async () => {
     const offerings = await getSubscriptionOfferings();
     if (offerings?.availablePackages) {
-      const monthly = offerings.availablePackages.find(pkg => 
-        pkg.identifier.includes('monthly')
+      const monthly = offerings.availablePackages.find(pkg =>
+        pkg.packageType === 'MONTHLY' || pkg.identifier.toLowerCase().includes('monthly')
       );
-      const annual = offerings.availablePackages.find(pkg => 
-        pkg.identifier.includes('annual')
+      const annual = offerings.availablePackages.find(pkg =>
+        pkg.packageType === 'ANNUAL' || pkg.identifier.toLowerCase().includes('annual')
       );
       setMonthlyPackage(monthly || null);
       setAnnualPackage(annual || null);
+      console.log('Subscription packages loaded - monthly:', monthly?.identifier, 'annual:', annual?.identifier);
     }
   };
 

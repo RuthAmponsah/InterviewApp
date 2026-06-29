@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useTheme } from "../theme/ThemeContext";   // ⭐ NEW
 import { typography } from "../theme/colors";
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 
 const AboutUs: React.FC = () => {
   const { colors, theme } = useTheme();
@@ -12,11 +12,7 @@ const AboutUs: React.FC = () => {
       style={[styles.root, { backgroundColor: isDark ? "#0f0f0f" : colors.background }]}
       contentContainerStyle={styles.content}
     >
-      <BackButton />
-
-      <Text style={[styles.logoText, { color: colors.primaryBlue }]}>
-        MY INTERVIEW
-      </Text>
+      <ScreenHeader />
 
       <Text style={[styles.title, { color: isDark ? "#fff" : colors.textDark }]}>About us</Text>
 
@@ -79,15 +75,17 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 70,
-    paddingBottom: 32,
+        paddingBottom: 32,
   },
   logoText: {
-    ...typography.heading,
-    fontWeight: "800",
-    alignSelf: "center",
-    marginBottom: 28,
-  },
+      fontSize: 11,
+      fontWeight: '800',
+      letterSpacing: 2.5,
+      lineHeight: 16,
+      opacity: 0.6,
+      marginBottom: 6,
+    color: '#1E63FF',
+    },
   title: {
     ...typography.headingMedium,
     marginBottom: 4,

@@ -122,18 +122,17 @@ const makeStyles = (colors: any, isDark: boolean) =>
       paddingTop: 70,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: '800',
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: 'center',
-      marginBottom: 28,
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? '#fff' : colors.textDark,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: isDark ? '#b5b5b5' : colors.textMuted,
       marginTop: 4,
       marginBottom: 16,

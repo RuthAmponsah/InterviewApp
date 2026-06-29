@@ -15,6 +15,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import AppHeader from '../components/AppHeader';
+import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
@@ -326,20 +328,10 @@ const Home: React.FC = () => {
         />
       }
     >
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <AppHeader showBell />
 
-      <Text style={styles.greeting}>
-        {greeting}, {name}
-      </Text>
-
-      <View style={styles.greetingRow}>
-      <Text style={styles.subGreeting}>
-        Ready to ace your next interview?
-      </Text>
-        {lastActive && (
-          <Text style={styles.lastActive}>Last active: {lastActive}</Text>
-        )}
-      </View>
+      <Text style={styles.greeting}>{greeting}, {name.split(' ')[0]}</Text>
+      <Text style={styles.subGreeting}>Ready for your next interview?</Text>
 
       {/* Primary CTA card */}
       <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
@@ -352,140 +344,131 @@ const Home: React.FC = () => {
           }}
         >
           <LinearGradient
-            colors={['#1E63FF', '#0D47A1']}
+            colors={['#1E3A6E', '#112244']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.card, styles.primaryCard]}
           >
-            <Text style={styles.cardTitlePrimary}>Start Interview</Text>
-            <Text style={styles.cardBodyPrimary}>
-              Practice with AI-powered interviews tailored to your role
-            </Text>
+            <Text style={styles.practiceLabel}>PRACTICE SESSION</Text>
+            <View style={styles.primaryCardBody}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitlePrimary}>Start AI interview</Text>
+                <Text style={styles.cardBodyPrimary}>Tailored to your role</Text>
+              </View>
+              <View style={styles.arrowCircle}>
+                <Ionicons name="arrow-forward" size={18} color="#1E3A6E" />
+              </View>
+            </View>
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Row of cards */}
+      {/* Stat Cards Row */}
       <View style={styles.row}>
         <TouchableOpacity
           style={[styles.card, styles.smallCard]}
           activeOpacity={0.85}
           onPress={() => navigation.navigate('QuestionBank')}
         >
-          <Text style={styles.cardTag}>Practice 📝</Text>
-          <Text style={styles.cardTitle}>Question Bank</Text>
-          <Text style={styles.cardBody}>Browse and practice common interview questions</Text>
-          <Text style={styles.tapHint}>Tap to view</Text>
+          <View style={[styles.statIconCircle, { backgroundColor: colors.primaryBlue + '18' }]}>
+            <Ionicons name="chatbubbles-outline" size={21} color={colors.primaryBlue} />
+          </View>
+          <Text style={styles.statCardTitle}>Question bank</Text>
+          <View style={[styles.statPill, { backgroundColor: '#fce7f3' }]}>
+            <Text style={[styles.statPillText, { color: '#be185d' }]}>250+ questions</Text>
+          </View>
         </TouchableOpacity>
 
         <View style={[styles.card, styles.smallCard]}>
-          <Text style={styles.cardTag}>Streak</Text>
-          <Text style={styles.cardTitle}>{streak} day streak</Text>
-          <Text style={styles.cardBody}>Keep practicing to build your streak!</Text>
+          <View style={[styles.statIconCircle, { backgroundColor: '#10b98118' }]}>
+            <Ionicons name="flame-outline" size={21} color="#10b981" />
+          </View>
+          <Text style={styles.statCardTitle}>Your streak</Text>
+          <Text style={styles.statCardSubtitle}>{streak} day{streak !== 1 ? 's' : ''} — keep{'\n'}going</Text>
         </View>
       </View>
 
-      {/* Daily Tip Card */}
+      {/* Latest Feedback */}
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionTitle}>Latest feedback</Text>
+        <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('AllFeedback'); }}>
+          <Text style={[styles.viewAllText, { color: colors.primaryBlue }]}>View all</Text>
+        </TouchableOpacity>
+      </View>
+
+      {loading ? (
+        <SkeletonCard />
+      ) : (
+        <TouchableOpacity
+          style={styles.card}
+          activeOpacity={0.85}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('AllFeedback'); }}
+        >
+          {hasInterviews && latestFeedback ? (
+            (() => {
+              const scoreMatch = latestFeedback.match(/Score:\s*(\d+)\/100/);
+              const strengthsMatch = latestFeedback.match(/Strengths:\s*(.+?)\s*Areas to improve:/s);
+              const improvementsMatch = latestFeedback.match(/Areas to improve:\s*(.+)$/s);
+              const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
+              const strengths = strengthsMatch ? strengthsMatch[1].trim() : '';
+              const improvements = improvementsMatch ? improvementsMatch[1].trim() : '';
+              return (
+                <View style={styles.feedbackEmptyRow}>
+                  <View style={[styles.scoreCircle, { borderColor: colors.primaryBlue }]}>
+                    <Text style={[styles.scoreCircleText, { color: colors.primaryBlue }]}>{score ?? '—'}</Text>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    {strengths ? <Text style={styles.feedbackBodyText} numberOfLines={3}>{strengths}</Text> : null}
+                    {improvements ? <Text style={[styles.feedbackBodyText, { marginTop: 4, color: isDark ? '#aaa' : colors.textMuted }]} numberOfLines={2}>{improvements}</Text> : null}
+                  </View>
+                </View>
+              );
+            })()
+          ) : (
+            <View style={styles.feedbackEmptyRow}>
+              <View style={[styles.scoreCircle, { borderColor: isDark ? '#444' : '#d1d5db' }]}>
+                <Text style={[styles.scoreCircleText, { color: isDark ? '#666' : '#9ca3af' }]}>0</Text>
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={styles.feedbackEmptyTitle}>No sessions yet</Text>
+                <Text style={styles.feedbackEmptySubtitle}>Complete a session to get feedback</Text>
+              </View>
+            </View>
+          )}
+        </TouchableOpacity>
+      )}
+
+      {/* Tip of the Day */}
       {loading ? (
         <SkeletonCard />
       ) : (
         <View style={styles.card}>
-          <Text style={styles.cardTag}>Daily Tip</Text>
-          <Text style={styles.cardTitle}>Tip of the Day</Text>
-          <Text style={styles.cardBody}>{tipOfTheDay}</Text>
+          <View style={styles.tipHeaderRow}>
+            <Text style={[styles.tipLabel, { color: '#f59e0b' }]}>TIP OF THE DAY</Text>
+            <Ionicons name="bulb-outline" size={17} color="#f59e0b" />
+          </View>
+          <Text style={styles.tipText}>{tipOfTheDay}</Text>
         </View>
-      )}
-
-      {/* Latest feedback section */}
-      {loading ? (
-        <SkeletonCard />
-      ) : (
-        <TouchableOpacity 
-          style={styles.card}
-          activeOpacity={0.85}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate('AllFeedback');
-          }}
-        >
-          <Text style={styles.cardTitle}>Latest Feedback</Text>
-          {hasInterviews && latestFeedback ? (
-            (() => {
-              // Parse the feedback text
-              const scoreMatch = latestFeedback.match(/Score:\s*(\d+)\/100/);
-              const strengthsMatch = latestFeedback.match(/Strengths:\s*(.+?)\s*Areas to improve:/s);
-              const improvementsMatch = latestFeedback.match(/Areas to improve:\s*(.+)$/s);
-              
-              const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
-              const strengths = strengthsMatch ? strengthsMatch[1].trim() : '';
-              const improvements = improvementsMatch ? improvementsMatch[1].trim() : '';
-              
-              return (
-                <>
-                  {score !== null && (
-                    <View style={styles.scoreBox}>
-                      <Text style={styles.scoreText}>{score}/100</Text>
-                    </View>
-                  )}
-                  
-                  {strengths && (
-                    <View style={styles.feedbackSection}>
-                      <Text style={styles.feedbackSectionTitle}>What you did well</Text>
-                      <Text style={styles.feedbackSectionText} numberOfLines={3}>
-                        {strengths}
-                      </Text>
-                    </View>
-                  )}
-                  
-                  {improvements && (
-                    <View style={styles.feedbackSection}>
-                      <Text style={styles.feedbackSectionTitle}>How to improve</Text>
-                      <Text style={styles.feedbackSectionText} numberOfLines={3}>
-                        {improvements}
-                      </Text>
-                    </View>
-                  )}
-                  
-                  <Text style={styles.tapToViewMore}>Tap to view all feedback</Text>
-                </>
-              );
-            })()
-          ) : (
-            <Text style={styles.cardBody}>
-              No interviews completed yet. Start your first practice session!
-            </Text>
-          )}
-        </TouchableOpacity>
       )}
 
       <TouchableOpacity
         style={styles.card}
         activeOpacity={0.85}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          navigation.navigate('ViewCV');
-        }}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('ViewCV'); }}
       >
         <Text style={styles.cardTitle}>Enhance CV</Text>
-        <Text style={styles.cardBody}>
-          Paste your CV and get AI suggestions to improve it.
-        </Text>
-        <Text style={styles.tapToViewMore}>Tap to enhance CV</Text>
+        <Text style={styles.cardBody}>Paste your CV and get AI suggestions to improve it.</Text>
+        <Text style={styles.tapHint}>Tap to enhance →</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.card} 
+      <TouchableOpacity
+        style={styles.card}
         activeOpacity={0.85}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          navigation.navigate('SuccessStories');
-        }}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('SuccessStories'); }}
       >
         <Text style={styles.cardTitle}>Success Stories</Text>
-        <Text style={styles.cardBody}>
-          Read how other learners went from nervous to hired after practicing with Aya.
-        </Text>
-        <Text style={styles.tapToViewMore}>Tap to view success stories →</Text>
+        <Text style={styles.cardBody}>Read how others went from nervous to hired after practicing with Aya.</Text>
+        <Text style={styles.tapHint}>Tap to view →</Text>
       </TouchableOpacity>
     </ScrollView>
 
@@ -525,33 +508,21 @@ const makeStyles = (colors: any, isDark: boolean) =>
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 70,
+    paddingTop: 8,
     paddingBottom: 28,
   },
-  logoText: {
-    ...typography.heading,
-    fontWeight: "800",
-    color: colors.primaryBlue,
-    alignSelf: 'center',
-    marginBottom: 28,
-  },
   greeting: {
-    ...typography.headingMedium,
-    color: isDark ? '#fff' : colors.textDark,
-  },
-  greetingRow: {
-    marginBottom: 16,
+    fontSize: 22,
+    fontWeight: '600',
+    color: isDark ? '#fff' : '#111827',
+    letterSpacing: -0.2,
+    marginBottom: 4,
+    marginTop: 8,
   },
   subGreeting: {
-    ...typography.bodyMedium,
-    color: isDark ? '#aaa' : colors.textMuted,
-    marginTop: 4,
-    marginBottom: 6,
-  },
-  lastActive: {
-    ...typography.bodySmall,
-    color: colors.primaryBlue,
-    fontWeight: '600',
+    fontSize: 14,
+    color: isDark ? '#9ca3af' : '#6b7280',
+    marginBottom: 20,
   },
   card: {
     backgroundColor: isDark ? '#222' : '#FFFFFF',
@@ -565,90 +536,153 @@ const makeStyles = (colors: any, isDark: boolean) =>
     elevation: 2,
   },
   primaryCard: {
-    backgroundColor: colors.primaryBlue,
+    padding: 20,
+    marginBottom: 12,
+  },
+  practiceLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    color: 'rgba(255,255,255,0.55)',
+    marginBottom: 10,
+  },
+  primaryCardBody: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  tapHint: {
-    ...typography.caption,
-    color: colors.primaryBlue,
-    fontWeight: '600',
-    marginTop: 8,
-  },
-  tapHintPrimary: {
-    ...typography.caption,
-    color: 'rgba(255,255,255,0.8)',
-    fontWeight: '600',
-    marginTop: 10,
-  },
   cardTitlePrimary: {
-    ...typography.headingSmall,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     color: '#FFFFFF',
     marginBottom: 4,
-    textAlign: 'center',
+    letterSpacing: -0.3,
   },
   cardBodyPrimary: {
-    ...typography.bodyMedium,
-    color: '#E5E7EB',
-    textAlign: 'center',
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.65)',
+  },
+  arrowCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 12,
   },
   row: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 4,
+    marginBottom: 12,
   },
   smallCard: {
     flex: 1,
+    marginBottom: 0,
   },
-  cardTag: {
-    ...typography.caption,
-    color: colors.primaryBlue,
+  statIconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  statCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: isDark ? '#fff' : '#111827',
+    marginBottom: 6,
+  },
+  statPill: {
+    alignSelf: 'flex-start',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  statPillText: {
+    fontSize: 12,
     fontWeight: '600',
-    marginBottom: 4,
+  },
+  statCardSubtitle: {
+    fontSize: 12,
+    color: isDark ? '#9ca3af' : '#6b7280',
+    lineHeight: 17,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: isDark ? '#fff' : '#111827',
+  },
+  viewAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  feedbackEmptyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  scoreCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scoreCircleText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  feedbackEmptyTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: isDark ? '#fff' : '#111827',
+    marginBottom: 2,
+  },
+  feedbackEmptySubtitle: {
+    fontSize: 13,
+    color: isDark ? '#9ca3af' : '#6b7280',
+  },
+  feedbackBodyText: {
+    fontSize: 13,
+    color: isDark ? '#d1d5db' : '#374151',
+    lineHeight: 18,
+  },
+  tipHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  tipLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+  tipText: {
+    fontSize: 14,
+    color: isDark ? '#d1d5db' : '#374151',
+    lineHeight: 21,
   },
   cardTitle: {
-    ...typography.bodyMedium,
-    fontWeight: '600',
-    color: isDark ? '#fff' : colors.textDark,
+    fontSize: 15,
+    fontWeight: '700',
+    color: isDark ? '#fff' : '#111827',
     marginBottom: 4,
   },
   cardBody: {
-    ...typography.bodySmall,
-    color: isDark ? '#aaa' : colors.textMuted,
-  },
-  scoreBox: {
-    backgroundColor: colors.primaryBlue,
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    alignSelf: 'flex-start',
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  scoreText: {
-    ...typography.bodySmall,
-    fontWeight: '700',
-    color: '#fff',
-    fontSize: 14,
-  },
-  feedbackSection: {
-    marginBottom: 12,
-  },
-  feedbackSectionTitle: {
-    ...typography.bodySmall,
-    fontWeight: '700',
-    color: isDark ? '#fff' : colors.textDark,
-    marginBottom: 6,
     fontSize: 13,
+    color: isDark ? '#9ca3af' : '#6b7280',
+    lineHeight: 19,
   },
-  feedbackSectionText: {
-    ...typography.bodySmall,
-    color: isDark ? '#b5b5b5' : colors.textMuted,
-    lineHeight: 18,
-    fontSize: 13,
-  },
-  tapToViewMore: {
-    ...typography.caption,
+  tapHint: {
+    fontSize: 12,
     color: colors.primaryBlue,
     fontWeight: '600',
     marginTop: 8,
@@ -668,19 +702,16 @@ const makeStyles = (colors: any, isDark: boolean) =>
     borderWidth: 1,
     borderColor: isDark ? '#333' : '#E5E7EB',
   },
-  modalIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
+  modalIcon: { fontSize: 48, marginBottom: 12 },
   modalTitle: {
-    ...typography.headingMedium,
+    fontSize: 20,
     fontWeight: '700',
     color: isDark ? '#fff' : '#111',
     marginBottom: 12,
     textAlign: 'center',
   },
   modalText: {
-    ...typography.bodyMedium,
+    fontSize: 15,
     color: isDark ? '#b5b5b5' : '#6B7280',
     textAlign: 'center',
     marginBottom: 20,
@@ -694,17 +725,9 @@ const makeStyles = (colors: any, isDark: boolean) =>
     alignItems: 'center',
     marginBottom: 12,
   },
-  modalButtonText: {
-    ...typography.label,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  modalButtonSecondary: {
-    paddingVertical: 12,
-  },
-  modalButtonSecondaryText: {
-    ...typography.bodyMedium,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-});export default Home;
+  modalButtonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 15 },
+  modalButtonSecondary: { paddingVertical: 12 },
+  modalButtonSecondaryText: { color: colors.textMuted, fontWeight: '600', fontSize: 15 },
+});
+
+export default Home;

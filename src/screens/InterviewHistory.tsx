@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, RefreshCon
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from 'expo-haptics';
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
@@ -222,10 +222,9 @@ export default function InterviewHistory({ navigation }: any) {
         />
       }
     >
-      <BackButton />
+      <ScreenHeader />
       
       <View style={styles.headerRow}>
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
         {stats.total > 0 && (
           <TouchableOpacity style={styles.shareButton} onPress={shareResults}>
             <Ionicons name="share-social-outline" size={24} color={colors.primaryBlue} />
@@ -392,8 +391,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 24,
-      paddingTop: 70,
-      paddingBottom: 32,
+            paddingBottom: 32,
     },
     headerRow: {
       flexDirection: 'row',
@@ -403,11 +401,8 @@ const makeStyles = (colors: any, isDark: boolean) =>
       position: 'relative',
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     shareButton: {
       position: 'absolute',
@@ -416,11 +411,13 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? "#fff" : colors.textDark,
       marginBottom: 4,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginBottom: 20,
     },

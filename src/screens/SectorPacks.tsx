@@ -8,12 +8,13 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from '../theme/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import BackButton from '../components/BackButton';
+import ScreenHeader from "../components/ScreenHeader";
 import { purchaseSectorPack, restoreSectorPacks, getPurchasedPacks } from '../services/purchaseService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SectorPacks'>;
@@ -26,6 +27,7 @@ interface SectorPack {
   icon: string;
   features: string[];
   popular?: boolean;
+  downloadUrl: string;
 }
 
 const SectorPacks: React.FC<Props> = ({ navigation }) => {
@@ -53,11 +55,12 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
       price: '£14.99',
       icon: 'medical',
       popular: true,
+      downloadUrl: 'https://urewxbnmubmkceuplctd.supabase.co/storage/v1/object/public/sector-packs/nhs-care.pdf',
       features: [
-        '50+ NHS-specific interview questions',
+        '30 NHS-specific interview questions',
         'Values-based interview scenarios',
         'Care quality & patient safety topics',
-        'Band 5-7 nursing questions',
+        'Tips & model answers for every question',
       ],
     },
     {
@@ -67,11 +70,12 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
       price: '£19.99',
       icon: 'school',
       popular: true,
+      downloadUrl: 'https://urewxbnmubmkceuplctd.supabase.co/storage/v1/object/public/sector-packs/graduate.pdf',
       features: [
-        'Graduate scheme questions',
+        '30 graduate scheme questions',
         'Assessment centre exercises',
         'Group task scenarios',
-        'Competency-based interviews',
+        'Tips & model answers for every question',
       ],
     },
     {
@@ -80,11 +84,12 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
       description: 'Master customer-facing roles and retail management',
       price: '£9.99',
       icon: 'storefront',
+      downloadUrl: 'https://urewxbnmubmkceuplctd.supabase.co/storage/v1/object/public/sector-packs/retail.pdf',
       features: [
-        'Customer service scenarios',
-        'Complaint handling',
-        'Sales techniques',
-        'Store manager interviews',
+        '30 customer service scenarios',
+        'Complaint handling questions',
+        'Sales & store management',
+        'Tips & model answers for every question',
       ],
     },
     {
@@ -93,11 +98,12 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
       description: 'For supervisors, managers, and leadership roles',
       price: '£14.99',
       icon: 'people',
+      downloadUrl: 'https://urewxbnmubmkceuplctd.supabase.co/storage/v1/object/public/sector-packs/management.pdf',
       features: [
-        'Team leadership scenarios',
-        'Performance management',
-        'Conflict resolution',
-        'Strategic decision making',
+        '30 leadership & management questions',
+        'Performance management scenarios',
+        'Conflict resolution & strategy',
+        'Tips & model answers for every question',
       ],
     },
   ];
@@ -135,12 +141,25 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
     }
   };
 
+  const handleDownload = async (pack: SectorPack) => {
+    try {
+      const supported = await Linking.canOpenURL(pack.downloadUrl);
+      if (supported) {
+        await Linking.openURL(pack.downloadUrl);
+      } else {
+        Alert.alert('Error', 'Unable to open the download link. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open PDF. Please try again.');
+    }
+  };
+
   const isPurchased = (packId: string) => purchasedPacks.includes(packId);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <BackButton />
+        <ScreenHeader />
         <Text style={styles.headerTitle}>Sector Packs</Text>
         <View style={{ width: 40 }} />
       </View>
@@ -199,9 +218,18 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
               </View>
 
               {isPurchased(pack.id) ? (
-                <View style={[styles.purchasedBadge, { backgroundColor: '#10b981' }]}>
-                  <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                  <Text style={styles.purchasedText}>Purchased</Text>
+                <View style={{ gap: 8 }}>
+                  <View style={[styles.purchasedBadge, { backgroundColor: '#10b981' }]}>
+                    <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                    <Text style={styles.purchasedText}>Purchased</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.buyButton, { backgroundColor: '#10b981' }]}
+                    onPress={() => handleDownload(pack)}
+                  >
+                    <Ionicons name="download-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                    <Text style={styles.buyButtonText}>Download PDF</Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
                 <TouchableOpacity
@@ -223,7 +251,7 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
         <View style={styles.infoCard}>
           <Ionicons name="information-circle" size={24} color={colors.primaryBlue} />
           <Text style={styles.infoText}>
-            All packs work with free and premium subscriptions. Questions are added to your interview practice immediately.
+            One-time purchase, lifetime access. Download your PDF pack instantly after purchase — 30 questions with tips and model answers.
           </Text>
         </View>
 
@@ -254,8 +282,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 16,
-      paddingTop: 60,
-      paddingBottom: 16,
+            paddingBottom: 16,
       backgroundColor: colors.background,
     },
     headerTitle: {

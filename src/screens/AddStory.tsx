@@ -13,7 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/colors';
-import BackButton from '../components/BackButton';
+import ScreenHeader from "../components/ScreenHeader";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
 
@@ -144,7 +144,7 @@ const AddStory: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <BackButton />
+      <ScreenHeader />
       
       <ScrollView
         style={styles.scrollView}
@@ -158,7 +158,6 @@ const AddStory: React.FC = () => {
           />
         }
       >
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
         <Text style={styles.title}>Share Your Success Story</Text>
         <Text style={styles.subtitle}>
           Inspire others by sharing how practicing with Aya helped you land your dream job!
@@ -259,23 +258,21 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-      paddingTop: 70,
-      paddingBottom: 40,
+            paddingBottom: 40,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: '800',
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: 'center',
-      marginBottom: 28,
     },
     title: {
       ...typography.headingSmall,
+      textAlign: 'center',
       color: isDark ? '#fff' : colors.textDark,
       marginBottom: 8,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: colors.textMuted,
       marginBottom: 24,
       lineHeight: 22,

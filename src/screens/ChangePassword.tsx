@@ -11,7 +11,7 @@ import {
   Keyboard,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import TextInputField from "../components/TextInputField";
 import PrimaryButton from "../components/PrimaryButton";
 import { useTheme } from "../theme/ThemeContext";
@@ -104,9 +104,7 @@ const ChangePassword: React.FC = () => {
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
           >
-        <BackButton />
-
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
+        <ScreenHeader />
 
         <Text style={styles.title}>Change password</Text>
         <Text style={styles.subtitle}>
@@ -168,22 +166,20 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-      paddingTop: 70,
-      paddingBottom: 32,
+            paddingBottom: 32,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? "#fff" : colors.textDark,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginTop: 4,
       marginBottom: 16,

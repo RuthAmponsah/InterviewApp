@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 
@@ -39,9 +39,7 @@ export default function HelpCentre() {
   const styles = makeStyles(colors, isDark);
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <BackButton />
-
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <ScreenHeader />
 
       <Text style={styles.title}>Help centre</Text>
       <Text style={styles.subtitle}>
@@ -72,23 +70,21 @@ const makeStyles = (colors: any, isDark: boolean) =>
       backgroundColor: isDark ? "#0f0f0f" : "#F3F4F6",
     },
     content: {
-      paddingTop: 70,
-      paddingHorizontal: 20,
+            paddingHorizontal: 20,
       paddingBottom: 40,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? "#fff" : colors.textDark,
     },
     subtitle: {
       ...typography.bodySmall,
+      textAlign: 'center',
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginTop: 4,
       marginBottom: 16,

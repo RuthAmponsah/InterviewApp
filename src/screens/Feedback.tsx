@@ -418,11 +418,8 @@ const makeStyles = (colors: any, isDark: boolean) =>
       paddingBottom: 100,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     title: {
       ...typography.headingSmall,

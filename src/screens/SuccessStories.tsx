@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/colors';
-import BackButton from '../components/BackButton';
+import ScreenHeader from "../components/ScreenHeader";
 import { supabase } from '../config/supabase';
 
 interface Story {
@@ -72,7 +72,7 @@ const SuccessStories: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <BackButton />
+      <ScreenHeader />
       
       <ScrollView
         style={styles.scrollView}
@@ -86,7 +86,6 @@ const SuccessStories: React.FC = () => {
           />
         }
       >
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
         <Text style={styles.title}>Success Stories</Text>
         <Text style={styles.subtitle}>
           Real people who practiced with Aya and landed their dream jobs
@@ -185,23 +184,21 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-      paddingTop: 70,
-      paddingBottom: 40,
+            paddingBottom: 40,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: '800',
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: 'center',
-      marginBottom: 28,
     },
     title: {
       ...typography.headingSmall,
+      textAlign: 'center',
       color: isDark ? '#fff' : colors.textDark,
       marginBottom: 8,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: colors.textMuted,
       marginBottom: 16,
       lineHeight: 22,

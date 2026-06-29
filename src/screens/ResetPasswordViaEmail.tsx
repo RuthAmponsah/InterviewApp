@@ -24,7 +24,7 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const styles = makeStyles(colors, isDark);
-  const token = route.params?.token;
+  const resetParams = route.params;
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -34,18 +34,40 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
 
   useEffect(() => {
     validateToken();
-  }, [token]);
+  }, [resetParams]);
 
   const validateToken = async () => {
     try {
-      if (!token) {
+      if (!resetParams?.token && !resetParams?.accessToken && !resetParams?.tokenHash) {
         Alert.alert('Error', 'Invalid reset link. Please request a new password reset.');
         setValidatingToken(false);
         return;
       }
 
-      // For email-based password reset, we validate the token by attempting to use it
-      // The token should be a recovery token from Supabase
+      if (resetParams.accessToken && resetParams.refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: resetParams.accessToken,
+          refresh_token: resetParams.refreshToken,
+        });
+
+        if (error) {
+          Alert.alert('Error', error.message || 'Invalid or expired reset link.');
+          setValidatingToken(false);
+          return;
+        }
+      } else if (resetParams.tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: resetParams.tokenHash,
+          type: 'recovery',
+        });
+
+        if (error) {
+          Alert.alert('Error', error.message || 'Invalid or expired reset link.');
+          setValidatingToken(false);
+          return;
+        }
+      }
+
       setTokenValid(true);
       setValidatingToken(false);
     } catch (error) {
@@ -192,18 +214,17 @@ const makeStyles = (colors: any, isDark: boolean) =>
       paddingTop: 70,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: '800',
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: 'center',
-      marginBottom: 28,
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? '#fff' : colors.textDark,
     },
     subtitle: {
       ...typography.bodyMedium,
+      textAlign: 'center',
       color: isDark ? '#b5b5b5' : colors.textMuted,
       marginTop: 4,
       marginBottom: 16,

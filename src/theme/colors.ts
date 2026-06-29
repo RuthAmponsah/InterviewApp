@@ -55,6 +55,16 @@ export const typography = {
     fontWeight: "400" as const,
     letterSpacing: 0.1,
   },
+
+  // Centralised brand mark — used by all inner screens as the small "MY INTERVIEW" watermark
+  brandMark: {
+    fontSize: 11,
+    fontWeight: "800" as const,
+    letterSpacing: 2.5,
+    lineHeight: 16,
+    opacity: 0.6,
+    marginBottom: 6,
+  },
 };
 
 export default function colors(theme: ThemeType) {
@@ -66,8 +76,8 @@ export default function colors(theme: ThemeType) {
     card: isDark ? "#1A1A1A" : "#FFFFFF",
 
     // --- BRAND COLORS (unchanged for both modes) ---
-    primaryBlue: "#1E63FF",
-    primaryBlueDark: "#1141A8",
+    primaryBlue: "#1E3A6E",
+    primaryBlueDark: "#112244",
     accentGreen: "#28A745",
 
     // --- TEXT ---

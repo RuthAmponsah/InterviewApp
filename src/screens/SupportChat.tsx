@@ -10,7 +10,7 @@ import {
   Platform,
   Keyboard,
 } from "react-native";
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { getSupportAgentReply } from "../services/aiService";
@@ -230,8 +230,7 @@ const SupportChat: React.FC = () => {
         keyboardShouldPersistTaps="handled"
         onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
       >
-        <BackButton />
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
+        <ScreenHeader />
         <Text style={styles.title}>Chat with an agent</Text>
         <Text style={styles.subtitle}>
           Ask about features, settings, or how to use the app.
@@ -277,22 +276,20 @@ const makeStyles = (colors: any, isDark: boolean) =>
     root: { flex: 1, backgroundColor: isDark ? "#0f0f0f" : "#F3F4F6" },
     content: {
       paddingHorizontal: 20,
-      paddingTop: 70,
-      paddingBottom: 200,
+            paddingBottom: 200,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? "#fff" : colors.textDark,
     },
     subtitle: {
       ...typography.bodySmall,
+      textAlign: 'center',
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginTop: 4,
       marginBottom: 16,

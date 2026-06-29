@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
+import AppHeader from "../components/AppHeader";
 import { supabase } from "../config/supabase";
 import { searchJobs, Job } from "../services/jobService";
 import { JOB_ROLES } from "../constants/jobRoles";
@@ -165,8 +166,7 @@ const Jobs: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}
     >
-      {/* Logo */}
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <AppHeader />
 
       {/* Header */}
       <View style={styles.headerRow}>
@@ -384,20 +384,20 @@ const Jobs: React.FC = () => {
                 {/* Job Title */}
                 <Text style={styles.jobTitle}>{item.title}</Text>
 
-                {/* Company */}
-                <Text style={styles.jobCompany}>{item.company}</Text>
-
-                {/* Location and Remote Type */}
+                {/* Company · Location + Remote badge */}
                 <View style={styles.jobMetaRow}>
-                  <Ionicons name="location-outline" size={14} color={isDark ? '#888' : colors.textMuted} />
-                  <Text style={styles.jobMeta}>{item.location}</Text>
+                  <Text style={styles.jobCompany} numberOfLines={1}>
+                    {item.company} · {item.location}
+                  </Text>
                   <View style={[styles.remoteBadge, { 
                     backgroundColor: item.remote === 'Remote' 
                       ? (isDark ? '#10B98120' : '#10B98115')
+                      : item.remote === 'Hybrid'
+                      ? (isDark ? '#8B5CF620' : '#8B5CF615')
                       : (isDark ? '#F59E0B20' : '#F59E0B15')
                   }]}>
                     <Text style={[styles.remoteBadgeText, {
-                      color: item.remote === 'Remote' ? '#10B981' : '#F59E0B'
+                      color: item.remote === 'Remote' ? '#10B981' : item.remote === 'Hybrid' ? '#8B5CF6' : '#F59E0B'
                     }]}>
                       {item.remote}
                     </Text>
@@ -405,13 +405,7 @@ const Jobs: React.FC = () => {
                 </View>
 
                 {/* Salary */}
-                <View style={styles.jobMetaRow}>
-                  <Ionicons name="cash-outline" size={14} color={isDark ? '#888' : colors.textMuted} />
-                  <Text style={styles.jobSalary}>{item.salary}</Text>
-                </View>
-
-                {/* Posted Date */}
-                <Text style={styles.postedText}>{getPostedText(item.postedDays)}</Text>
+                <Text style={styles.jobSalary}>{item.salary}</Text>
 
                 {/* Apply Button */}
                 <TouchableOpacity
@@ -419,7 +413,7 @@ const Jobs: React.FC = () => {
                   onPress={() => openJob(item)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.applyButtonText}>View & Apply</Text>
+                  <Text style={styles.applyButtonText}>View and apply</Text>
                   <Ionicons name="arrow-forward" size={16} color="#fff" />
                 </TouchableOpacity>
               </View>
@@ -436,21 +430,14 @@ const makeStyles = (colors: any, isDark: boolean) =>
   root: {
     flex: 1,
     backgroundColor: isDark ? '#0f0f0f' : '#F3F4F6',
-    paddingTop: 60,
-  },
-  logoText: {
-    ...typography.heading,
-    fontWeight: '800',
-    color: colors.primaryBlue,
-    alignSelf: 'center',
-    marginBottom: 28,
   },
   headerRow: {
     paddingHorizontal: 20,
     marginBottom: 16,
   },
   title: {
-    ...typography.heading,
+    ...typography.headingSmall,
+    fontWeight: '700',
     color: isDark ? '#fff' : colors.textDark,
     marginBottom: 4,
   },
@@ -637,16 +624,16 @@ const makeStyles = (colors: any, isDark: boolean) =>
     marginBottom: 6,
   },
   jobCompany: {
-    ...typography.bodyMedium,
+    ...typography.bodySmall,
     fontWeight: '500',
-    color: isDark ? '#e5e5e5' : '#374151',
-    marginBottom: 10,
+    color: isDark ? '#aaa' : colors.textMuted,
+    flex: 1,
+    marginRight: 8,
   },
   jobMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   jobMeta: {
     ...typography.bodyMedium,
@@ -655,8 +642,9 @@ const makeStyles = (colors: any, isDark: boolean) =>
   },
   jobSalary: {
     ...typography.bodyMedium,
-    fontWeight: '600',
+    fontWeight: '700',
     color: isDark ? '#10B981' : '#059669',
+    marginBottom: 12,
   },
   remoteBadge: {
     paddingHorizontal: 8,

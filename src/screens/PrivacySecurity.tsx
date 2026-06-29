@@ -8,14 +8,19 @@ import {
   Alert,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/RootNavigator";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import BackButton from "../components/BackButton";
+import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
 
 const PrivacySecurity: React.FC = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
   const styles = makeStyles(colors, isDark);
@@ -42,7 +47,7 @@ const PrivacySecurity: React.FC = () => {
   const handleDeleteAccount = async () => {
     Alert.alert(
       "Delete Account",
-      "This will permanently delete your account and all interview data within 30 days. This action cannot be undone.",
+      "This will permanently delete your account and all data. This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -52,20 +57,27 @@ const PrivacySecurity: React.FC = () => {
             try {
               const userId = await AsyncStorage.getItem('userId');
               if (userId) {
-                // Delete user data from database
+                // Delete all user data from every table
+                await supabase.from('question_answers').delete().eq('user_id', userId);
+                await supabase.from('interview_history').delete().eq('user_id', userId);
+                await supabase.from('custom_questions').delete().eq('user_id', userId);
+                await supabase.from('success_stories').delete().eq('user_email', await AsyncStorage.getItem('userEmail'));
                 await supabase.from('user_preferences').delete().eq('user_id', userId);
-                await supabase.from('interviews').delete().eq('user_id', userId);
-                await supabase.from('interview_feedback').delete().eq('user_id', userId);
+                await supabase.from('users').delete().eq('id', userId);
               }
-              
-              // Sign out and clear local data
+
+              // Sign out and wipe local storage
               await supabase.auth.signOut();
               await AsyncStorage.clear();
-              
-              Alert.alert("Account Deleted", "Your account and data have been scheduled for deletion.");
+
+              Alert.alert(
+                "Account Deleted",
+                "Your data has been removed. To fully delete your auth account contact support@myinterview.app.",
+                [{ text: "OK", onPress: () => navigation.navigate("SignIn") }]
+              );
             } catch (error) {
               console.error('Error deleting account:', error);
-              Alert.alert("Error", "Failed to delete account. Please try again or contact support.");
+              Alert.alert("Error", "Failed to delete account. Please try again or contact support@myinterview.app.");
             }
           },
         },
@@ -146,8 +158,7 @@ const PrivacySecurity: React.FC = () => {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <BackButton />
-      <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <ScreenHeader />
 
       <Text style={styles.title}>Privacy and security</Text>
       <Text style={styles.subtitle}>
@@ -155,7 +166,10 @@ const PrivacySecurity: React.FC = () => {
       </Text>
 
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>🔐 Legal Documents</Text>
+        <View style={styles.sectionTitleRow}>
+          <Ionicons name="lock-closed-outline" size={16} color={colors.primaryBlue} />
+          <Text style={styles.sectionTitle}>Legal Documents</Text>
+        </View>
         <Text style={styles.sectionHint}>
           Review our privacy and terms policies
         </Text>
@@ -239,7 +253,10 @@ const PrivacySecurity: React.FC = () => {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>📊 Your Data Rights</Text>
+        <View style={styles.sectionTitleRow}>
+          <Ionicons name="bar-chart-outline" size={16} color={colors.primaryBlue} />
+          <Text style={styles.sectionTitle}>Your Data Rights</Text>
+        </View>
         <Text style={styles.sectionHint}>
           We follow UK GDPR regulations. You are always in control of your data.
         </Text>
@@ -294,22 +311,20 @@ const makeStyles = (colors: any, isDark: boolean) =>
     root: { flex: 1, backgroundColor: isDark ? "#0f0f0f" : "#F3F4F6" },
     content: {
       paddingHorizontal: 20,
-      paddingTop: 70,
-      paddingBottom: 32,
+            paddingBottom: 32,
     },
     logoText: {
-      ...typography.heading,
-      fontWeight: "800",
+      ...typography.brandMark,
       color: colors.primaryBlue,
-      alignSelf: "center",
-      marginBottom: 28,
     },
     title: {
       ...typography.headingMedium,
+      textAlign: 'center',
       color: isDark ? "#fff" : colors.textDark,
     },
     subtitle: {
       ...typography.bodySmall,
+      textAlign: 'center',
       color: isDark ? "#b5b5b5" : colors.textMuted,
       marginTop: 4,
       marginBottom: 16,
@@ -325,11 +340,16 @@ const makeStyles = (colors: any, isDark: boolean) =>
       shadowOffset: { width: 0, height: 4 },
       elevation: 2,
     },
+    sectionTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 4,
+    },
     sectionTitle: {
       ...typography.bodyMedium,
-      fontWeight: "600",
-      color: isDark ? "#fff" : colors.textDark,
-      marginBottom: 4,
+      fontWeight: '600',
+      color: isDark ? '#fff' : colors.textDark,
     },
     sectionHint: {
       ...typography.bodySmall,

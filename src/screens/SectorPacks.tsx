@@ -14,7 +14,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from '../theme/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import BackButton from '../components/BackButton';
-import { purchaseSectorPack, getPurchasedPacks } from '../services/purchaseService';
+import { purchaseSectorPack, restoreSectorPacks, getPurchasedPacks } from '../services/purchaseService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SectorPacks'>;
 
@@ -105,18 +105,33 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
   const handlePurchaseAsync = async (pack: SectorPack) => {
     setLoading(pack.id);
     
-    const result = await purchaseSectorPack(pack.id, pack.price);
+    const result = await purchaseSectorPack(pack.id);
     
     setLoading(null);
     
     if (result.success) {
       setPurchasedPacks([...purchasedPacks, pack.id]);
       Alert.alert(
-        '🎉 Success!',
+        '🎉 Pack Unlocked!',
         `You've purchased the ${pack.title}.\n\nNew questions are now available in your interview practice!`
       );
-    } else {
+    } else if (result.error !== 'User cancelled') {
       Alert.alert('Purchase Failed', result.error || 'Something went wrong. Please try again.');
+    }
+  };
+
+  const handleRestore = async () => {
+    setLoading('restore');
+    const result = await restoreSectorPacks();
+    setLoading(null);
+
+    if (result.restoredCount > 0) {
+      await loadPurchasedPacks();
+      Alert.alert('✅ Restored', `${result.restoredCount} pack(s) restored successfully!`);
+    } else if (result.error) {
+      Alert.alert('Restore Failed', result.error);
+    } else {
+      Alert.alert('Nothing to Restore', 'No previous purchases found for this account.');
     }
   };
 
@@ -211,6 +226,18 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
             All packs work with free and premium subscriptions. Questions are added to your interview practice immediately.
           </Text>
         </View>
+
+        <TouchableOpacity
+          style={styles.restoreButton}
+          onPress={handleRestore}
+          disabled={loading === 'restore'}
+        >
+          {loading === 'restore' ? (
+            <ActivityIndicator color={colors.primaryBlue} size="small" />
+          ) : (
+            <Text style={[styles.restoreText, { color: colors.primaryBlue }]}>Restore Purchases</Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -384,6 +411,16 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: colors.text,
       marginLeft: 12,
       lineHeight: 20,
+    },
+    restoreButton: {
+      alignItems: 'center',
+      paddingVertical: 14,
+      marginBottom: 32,
+    },
+    restoreText: {
+      fontSize: 15,
+      fontWeight: '500',
+      textDecorationLine: 'underline',
     },
   });
 

@@ -23,7 +23,7 @@ export default function MyProfile() {
   const styles = makeStyles(colors, isDark);
 
   const [name, setName] = useState("User");
-  const [email, setEmail] = useState("ruthrocwel@example.com");
+  const [email, setEmail] = useState("");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [cvUploaded, setCvUploaded] = useState(false);
   const [cvFileName, setCvFileName] = useState<string | null>(null);

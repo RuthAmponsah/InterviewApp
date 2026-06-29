@@ -158,48 +158,107 @@ export const purchaseSubscription = async (
   }
 };
 
+// Maps internal pack IDs to App Store / Google Play product IDs
+const SECTOR_PACK_PRODUCT_IDS: Record<string, string> = {
+  'nhs-care':   'nhs_care_pack',
+  'graduate':   'graduate_pack',
+  'retail':     'retail_pack',
+  'management': 'management_pack',
+};
+
 /**
- * Purchase a one-time sector pack
+ * Saves a purchased pack ID to the database for the current user
+ */
+const savePurchasedPackToDb = async (packId: string): Promise<void> => {
+  const userId = await AsyncStorage.getItem('userId');
+  if (!userId) return;
+
+  const { data: prefs } = await supabase
+    .from('user_preferences')
+    .select('purchased_packs')
+    .eq('user_id', userId)
+    .single();
+
+  const currentPacks: string[] = prefs?.purchased_packs || [];
+  if (!currentPacks.includes(packId)) {
+    await supabase
+      .from('user_preferences')
+      .update({ purchased_packs: [...currentPacks, packId] })
+      .eq('user_id', userId);
+  }
+};
+
+/**
+ * Purchase a one-time sector pack via RevenueCat non-consumable IAP
  */
 export const purchaseSectorPack = async (
   packId: string,
-  price: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // For sector packs, use non-consumable in-app purchase
-    // This requires setting up products in App Store Connect / Google Play Console
-    
-    // TODO: Implement non-consumable IAP for sector packs
-    // For now, mock the purchase
-    
+    const productId = SECTOR_PACK_PRODUCT_IDS[packId];
+    if (!productId) {
+      return { success: false, error: 'Unknown pack' };
+    }
+
     const userId = await AsyncStorage.getItem('userId');
     if (!userId) {
       return { success: false, error: 'User not logged in' };
     }
-    
-    // Get current purchased packs
-    const { data: prefs } = await supabase
-      .from('user_preferences')
-      .select('purchased_packs')
-      .eq('user_id', userId)
-      .single();
-    
-    const currentPacks = prefs?.purchased_packs || [];
-    
-    // Add new pack
-    if (!currentPacks.includes(packId)) {
-      await supabase
-        .from('user_preferences')
-        .update({
-          purchased_packs: [...currentPacks, packId],
-        })
-        .eq('user_id', userId);
+
+    // Fetch product from App Store / Google Play via RevenueCat
+    const products = await Purchases.getProducts([productId]);
+    if (!products || products.length === 0) {
+      console.error('Sector pack product not found in store:', productId);
+      return { success: false, error: 'Product not available in store. Please try again later.' };
     }
-    
-    return { success: true };
+
+    // Trigger the purchase sheet
+    const { customerInfo } = await Purchases.purchaseStoreProduct(products[0]);
+
+    // Confirm the transaction exists in non-subscription transactions
+    const purchased = customerInfo.nonSubscriptionTransactions.some(
+      (t) => t.productIdentifier === productId
+    );
+
+    if (purchased) {
+      await savePurchasedPackToDb(packId);
+      console.log('✅ Sector pack purchased:', packId);
+      return { success: true };
+    }
+
+    return { success: false, error: 'Purchase not confirmed by store.' };
   } catch (error: any) {
+    if (error.userCancelled) {
+      return { success: false, error: 'User cancelled' };
+    }
     console.error('Sector pack purchase error:', error);
     return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Restore previously purchased sector packs (e.g. after reinstall)
+ */
+export const restoreSectorPacks = async (): Promise<{ restoredCount: number; error?: string }> => {
+  try {
+    const customerInfo = await Purchases.restorePurchases();
+    const purchasedIds = customerInfo.nonSubscriptionTransactions.map(
+      (t) => t.productIdentifier
+    );
+
+    const restoredPackIds: string[] = [];
+    for (const [packId, productId] of Object.entries(SECTOR_PACK_PRODUCT_IDS)) {
+      if (purchasedIds.includes(productId)) {
+        await savePurchasedPackToDb(packId);
+        restoredPackIds.push(packId);
+      }
+    }
+
+    console.log('✅ Restored sector packs:', restoredPackIds);
+    return { restoredCount: restoredPackIds.length };
+  } catch (error: any) {
+    console.error('Restore sector packs error:', error);
+    return { restoredCount: 0, error: error.message };
   }
 };
 

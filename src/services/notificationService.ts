@@ -1,6 +1,10 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../config/supabase';
+
+// EAS project ID (from app.json extra.eas.projectId)
+const EAS_PROJECT_ID = '5fe21a1b-adb5-4a48-ab5a-6d149d888986';
 
 // Configure how notifications should be displayed
 Notifications.setNotificationHandler({
@@ -319,7 +323,7 @@ export const initializeNotifications = async () => {
     if (!hasPermission) return;
 
     // Check if notifications are enabled in user preferences
-    const notifPush = await AsyncStorage.getItem('notifPush');
+    const notifPush = await AsyncStorage.getItem('notif_push');
     if (notifPush === 'false') return;
 
     // Schedule daily reminder (default 6 PM)
@@ -346,6 +350,92 @@ export const initializeNotifications = async () => {
 // Update weekly interview count (call after each interview)
 export const incrementWeeklyCount = async () => {
   try {
+    const count = parseInt(await AsyncStorage.getItem('weeklyInterviewCount') || '0');
+    await AsyncStorage.setItem('weeklyInterviewCount', String(count + 1));
+    
+    // Reset count if it's a new week
+    const lastReset = await AsyncStorage.getItem('weeklyCountResetDate');
+    const now = new Date();
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    if (!lastReset || new Date(lastReset) < startOfWeek) {
+      await AsyncStorage.setItem('weeklyInterviewCount', '1');
+      await AsyncStorage.setItem('weeklyCountResetDate', new Date().toISOString());
+    }
+  } catch (error) {
+    console.error('Error incrementing weekly count:', error);
+  }
+};
+
+// ------------------------------------------------------------------
+// REMOTE PUSH TOKEN REGISTRATION
+// Requires a push_token column in user_preferences:
+//   ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS push_token text;
+// ------------------------------------------------------------------
+
+/**
+ * Gets the Expo Push Token and saves it to Supabase so the server
+ * can send remote pushes via the send-push Edge Function.
+ */
+export const registerPushToken = async (): Promise<string | null> => {
+  try {
+    if (Platform.OS === 'web') return null;
+
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) return null;
+
+    // Android requires a notification channel
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#1E3A6E',
+      });
+    }
+
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: EAS_PROJECT_ID });
+    const token = tokenData.data;
+
+    await AsyncStorage.setItem('expoPushToken', token);
+
+    const userId = await AsyncStorage.getItem('userId');
+    if (userId) {
+      await supabase
+        .from('user_preferences')
+        .update({ push_token: token })
+        .eq('user_id', userId);
+    }
+
+    console.log('\u2705 Push token registered:', token);
+    return token;
+  } catch (error) {
+    console.error('Error registering push token:', error);
+    return null;
+  }
+};
+
+/** Removes the push token from Supabase so no further remote pushes are sent. */
+export const unregisterPushToken = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem('expoPushToken');
+
+    const userId = await AsyncStorage.getItem('userId');
+    if (userId) {
+      await supabase
+        .from('user_preferences')
+        .update({ push_token: null })
+        .eq('user_id', userId);
+    }
+
+    console.log('Push token unregistered');
+  } catch (error) {
+    console.error('Error unregistering push token:', error);
+  }
+};
+
+export const incrementWeeklyInterviewCount = async (): Promise<void> => {
     const count = parseInt(await AsyncStorage.getItem('weeklyInterviewCount') || '0');
     await AsyncStorage.setItem('weeklyInterviewCount', String(count + 1));
     

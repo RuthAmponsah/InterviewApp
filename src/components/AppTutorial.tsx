@@ -243,7 +243,7 @@ export default function AppTutorial({ visible, onClose }: Props) {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>📖 How to Use the App</Text>
-            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton} accessibilityLabel="Close tutorial" accessibilityRole="button">
               <Ionicons name="close" size={24} color={isDark ? '#fff' : '#333'} />
             </TouchableOpacity>
           </View>

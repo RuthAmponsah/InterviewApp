@@ -19,6 +19,8 @@ import {
   scheduleDailyReminder, 
   cancelAllReminders,
   sendTestNotification,
+  registerPushToken,
+  unregisterPushToken,
 } from "../services/notificationService";
 
 const Notifications: React.FC = () => {
@@ -94,6 +96,20 @@ const Notifications: React.FC = () => {
     setter(value);
     await AsyncStorage.setItem(key, value.toString());
     
+    // Register / unregister remote push token + cancel all local notifications
+    if (key === "notif_push") {
+      if (value) {
+        await registerPushToken();
+        // Re-schedule local reminders if practice toggle is on
+        if (practiceReminders && permissionsGranted) {
+          await scheduleDailyReminder(reminderTime.hour, reminderTime.minute);
+        }
+      } else {
+        await unregisterPushToken();
+        await cancelAllReminders(); // cancel ALL local scheduled notifications
+      }
+    }
+
     // Handle practice reminders scheduling
     if (key === "notif_practice") {
       if (value && permissionsGranted) {

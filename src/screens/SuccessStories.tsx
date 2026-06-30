@@ -46,6 +46,7 @@ const SuccessStories: React.FC = () => {
       const { data, error } = await supabase
         .from('success_stories')
         .select('*')
+        .eq('approved', true)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -98,7 +99,13 @@ const SuccessStories: React.FC = () => {
           </View>
         ) : stories.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📝</Text>
+            <View style={styles.emptyIllustration}>
+              <View style={styles.emptyCircle}>
+                <Ionicons name="ribbon-outline" size={52} color={colors.primaryBlue} />
+              </View>
+              <View style={styles.emptyDotA} />
+              <View style={styles.emptyDotB} />
+            </View>
             <Text style={styles.emptyTitle}>No stories yet</Text>
             <Text style={styles.emptyText}>
               Be the first to share your success story and inspire others!
@@ -209,9 +216,38 @@ const makeStyles = (colors: any, isDark: boolean) =>
       paddingVertical: 60,
       paddingHorizontal: 30,
     },
-    emptyIcon: {
-      fontSize: 64,
-      marginBottom: 16,
+    emptyIllustration: {
+      width: 120,
+      height: 120,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    emptyCircle: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: colors.primaryBlue + '14',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyDotA: {
+      position: 'absolute',
+      top: 6,
+      right: 8,
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: colors.primaryBlue + '28',
+    },
+    emptyDotB: {
+      position: 'absolute',
+      bottom: 6,
+      left: 10,
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primaryBlue + '1e',
     },
     emptyTitle: {
       ...typography.headingMedium,

@@ -211,7 +211,7 @@ const Jobs: React.FC = () => {
                 onChangeText={setDropdownSearch}
               />
               {dropdownSearch ? (
-                <TouchableOpacity onPress={() => setDropdownSearch('')}>
+                <TouchableOpacity onPress={() => setDropdownSearch('')} accessibilityLabel="Clear search" accessibilityRole="button">
                   <Ionicons name="close-circle" size={18} color={colors.primaryBlue} />
                 </TouchableOpacity>
               ) : null}
@@ -264,7 +264,7 @@ const Jobs: React.FC = () => {
           onChangeText={setLocationFilter}
         />
         {locationFilter ? (
-          <TouchableOpacity onPress={() => setLocationFilter('')}>
+          <TouchableOpacity onPress={() => setLocationFilter('')} accessibilityLabel="Clear location filter" accessibilityRole="button">
             <Ionicons name="close-circle" size={20} color={colors.primaryBlue} />
           </TouchableOpacity>
         ) : (
@@ -309,11 +309,17 @@ const Jobs: React.FC = () => {
         </View>
       ) : filteredJobs.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons 
-            name={selectedCategory === 'Saved Jobs' ? 'bookmark-outline' : 'briefcase-outline'} 
-            size={60} 
-            color={isDark ? '#444' : '#ccc'} 
-          />
+          <View style={styles.emptyIllustration}>
+            <View style={styles.emptyCircle}>
+              <Ionicons
+                name={selectedCategory === 'Saved Jobs' ? 'bookmark-outline' : 'briefcase-outline'}
+                size={52}
+                color={colors.primaryBlue}
+              />
+            </View>
+            <View style={styles.emptyDotA} />
+            <View style={styles.emptyDotB} />
+          </View>
           <Text style={styles.emptyTitle}>
             {selectedCategory === 'Saved Jobs' 
               ? 'No saved jobs yet'
@@ -372,6 +378,8 @@ const Jobs: React.FC = () => {
                   <TouchableOpacity
                     onPress={() => toggleSaveJob(item.id)}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    accessibilityLabel={isSaved ? 'Remove saved job' : 'Save job'}
+                    accessibilityRole="button"
                   >
                     <Ionicons
                       name={isSaved ? "bookmark" : "bookmark-outline"}
@@ -692,6 +700,39 @@ const makeStyles = (colors: any, isDark: boolean) =>
     alignItems: 'center',
     paddingHorizontal: 40,
     paddingBottom: 100,
+  },
+  emptyIllustration: {
+    width: 120,
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  emptyCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.primaryBlue + '14',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyDotA: {
+    position: 'absolute',
+    top: 6,
+    right: 8,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.primaryBlue + '28',
+  },
+  emptyDotB: {
+    position: 'absolute',
+    bottom: 6,
+    left: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primaryBlue + '1e',
   },
   emptyTitle: {
     ...typography.headingSmall,

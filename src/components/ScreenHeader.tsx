@@ -16,6 +16,8 @@ export default function ScreenHeader() {
         style={styles.back}
         onPress={() => navigation.goBack()}
         activeOpacity={0.7}
+        accessibilityLabel="Go back"
+        accessibilityRole="button"
       >
         <Ionicons name="chevron-back" size={20} color={colors.primaryBlue} />
         <Text style={[styles.backText, { color: colors.primaryBlue }]}>Back</Text>

@@ -9,7 +9,7 @@ export default function BackButton() {
   const { colors } = useTheme();
 
   return (
-    <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityLabel="Go back" accessibilityRole="button">
       <Ionicons name="chevron-back" size={20} color={colors.primaryBlue} />
       <Text style={[styles.text, { color: colors.primaryBlue }]}>Back</Text>
     </TouchableOpacity>

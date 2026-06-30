@@ -22,6 +22,8 @@ import { supabase } from "../config/supabase";
 import { initializeInterviewChat, sendMessageToAI, speakText, stopSpeaking } from "../services/aiService";
 import { startRecording, stopRecording, transcribeAudio, cancelRecording } from "../services/voiceRecordingService";
 import { incrementWeeklyCount, checkAndSendStreakMilestone, scheduleStreakWarning } from "../services/notificationService";
+import { queueInterview } from '../services/offlineQueue';
+import NetInfo from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'InterviewChat'>;
@@ -350,32 +352,37 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
           console.error('This will cause RLS policy violation');
         }
 
-        // Save to interview_history (even if no job role, use 'Unknown')
-        // Include transcript of the conversation
+        // Save to interview_history — queue locally if offline or insert fails
         const transcript = JSON.stringify(latestMessages.map(m => ({ from: m.from, text: m.text })));
-        
-        const { data: insertedInterview, error: insertError } = await supabase
-          .from('interview_history')
-          .insert({
-            user_id: userId,
-            job_role: jobRole || 'Unknown',
-            mode: mode,
-            duration_minutes: durationMinutes,
-            date: new Date().toISOString(),
-            transcript: transcript,
-          })
-          .select()
-          .single();
+        const interviewRecord = {
+          user_id: userId,
+          job_role: jobRole || 'Unknown',
+          mode: mode,
+          duration_minutes: durationMinutes,
+          date: new Date().toISOString(),
+          transcript: transcript,
+        };
 
-        if (insertError) {
-          console.error('❌ Error inserting interview:', insertError);
-          console.error('Full error details:', JSON.stringify(insertError, null, 2));
-          console.error('Insert failed - interviewId will be undefined');
-          // Continue anyway to show feedback, but note the issue
+        const { isConnected } = await NetInfo.fetch();
+        let insertedInterview: any = null;
+
+        if (!isConnected) {
+          console.log('📵 Offline — queuing interview for later sync');
+          await queueInterview(interviewRecord);
         } else {
-          console.log('✅ Interview saved successfully!');
-          console.log('Interview data:', insertedInterview);
-          console.log('Interview ID:', insertedInterview?.id);
+          const { data, error: insertError } = await supabase
+            .from('interview_history')
+            .insert(interviewRecord)
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('❌ Insert failed — queuing for retry:', insertError.message);
+            await queueInterview(interviewRecord);
+          } else {
+            insertedInterview = data;
+            console.log('✅ Interview saved:', insertedInterview?.id);
+          }
         }
 
         // Update user_progress total_interviews count
@@ -401,8 +408,11 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
           await checkAndSendStreakMilestone(currentStreak);
         }
         
-        // Re-schedule streak warning for tomorrow
-        await scheduleStreakWarning();
+        // Re-schedule streak warning for tomorrow (only if push notifications are enabled)
+        const pushEnabled = await AsyncStorage.getItem('notif_push');
+        if (pushEnabled !== 'false') {
+          await scheduleStreakWarning();
+        }
         
         const interviewId = insertedInterview?.id;
         
@@ -518,6 +528,8 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
             ]}
             onPress={handleVoicePress}
             disabled={isSpeaking || isAiTyping}
+            accessibilityLabel={isRecording ? 'Stop recording' : isTranscribing ? 'Transcribing' : isSpeaking ? 'Aya is speaking' : 'Start voice recording'}
+            accessibilityRole="button"
           >
             <Ionicons 
               name={isRecording ? "stop" : isTranscribing ? "hourglass" : isSpeaking ? "volume-high" : "mic"} 

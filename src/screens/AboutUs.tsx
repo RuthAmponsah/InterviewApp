@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
       lineHeight: 16,
       opacity: 0.6,
       marginBottom: 6,
-    color: '#1E63FF',
+    color: '#1E3A6E',
     },
   title: {
     ...typography.headingMedium,

@@ -297,7 +297,13 @@ const AllFeedback: React.FC = () => {
           </View>
         ) : feedbackList.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📝</Text>
+            <View style={styles.emptyIllustration}>
+              <View style={styles.emptyCircle}>
+                <Ionicons name="chatbubble-ellipses-outline" size={52} color={colors.primaryBlue} />
+              </View>
+              <View style={styles.emptyDotA} />
+              <View style={styles.emptyDotB} />
+            </View>
             <Text style={styles.emptyTitle}>Nothing to see yet</Text>
             <Text style={styles.emptyText}>
               Complete your first interview to start receiving personalized feedback and track your progress!
@@ -431,6 +437,8 @@ const AllFeedback: React.FC = () => {
                   setShowTranscript(false);
                 }}
                 style={styles.closeButton}
+                accessibilityLabel="Close transcript"
+                accessibilityRole="button"
               >
                 <Ionicons name="close" size={22} color={isDark ? '#fff' : '#666'} />
               </TouchableOpacity>
@@ -558,9 +566,38 @@ const makeStyles = (colors: any, isDark: boolean) =>
       paddingVertical: 60,
       paddingHorizontal: 30,
     },
-    emptyIcon: {
-      fontSize: 64,
-      marginBottom: 16,
+    emptyIllustration: {
+      width: 120,
+      height: 120,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    emptyCircle: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: colors.primaryBlue + '14',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyDotA: {
+      position: 'absolute',
+      top: 6,
+      right: 8,
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: colors.primaryBlue + '28',
+    },
+    emptyDotB: {
+      position: 'absolute',
+      bottom: 6,
+      left: 10,
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primaryBlue + '1e',
     },
     emptyTitle: {
       ...typography.headingMedium,

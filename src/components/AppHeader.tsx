@@ -23,6 +23,8 @@ export default function AppHeader({ showBell = false }: AppHeaderProps) {
           style={[styles.bellButton, { backgroundColor: isDark ? "#2a2a2a" : "#fff" }]}
           onPress={() => navigation.navigate("Notifications")}
           activeOpacity={0.8}
+          accessibilityLabel="Notifications"
+          accessibilityRole="button"
         >
           <Ionicons
             name="notifications-outline"

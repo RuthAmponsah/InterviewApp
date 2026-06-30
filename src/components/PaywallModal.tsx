@@ -133,7 +133,7 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
       <View style={styles.overlay}>
         <View style={styles.container}>
           {/* Close Button */}
-          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+          <TouchableOpacity style={styles.closeButton} onPress={handleClose} accessibilityLabel="Close" accessibilityRole="button">
             <Ionicons name="close" size={24} color={isDark ? '#fff' : '#666'} />
           </TouchableOpacity>
 

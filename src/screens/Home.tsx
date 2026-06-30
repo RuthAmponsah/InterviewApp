@@ -1,6 +1,6 @@
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -23,8 +23,8 @@ import { typography } from "../theme/colors";
 import { supabase } from '../config/supabase';
 import { SkeletonCard } from '../components/Skeleton';
 import OnboardingWalkthrough from '../components/OnboardingWalkthrough';
-import { Modal } from 'react-native';
 import PaywallModal from '../components/PaywallModal';
+import { flushInterviewQueue } from '../services/offlineQueue';
 
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -60,6 +60,8 @@ const Home: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [streakBroken, setStreakBroken] = useState(false);
   const [canRecoverStreak, setCanRecoverStreak] = useState(false);
+  const [showJobRolePrompt, setShowJobRolePrompt] = useState(false);
+  const [syncedSessions, setSyncedSessions] = useState(0);
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
   const [showPaywall, setShowPaywall] = useState(false);
   
@@ -99,6 +101,8 @@ const Home: React.FC = () => {
       if (storedName) {
         setName(storedName);
       }
+      const storedRole = await AsyncStorage.getItem("jobRole");
+      if (!storedRole) setShowJobRolePrompt(true);
     };
     
     loadName();
@@ -304,6 +308,15 @@ const Home: React.FC = () => {
     }
   }, [loading]);
 
+  // Flush offline-queued interviews on focus
+  useFocusEffect(
+    useCallback(() => {
+      flushInterviewQueue().then(count => {
+        if (count > 0) setSyncedSessions(count);
+      });
+    }, [])
+  );
+
   // Pull to refresh handler
   const onRefresh = async () => {
     setRefreshing(true);
@@ -332,6 +345,43 @@ const Home: React.FC = () => {
 
       <Text style={styles.greeting}>{greeting}, {name.split(' ')[0]}</Text>
       <Text style={styles.subGreeting}>Ready for your next interview?</Text>
+
+      {/* Synced sessions banner */}
+      {syncedSessions > 0 && (
+        <View style={styles.syncBanner}>
+          <Ionicons name="checkmark-circle-outline" size={16} color="#10b981" />
+          <Text style={styles.syncBannerText}>
+            {syncedSessions} session{syncedSessions > 1 ? 's' : ''} synced from offline
+          </Text>
+          <TouchableOpacity onPress={() => setSyncedSessions(0)} style={styles.freezeDismissBtn} accessibilityLabel="Dismiss" accessibilityRole="button">
+            <Ionicons name="close" size={14} color={isDark ? '#9ca3af' : '#6b7280'} />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Job Role Prompt Banner */}
+      {showJobRolePrompt && (
+        <View style={styles.rolePromptBanner}>
+          <View style={styles.freezeBannerLeft}>
+            <Ionicons name="briefcase-outline" size={20} color={colors.primaryBlue} />
+            <View style={styles.freezeBannerTextBlock}>
+              <Text style={styles.rolePromptTitle}>Set your job role</Text>
+              <Text style={styles.rolePromptSub}>Personalise Aya's coaching for you</Text>
+            </View>
+          </View>
+          <View style={styles.freezeBannerActions}>
+            <TouchableOpacity
+              onPress={() => { setShowJobRolePrompt(false); navigation.navigate('JobPreferences'); }}
+              style={styles.rolePromptBtn}
+            >
+              <Text style={styles.rolePromptBtnText}>Set up</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowJobRolePrompt(false)} style={styles.freezeDismissBtn} accessibilityLabel="Dismiss" accessibilityRole="button">
+              <Ionicons name="close" size={16} color={isDark ? '#9ca3af' : '#6b7280'} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Primary CTA card */}
       <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
@@ -387,6 +437,27 @@ const Home: React.FC = () => {
           <Text style={styles.statCardSubtitle}>{streak} day{streak !== 1 ? 's' : ''} — keep{'\n'}going</Text>
         </View>
       </View>
+
+      {/* Streak Freeze Banner */}
+      {streakBroken && canRecoverStreak && (
+        <View style={styles.freezeBanner}>
+          <View style={styles.freezeBannerLeft}>
+            <Ionicons name="snow-outline" size={20} color="#3b82f6" />
+            <View style={styles.freezeBannerTextBlock}>
+              <Text style={styles.freezeBannerTitle}>Streak Freeze Available</Text>
+              <Text style={styles.freezeBannerSub}>Save your {streak}-day streak</Text>
+            </View>
+          </View>
+          <View style={styles.freezeBannerActions}>
+            <TouchableOpacity onPress={useStreakFreeze} style={styles.freezeUseBtn}>
+              <Text style={styles.freezeUseBtnText}>Use</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={declineStreakFreeze} style={styles.freezeDismissBtn} accessibilityLabel="Dismiss streak freeze" accessibilityRole="button">
+              <Ionicons name="close" size={16} color={isDark ? '#9ca3af' : '#6b7280'} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Latest Feedback */}
       <View style={styles.sectionHeaderRow}>
@@ -472,25 +543,7 @@ const Home: React.FC = () => {
       </TouchableOpacity>
     </ScrollView>
 
-    {/* Streak Freeze Modal */}
-    <Modal transparent visible={streakBroken && canRecoverStreak} animationType="fade">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalBox}>
-          <Text style={styles.modalIcon}>🔥❄️</Text>
-          <Text style={styles.modalTitle}>Streak Freeze Available!</Text>
-          <Text style={styles.modalText}>
-            You missed a day, but you can use a Streak Freeze to save your {streak}-day streak! 
-            You get one free freeze - use it wisely.
-          </Text>
-          <TouchableOpacity style={styles.modalButton} onPress={useStreakFreeze}>
-            <Text style={styles.modalButtonText}>Use Streak Freeze</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.modalButtonSecondary} onPress={declineStreakFreeze}>
-            <Text style={styles.modalButtonSecondaryText}>Start Over</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
+
     <PaywallModal
       visible={showPaywall}
       onClose={() => setShowPaywall(false)}
@@ -687,47 +740,104 @@ const makeStyles = (colors: any, isDark: boolean) =>
     fontWeight: '600',
     marginTop: 8,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
+  freezeBanner: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  modalBox: {
-    width: '85%',
-    backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: isDark ? '#1e3a5f' : '#eff6ff',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: isDark ? '#333' : '#E5E7EB',
+    borderColor: isDark ? '#2563eb44' : '#bfdbfe',
   },
-  modalIcon: { fontSize: 48, marginBottom: 12 },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: isDark ? '#fff' : '#111',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  modalText: {
-    fontSize: 15,
-    color: isDark ? '#b5b5b5' : '#6B7280',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 22,
-  },
-  modalButton: {
-    width: '100%',
-    backgroundColor: colors.primaryBlue,
-    paddingVertical: 14,
-    borderRadius: 12,
+  freezeBannerLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 10,
+    flex: 1,
   },
-  modalButtonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 15 },
-  modalButtonSecondary: { paddingVertical: 12 },
-  modalButtonSecondaryText: { color: colors.textMuted, fontWeight: '600', fontSize: 15 },
+  freezeBannerTextBlock: {
+    flex: 1,
+  },
+  freezeBannerTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: isDark ? '#93c5fd' : '#1d4ed8',
+  },
+  freezeBannerSub: {
+    fontSize: 12,
+    color: isDark ? '#60a5fa' : '#3b82f6',
+    marginTop: 1,
+  },
+  freezeBannerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  freezeUseBtn: {
+    backgroundColor: '#2563eb',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  freezeUseBtnText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  freezeDismissBtn: {
+    padding: 4,
+  },
+  rolePromptBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: isDark ? '#1a2f50' : '#eef2ff',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: isDark ? '#1E3A6E' : '#c7d2fe',
+  },
+  rolePromptTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: isDark ? '#93c5fd' : colors.primaryBlue,
+  },
+  rolePromptSub: {
+    fontSize: 12,
+    color: isDark ? '#60a5fa' : '#4f6eb0',
+    marginTop: 1,
+  },
+  rolePromptBtn: {
+    backgroundColor: colors.primaryBlue,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  rolePromptBtnText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  syncBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: isDark ? '#052e16' : '#f0fdf4',
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: isDark ? '#16a34a44' : '#bbf7d0',
+  },
+  syncBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: isDark ? '#4ade80' : '#15803d',
+    fontWeight: '500',
+  },
 });
 
 export default Home;

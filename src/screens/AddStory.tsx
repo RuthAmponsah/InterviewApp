@@ -111,6 +111,7 @@ const AddStory: React.FC = () => {
           story: story.trim(),
           interview_count: interviewCount,
           timeframe: timeframe || 'N/A',
+          approved: false,
         });
 
       if (error) {
@@ -118,8 +119,8 @@ const AddStory: React.FC = () => {
         Alert.alert('Error', 'Failed to submit your story. Please try again.');
       } else {
         Alert.alert(
-          'Success!',
-          'Thank you for sharing your story! It will inspire others on their journey.',
+          'Story Submitted!',
+          'Thank you! Your story is under review and will appear publicly once approved. This usually takes 1-2 days.',
           [
             {
               text: 'OK',

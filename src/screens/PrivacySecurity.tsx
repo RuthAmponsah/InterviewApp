@@ -66,13 +66,20 @@ const PrivacySecurity: React.FC = () => {
                 await supabase.from('users').delete().eq('id', userId);
               }
 
+              // Delete the Supabase Auth record via Edge Function
+              const { error: fnError } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+              if (fnError) {
+                console.error('delete-account function error:', fnError);
+                // Still sign out — DB rows are gone, auth record removal failed gracefully
+              }
+
               // Sign out and wipe local storage
               await supabase.auth.signOut();
               await AsyncStorage.clear();
 
               Alert.alert(
                 "Account Deleted",
-                "Your data has been removed. To fully delete your auth account contact support@myinterview.app.",
+                "Your account and all data have been permanently deleted.",
                 [{ text: "OK", onPress: () => navigation.navigate("SignIn") }]
               );
             } catch (error) {

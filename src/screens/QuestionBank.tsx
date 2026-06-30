@@ -576,7 +576,7 @@ export default function QuestionBank({ navigation }: any) {
                 onChangeText={setSearchQuery}
               />
               {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityLabel="Clear search" accessibilityRole="button">
                   <Ionicons name="close-circle" size={20} color={colors.textMuted} />
                 </TouchableOpacity>
               )}
@@ -624,7 +624,13 @@ export default function QuestionBank({ navigation }: any) {
               <View style={styles.questionsList}>
                 {filteredQuestions.length === 0 ? (
                   <View style={styles.emptyState}>
-                    <Ionicons name="document-text-outline" size={48} color={colors.textMuted} />
+                    <View style={styles.emptyIllustration}>
+                      <View style={styles.emptyCircle}>
+                        <Ionicons name="help-circle-outline" size={52} color={colors.primaryBlue} />
+                      </View>
+                      <View style={styles.emptyDotA} />
+                      <View style={styles.emptyDotB} />
+                    </View>
                     <Text style={styles.emptyText}>No questions yet</Text>
                     <Text style={styles.emptySubtext}>Add your first custom question!</Text>
                   </View>
@@ -701,6 +707,8 @@ export default function QuestionBank({ navigation }: any) {
                               <TouchableOpacity
                                 style={styles.deleteButton}
                                 onPress={() => deleteCustomQuestion(question.id)}
+                                accessibilityLabel="Delete question"
+                                accessibilityRole="button"
                               >
                                 <Ionicons name="trash-outline" size={20} color="#EF4444" />
                               </TouchableOpacity>
@@ -1006,6 +1014,39 @@ const makeStyles = (colors: any, isDark: boolean) =>
     emptyState: {
       alignItems: 'center',
       paddingVertical: 48,
+    },
+    emptyIllustration: {
+      width: 120,
+      height: 120,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    emptyCircle: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: colors.primaryBlue + '14',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyDotA: {
+      position: 'absolute',
+      top: 6,
+      right: 8,
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: colors.primaryBlue + '28',
+    },
+    emptyDotB: {
+      position: 'absolute',
+      bottom: 6,
+      left: 10,
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primaryBlue + '1e',
     },
     emptyText: {
       ...typography.bodyMedium,

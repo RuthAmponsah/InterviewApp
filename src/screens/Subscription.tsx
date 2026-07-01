@@ -16,6 +16,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
+  getPackageSubscriptionTier,
   getSubscriptionOfferings, 
   purchaseSubscription, 
   restorePurchases 
@@ -45,10 +46,10 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
     const offerings = await getSubscriptionOfferings();
     if (offerings?.availablePackages) {
       const monthly = offerings.availablePackages.find(pkg =>
-        pkg.packageType === 'MONTHLY' || pkg.identifier.toLowerCase().includes('monthly')
+        getPackageSubscriptionTier(pkg) === 'monthly'
       );
       const annual = offerings.availablePackages.find(pkg =>
-        pkg.packageType === 'ANNUAL' || pkg.identifier.toLowerCase().includes('annual')
+        getPackageSubscriptionTier(pkg) === 'annual'
       );
       setMonthlyPackage(monthly || null);
       setAnnualPackage(annual || null);
@@ -62,11 +63,9 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
     const packageToPurchase = selectedPlan === 'annual' ? annualPackage : monthlyPackage;
     
     if (!packageToPurchase) {
-      // Fallback to mock purchase if RevenueCat not configured
       Alert.alert(
-        '🎉 Success!',
-        `You're now on the ${selectedPlan === 'annual' ? 'Annual' : 'Monthly'} plan.\n\nEnjoy unlimited interviews!`,
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        'Subscription Unavailable',
+        'Subscription products are not available right now. Please try again later.'
       );
       setLoading(false);
       return;

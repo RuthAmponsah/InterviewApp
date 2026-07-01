@@ -19,11 +19,12 @@
       "bundleIdentifier": "com.myinterview.app",
       "infoPlist": {
         "CFBundleDisplayName": "My Interview",
+        "CFBundleName": "My Interview",
         "NSPhotoLibraryUsageDescription": "MY INTERVIEW needs access to your photo library to let you choose a profile photo.",
         "NSUserNotificationsUsageDescription": "MY INTERVIEW would like to send you interview reminders and progress updates to help you stay consistent with your practice.",
         "NSDocumentsFolderUsageDescription": "MY INTERVIEW needs access to your documents to let you upload your CV for AI analysis.",
-        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone.",
+        "NSSpeechRecognitionUsageDescription": "Allow My Interview to use speech recognition.",
+        "NSMicrophoneUsageDescription": "Allow My Interview to use the microphone.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },

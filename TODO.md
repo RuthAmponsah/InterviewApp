@@ -2,18 +2,18 @@
 
 ## High Priority
 
-- [ ] **Email delivery audit**: Verify all transactional emails (sign-up confirmation, password reset, magic link) are actually landing in inboxes — check Supabase Auth → Logs → Email Logs, test with a fresh account using a non-Gmail address, and confirm SMTP provider (Resend/SendGrid) is configured and not using the default Supabase rate-limited sender.
 - [ ] **App Store submission**: Update screenshots, bump build number, verify RevenueCat production key (`appl_...`) is set in `.env` before submitting.
 
 ## Medium Priority
 
 - [ ] **Interview experience screen**: Currently marked "COMING SOON" in Settings. Build out voice avatar, difficulty selector, and AI persona options.
-- [ ] **Sector packs — receipt validation**: `purchaseSectorPack` checks `nonSubscriptionTransactions` client-side. Add server-side receipt verification via RevenueCat webhook → Supabase Edge Function for security.
-- [ ] **CV analysis edge function**: `supabase/functions/extract-cv-text` exists but needs testing end-to-end. Verify Groq prompt quality and file size limits.
 - [ ] **Android build**: App has only been tested on iOS. Test on Android — check RevenueCat Android key, deep links, and font rendering.
 
 ## Done ✅
 
+- [x] **Email delivery audit**: Verify all transactional emails (sign-up confirmation, password reset, magic link) are actually landing in inboxes — check Supabase Auth → Logs → Email Logs, test with a fresh account using a non-Gmail address, and confirm SMTP provider (Resend/SendGrid) is configured and not using the default Supabase rate-limited sender.
+- [x] **Sector packs — receipt validation**: `purchaseSectorPack` checks `nonSubscriptionTransactions` client-side. Add server-side receipt verification via RevenueCat webhook → Supabase Edge Function for security.
+- [x] **CV analysis edge function**: `supabase/functions/extract-cv-text` exists but needs testing end-to-end. Verify Groq prompt quality and file size limits.
 - [x] **Delete account — full auth deletion**: Edge Function `supabase/functions/delete-account/index.ts` created. Verifies caller JWT, then calls `admin.deleteUser(userId)` with service-role key. Client (`PrivacySecurity.tsx`) calls it after clearing DB rows.
 - [x] **Push notifications**: `registerPushToken()`/`unregisterPushToken()` added to `notificationService.ts` — called when user toggles Push Notifications switch. Token saved to `user_preferences.push_token`. Edge Function `send-push` created for server-side sends via Expo Push API. **Setup:** `ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS push_token text;` then `npx supabase functions deploy send-push`.
 - [x] **Success stories moderation**: Stories insert with `approved: false`. `SuccessStories.tsx` filters `.eq('approved', true)` so only approved entries show publicly. Submit message tells users to expect 1-2 day review. **Setup:** `ALTER TABLE success_stories ADD COLUMN IF NOT EXISTS approved boolean DEFAULT false;` — approve stories via Supabase Table Editor.

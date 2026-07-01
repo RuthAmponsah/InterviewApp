@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Linking,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from '../theme/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,9 +39,11 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
   const [purchasedPacks, setPurchasedPacks] = useState<string[]>([]);
   const [loading, setLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadPurchasedPacks();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadPurchasedPacks();
+    }, [])
+  );
 
   const loadPurchasedPacks = async () => {
     const packs = await getPurchasedPacks();
@@ -173,6 +176,24 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
           Unlock specialized interview questions tailored to your industry. One-time purchase, lifetime access.
         </Text>
 
+        <TouchableOpacity
+          style={styles.restorePrompt}
+          onPress={handleRestore}
+          disabled={loading === 'restore'}
+        >
+          {loading === 'restore' ? (
+            <ActivityIndicator color={colors.primaryBlue} size="small" />
+          ) : (
+            <>
+              <Ionicons name="refresh-circle-outline" size={22} color={colors.primaryBlue} />
+              <View style={styles.restorePromptTextWrap}>
+                <Text style={styles.restorePromptTitle}>Already bought a pack?</Text>
+                <Text style={styles.restorePromptSubtitle}>Restore purchases to unlock it on this account.</Text>
+              </View>
+            </>
+          )}
+        </TouchableOpacity>
+
         {packs.map((pack) => (
           <View
             key={pack.id}
@@ -221,7 +242,7 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
                 <View style={{ gap: 8 }}>
                   <View style={[styles.purchasedBadge, { backgroundColor: '#10b981' }]}>
                     <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                    <Text style={styles.purchasedText}>Purchased</Text>
+                    <Text style={styles.purchasedText}>Owned</Text>
                   </View>
                   <TouchableOpacity
                     style={[styles.buyButton, { backgroundColor: '#10b981' }]}
@@ -303,8 +324,33 @@ const makeStyles = (colors: any, isDark: boolean) =>
     introText: {
       fontSize: 16,
       color: colors.textSecondary,
-      marginBottom: 24,
+      marginBottom: 14,
       lineHeight: 24,
+    },
+    restorePrompt: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.primaryBlue + '10',
+      borderWidth: 1,
+      borderColor: colors.primaryBlue + '30',
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 24,
+    },
+    restorePromptTextWrap: {
+      flex: 1,
+    },
+    restorePromptTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    restorePromptSubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 2,
+      lineHeight: 18,
     },
     packCard: {
       backgroundColor: colors.cardBackground,
@@ -419,9 +465,9 @@ const makeStyles = (colors: any, isDark: boolean) =>
       borderRadius: 12,
     },
     purchasedText: {
-      color: '#10b981',
+      color: '#fff',
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: '700',
       marginLeft: 8,
     },
     infoCard: {

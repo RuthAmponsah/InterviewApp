@@ -44,7 +44,7 @@ const KNOWLEDGE_BASE = [
   {
     keywords: ["paste", "analyze", "analyse"],
     answer:
-      "Paste your CV text and tap Analyze CV. Aya will return suggestions based on your target job role.",
+      "Paste your CV text and tap Analyse CV. Aya will return suggestions based on your target job role.",
   },
   {
     keywords: ["saved jobs", "jobs"],

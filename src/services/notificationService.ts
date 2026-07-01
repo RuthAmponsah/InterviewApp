@@ -436,6 +436,7 @@ export const unregisterPushToken = async (): Promise<void> => {
 };
 
 export const incrementWeeklyInterviewCount = async (): Promise<void> => {
+  try {
     const count = parseInt(await AsyncStorage.getItem('weeklyInterviewCount') || '0');
     await AsyncStorage.setItem('weeklyInterviewCount', String(count + 1));
     

@@ -23,6 +23,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from '../config/supabase';
 import { getQuestionAnswerFeedback, type QuestionAnswerFeedback } from "../services/aiService";
 import PaywallModal from "../components/PaywallModal";
+import { checkSubscriptionStatus, isPremiumTier } from "../services/purchaseService";
 
 type QuestionCategory = 'Behavioral' | 'Technical' | 'Situational' | 'Strengths' | 'Role-Specific' | 'Custom';
 
@@ -177,16 +178,8 @@ export default function QuestionBank({ navigation }: any) {
       const jobRoleStored = await AsyncStorage.getItem('jobRole');
       
       if (userId) {
-        // Load subscription tier from database
-        const { data, error } = await supabase
-          .from('user_preferences')
-          .select('subscription_tier')
-          .eq('user_id', userId)
-          .single();
-        
-        if (data) {
-          setSubscriptionTier(data.subscription_tier || 'free');
-        }
+        const status = await checkSubscriptionStatus();
+        setSubscriptionTier(status.tier);
       }
       
       if (jobRoleStored) {
@@ -463,7 +456,7 @@ export default function QuestionBank({ navigation }: any) {
       return;
     }
 
-    if (subscriptionTier === 'free' && aiUsageCount >= AI_FREE_LIMIT) {
+    if (!isPremiumTier(subscriptionTier) && aiUsageCount >= AI_FREE_LIMIT) {
       Alert.alert(
         'AI Feedback Limit Reached',
         'You have used your 2 free AI feedback requests for today. Upgrade for unlimited feedback.',
@@ -490,7 +483,7 @@ export default function QuestionBank({ navigation }: any) {
 
       setAiFeedback(feedback);
 
-      if (subscriptionTier === 'free') {
+      if (!isPremiumTier(subscriptionTier)) {
         await incrementAiUsage();
       }
     } catch (error) {
@@ -556,7 +549,7 @@ export default function QuestionBank({ navigation }: any) {
             </View>
 
             {/* Premium unlock message for role-specific */}
-            {subscriptionTier === 'free' && (
+            {!isPremiumTier(subscriptionTier) && (
               <View style={[styles.premiumUnlockBanner, { backgroundColor: colors.primaryBlue + '15', borderColor: colors.primaryBlue, borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 20, flexDirection: 'row', alignItems: 'center' }]}>
                 <Ionicons name="lock-closed" size={16} color={colors.primaryBlue} style={{ marginRight: 8 }} />
                 <Text style={[styles.premiumUnlockText, { color: colors.primaryBlue, fontSize: 13 }]}>
@@ -637,7 +630,7 @@ export default function QuestionBank({ navigation }: any) {
                 ) : (
                   filteredQuestions.map((question) => (
                     <View key={question.id}>
-                      {question.isPremium && subscriptionTier === 'free' ? (
+                      {question.isPremium && !isPremiumTier(subscriptionTier) ? (
                         <TouchableOpacity 
                           style={[styles.questionCard, { backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF', borderWidth: 1, borderColor: isDark ? '#333' : '#E5E7EB' }]}
                           onPress={() => setShowPaywall(true)}
@@ -791,7 +784,7 @@ Result: What was the outcome?"
                 </TouchableOpacity>
 
                 <View style={styles.aiSection}>
-                  {subscriptionTier === 'free' && (
+                  {!isPremiumTier(subscriptionTier) && (
                     <Text style={styles.aiUsageText}>
                       Free AI feedback left today: {Math.max(0, AI_FREE_LIMIT - aiUsageCount)}
                     </Text>

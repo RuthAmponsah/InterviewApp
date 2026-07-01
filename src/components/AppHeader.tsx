@@ -7,16 +7,17 @@ import { useTheme } from "../theme/ThemeContext";
 
 interface AppHeaderProps {
   showBell?: boolean;
+  horizontalPadding?: number;
 }
 
-export default function AppHeader({ showBell = false }: AppHeaderProps) {
+export default function AppHeader({ showBell = false, horizontalPadding = 0 }: AppHeaderProps) {
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.row, { paddingTop: insets.top + 8 }]}>
+    <View style={[styles.row, { paddingTop: insets.top + 8, paddingHorizontal: horizontalPadding }]}>
       <Text style={[styles.brand, { color: colors.primaryBlue }]}>MY INTERVIEW</Text>
       {showBell && (
         <TouchableOpacity

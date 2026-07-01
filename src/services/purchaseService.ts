@@ -4,6 +4,78 @@ import { supabase } from '../config/supabase';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
+export type SubscriptionTier = 'free' | 'monthly' | 'annual' | 'premium';
+
+const SUBSCRIPTION_TIER_CACHE_KEY = 'subscriptionTier';
+
+export const getPackageSubscriptionTier = (pkg: PurchasesPackage): Exclude<SubscriptionTier, 'free' | 'premium'> => {
+  const product = (pkg as any).product || {};
+  const signals = [
+    product.identifier,
+    product.productIdentifier,
+    product.title,
+    product.description,
+    product.subscriptionPeriod,
+    product.period,
+    pkg.identifier,
+    pkg.packageType,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (/year|yearly|annual|annually|12\s*month|p1y/.test(signals)) {
+    return 'annual';
+  }
+
+  return 'monthly';
+};
+
+export const isPremiumTier = (tier?: string | null) =>
+  tier === 'monthly' || tier === 'annual' || tier === 'premium';
+
+const cacheSubscriptionTier = async (tier: SubscriptionTier) => {
+  await AsyncStorage.setItem(SUBSCRIPTION_TIER_CACHE_KEY, tier);
+};
+
+const saveSubscriptionStatus = async (
+  userId: string,
+  tier: SubscriptionTier,
+  expiresAt: string | null,
+) => {
+  const update = {
+    subscription_tier: tier,
+    subscription_expires_at: expiresAt,
+  };
+
+  const { data: existingPrefs, error: selectError } = await supabase
+    .from('user_preferences')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (selectError) {
+    console.error('Error checking subscription status row:', selectError);
+    throw selectError;
+  }
+
+  const { error } = existingPrefs
+    ? await supabase
+        .from('user_preferences')
+        .update(update)
+        .eq('user_id', userId)
+    : await supabase
+        .from('user_preferences')
+        .insert({ user_id: userId, ...update });
+
+  if (error) {
+    console.error('Error saving subscription status:', error);
+    throw error;
+  }
+
+  await cacheSubscriptionTier(tier);
+};
+
 // RevenueCat API Keys
 const envExtra = ((Constants.expoConfig as any)?.extra || (Constants.manifest as any)?.extra || {}) as Record<string, any>;
 const REVENUECAT_IOS_KEY = envExtra.revenuecatIosKey || process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
@@ -76,26 +148,14 @@ export const syncSubscriptionStatus = async () => {
     // Check if user has active premium entitlement
     if (typeof customerInfo.entitlements.active['premium'] !== 'undefined') {
       const entitlement = customerInfo.entitlements.active['premium'];
-      const tier = entitlement.productIdentifier.includes('annual') ? 'annual' : 'monthly';
+      const tier = /year|annual|p1y/i.test(entitlement.productIdentifier) ? 'annual' : 'monthly';
       
-      await supabase
-        .from('user_preferences')
-        .update({
-          subscription_tier: tier,
-          subscription_expires_at: entitlement.expirationDate,
-        })
-        .eq('user_id', userId);
+      await saveSubscriptionStatus(userId, tier, entitlement.expirationDate);
       
       console.log(`✅ Synced subscription: ${tier}`);
     } else {
       // No active subscription, set to free
-      await supabase
-        .from('user_preferences')
-        .update({
-          subscription_tier: 'free',
-          subscription_expires_at: null,
-        })
-        .eq('user_id', userId);
+      await saveSubscriptionStatus(userId, 'free', null);
       
       console.log('✅ Synced subscription: free');
     }
@@ -134,15 +194,13 @@ export const purchaseSubscription = async (
       // Update database
       const userId = await AsyncStorage.getItem('userId');
       if (userId) {
-        const tier = packageToPurchase.identifier.includes('annual') ? 'annual' : 'monthly';
+        const tier = getPackageSubscriptionTier(packageToPurchase);
         
-        await supabase
-          .from('user_preferences')
-          .update({
-            subscription_tier: tier,
-            subscription_expires_at: customerInfo.entitlements.active['premium'].expirationDate,
-          })
-          .eq('user_id', userId);
+        await saveSubscriptionStatus(
+          userId,
+          tier,
+          customerInfo.entitlements.active['premium'].expirationDate,
+        );
       }
       
       return { success: true };
@@ -169,9 +227,41 @@ const SECTOR_PACK_PRODUCT_IDS: Record<string, string> = {
 /**
  * Saves a purchased pack ID to the database for the current user
  */
-const savePurchasedPackToDb = async (packId: string): Promise<void> => {
+const waitForServerPackUnlock = async (
+  packId: string,
+  attempts = 10,
+  delayMs = 2000,
+): Promise<boolean> => {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const purchasedPacks = await getPurchasedPacks();
+    if (purchasedPacks.includes(packId)) {
+      return true;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  return false;
+};
+
+export const syncSectorPacksFromServer = async (): Promise<string[]> => {
+  const { data, error } = await supabase.functions.invoke('sync-sector-packs', {
+    method: 'POST',
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return Array.isArray(data?.purchasedPacks) ? data.purchasedPacks : [];
+};
+
+/**
+ * Direct database helper for reading confirmed server-side purchases.
+ */
+const getPurchasedPacksFromDb = async (): Promise<string[]> => {
   const userId = await AsyncStorage.getItem('userId');
-  if (!userId) return;
+  if (!userId) return [];
 
   const { data: prefs } = await supabase
     .from('user_preferences')
@@ -179,13 +269,7 @@ const savePurchasedPackToDb = async (packId: string): Promise<void> => {
     .eq('user_id', userId)
     .single();
 
-  const currentPacks: string[] = prefs?.purchased_packs || [];
-  if (!currentPacks.includes(packId)) {
-    await supabase
-      .from('user_preferences')
-      .update({ purchased_packs: [...currentPacks, packId] })
-      .eq('user_id', userId);
-  }
+  return prefs?.purchased_packs || [];
 };
 
 /**
@@ -215,15 +299,23 @@ export const purchaseSectorPack = async (
     // Trigger the purchase sheet
     const { customerInfo } = await Purchases.purchaseStoreProduct(products[0]);
 
-    // Confirm the transaction exists in non-subscription transactions
+    // This client-side check is only used to know whether to wait for the
+    // RevenueCat webhook. The database unlock is server-side only.
     const purchased = customerInfo.nonSubscriptionTransactions.some(
       (t) => t.productIdentifier === productId
     );
 
     if (purchased) {
-      await savePurchasedPackToDb(packId);
-      console.log('✅ Sector pack purchased:', packId);
-      return { success: true };
+      const serverUnlocked = await waitForServerPackUnlock(packId);
+      if (serverUnlocked) {
+        console.log('✅ Sector pack verified by server:', packId);
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        error: 'Purchase completed, but server verification is still pending. Please tap Restore Purchases in a moment.',
+      };
     }
 
     return { success: false, error: 'Purchase not confirmed by store.' };
@@ -241,21 +333,13 @@ export const purchaseSectorPack = async (
  */
 export const restoreSectorPacks = async (): Promise<{ restoredCount: number; error?: string }> => {
   try {
-    const customerInfo = await Purchases.restorePurchases();
-    const purchasedIds = customerInfo.nonSubscriptionTransactions.map(
-      (t) => t.productIdentifier
-    );
+    await Purchases.restorePurchases();
+    const before = await getPurchasedPacksFromDb();
+    const after = await syncSectorPacksFromServer();
+    const restoredPackIds = after.filter((packId) => !before.includes(packId));
 
-    const restoredPackIds: string[] = [];
-    for (const [packId, productId] of Object.entries(SECTOR_PACK_PRODUCT_IDS)) {
-      if (purchasedIds.includes(productId)) {
-        await savePurchasedPackToDb(packId);
-        restoredPackIds.push(packId);
-      }
-    }
-
-    console.log('✅ Restored sector packs:', restoredPackIds);
-    return { restoredCount: restoredPackIds.length };
+    console.log('✅ Server-verified sector packs:', after);
+    return { restoredCount: restoredPackIds.length || after.length };
   } catch (error: any) {
     console.error('Restore sector packs error:', error);
     return { restoredCount: 0, error: error.message };
@@ -268,23 +352,30 @@ export const restoreSectorPacks = async (): Promise<{ restoredCount: number; err
 export const restorePurchases = async (): Promise<{ success: boolean; error?: string }> => {
   try {
     const customerInfo = await Purchases.restorePurchases();
+    let restoredPacks: string[] = [];
     
     // Update database with restored purchases
     const userId = await AsyncStorage.getItem('userId');
     if (userId && typeof customerInfo.entitlements.active['premium'] !== 'undefined') {
       const entitlement = customerInfo.entitlements.active['premium'];
-      const tier = entitlement.productIdentifier.includes('annual') ? 'annual' : 'monthly';
+      const tier = /year|annual|p1y/i.test(entitlement.productIdentifier) ? 'annual' : 'monthly';
       
-      await supabase
-        .from('user_preferences')
-        .update({
-          subscription_tier: tier,
-          subscription_expires_at: entitlement.expirationDate,
-        })
-        .eq('user_id', userId);
+      await saveSubscriptionStatus(userId, tier, entitlement.expirationDate);
+    }
+
+    if (userId) {
+      try {
+        restoredPacks = await syncSectorPacksFromServer();
+      } catch (packError) {
+        console.error('Restore sector packs during purchase restore failed:', packError);
+      }
     }
     
-    return { success: true };
+    return {
+      success:
+        typeof customerInfo.entitlements.active['premium'] !== 'undefined' ||
+        restoredPacks.length > 0,
+    };
   } catch (error: any) {
     console.error('Restore error:', error);
     return { success: false, error: error.message };
@@ -296,7 +387,7 @@ export const restorePurchases = async (): Promise<{ success: boolean; error?: st
  */
 export const checkSubscriptionStatus = async (): Promise<{
   isActive: boolean;
-  tier: 'free' | 'monthly' | 'annual';
+  tier: SubscriptionTier;
   expiresAt?: string;
 }> => {
   try {
@@ -311,18 +402,23 @@ export const checkSubscriptionStatus = async (): Promise<{
       .eq('user_id', userId)
       .single();
     
-    if (!prefs || prefs.subscription_tier === 'free') {
+    const cachedTier = await AsyncStorage.getItem(SUBSCRIPTION_TIER_CACHE_KEY);
+    const tier = (prefs?.subscription_tier || cachedTier || 'free') as SubscriptionTier;
+
+    if (!isPremiumTier(tier)) {
+      await cacheSubscriptionTier('free');
       return { isActive: false, tier: 'free' };
     }
     
     // Check if subscription is still active
-    const expiresAt = prefs.subscription_expires_at ? new Date(prefs.subscription_expires_at) : null;
+    const expiresAt = prefs?.subscription_expires_at ? new Date(prefs.subscription_expires_at) : null;
     const isActive = !expiresAt || expiresAt > new Date();
+    await cacheSubscriptionTier(isActive ? tier : 'free');
     
     return {
       isActive,
-      tier: prefs.subscription_tier,
-      expiresAt: prefs.subscription_expires_at,
+      tier: isActive ? tier : 'free',
+      expiresAt: prefs?.subscription_expires_at,
     };
   } catch (error) {
     console.error('Error checking subscription:', error);
@@ -335,16 +431,7 @@ export const checkSubscriptionStatus = async (): Promise<{
  */
 export const getPurchasedPacks = async (): Promise<string[]> => {
   try {
-    const userId = await AsyncStorage.getItem('userId');
-    if (!userId) return [];
-    
-    const { data: prefs } = await supabase
-      .from('user_preferences')
-      .select('purchased_packs')
-      .eq('user_id', userId)
-      .single();
-    
-    return prefs?.purchased_packs || [];
+    return await getPurchasedPacksFromDb();
   } catch (error) {
     console.error('Error fetching packs:', error);
     return [];

@@ -24,6 +24,7 @@ import { supabase } from '../config/supabase';
 import { SkeletonCard } from '../components/Skeleton';
 import OnboardingWalkthrough from '../components/OnboardingWalkthrough';
 import PaywallModal from '../components/PaywallModal';
+import { checkSubscriptionStatus, isPremiumTier } from '../services/purchaseService';
 import { flushInterviewQueue } from '../services/offlineQueue';
 
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
@@ -39,6 +40,36 @@ const dailyTips = [
   "Ask thoughtful questions at the end of an interview.",
   "'I' for personal wins, 'We' for team wins — balance both.",
   "Smile — it naturally boosts your vocal warmth and tone.",
+  "Research the company mission and connect one answer to it.",
+  "Prepare three strong examples you can adapt to different questions.",
+  "Keep answers focused: aim for 60 to 90 seconds unless asked for more.",
+  "Use the job description as your revision checklist.",
+  "Before the interview, write down the top three skills they need.",
+  "When stuck, repeat the question briefly to buy thinking time.",
+  "End answers by linking back to the role you want.",
+  "Prepare one story about teamwork, one about challenge, and one about impact.",
+  "For competency questions, describe your specific action, not just the team result.",
+  "Avoid memorising scripts — practise flexible bullet points instead.",
+  "If you do not know an answer, explain how you would find the solution.",
+  "Use numbers where possible: time saved, customers helped, revenue, quality, or speed.",
+  "Have a concise answer ready for 'Tell me about yourself'.",
+  "Show enthusiasm with specifics: mention the team, product, mission, or role duties.",
+  "Practise your first answer twice; early confidence settles nerves.",
+  "Keep a glass of water nearby for voice interviews.",
+  "For virtual interviews, test your camera, mic, and lighting beforehand.",
+  "Use positive framing: say what you learned, improved, or would do next.",
+  "Prepare a short closing statement about why you are a strong fit.",
+  "Ask about success in the role, team priorities, or first 90 days.",
+  "After answering, stop cleanly instead of filling silence.",
+  "If interrupted, stay calm and ask if they would like more detail.",
+  "Use active verbs: led, built, improved, solved, supported, delivered.",
+  "Match your examples to the seniority of the role.",
+  "Review your CV and be ready to explain every role, gap, and achievement.",
+  "Practise saying salary expectations calmly before the interview.",
+  "Listen for clues in the interviewer's follow-up questions.",
+  "If nerves rise, slow your breathing and lower your speaking pace.",
+  "Use 'we' for context, then 'I' for your contribution.",
+  "Send a brief thank-you message after the interview if appropriate.",
 ];
 
 const PAYWALL_PROMPT_KEY = 'paywall_prompt_last_shown_v1';
@@ -160,7 +191,7 @@ const Home: React.FC = () => {
     try {
       await setAudioModeAsync({ playsInSilentMode: true });
       const player = createAudioPlayer(require('../../assets/sounds/pop.mp3'));
-      player.volume = 0.1;
+      player.volume = 0.009;
       player.play();
       console.log('🔊 Home pop sound played');
     } catch (error) {
@@ -249,15 +280,8 @@ const Home: React.FC = () => {
         const userId = await AsyncStorage.getItem('userId');
         if (!userId) return;
 
-        const { data } = await supabase
-          .from('user_preferences')
-          .select('subscription_tier')
-          .eq('user_id', userId)
-          .single();
-
-        if (data?.subscription_tier) {
-          setSubscriptionTier(data.subscription_tier);
-        }
+        const status = await checkSubscriptionStatus();
+        setSubscriptionTier(status.tier);
       } catch (error) {
         console.error('Error loading subscription tier:', error);
       }
@@ -274,7 +298,7 @@ const Home: React.FC = () => {
   }, [navigation, subscriptionTier]);
 
   const maybeShowPaywallPrompt = async () => {
-    if (subscriptionTier !== 'free') return;
+    if (isPremiumTier(subscriptionTier)) return;
 
     try {
       const today = new Date().toISOString().slice(0, 10);
@@ -547,7 +571,10 @@ const Home: React.FC = () => {
     <PaywallModal
       visible={showPaywall}
       onClose={() => setShowPaywall(false)}
-      onSuccess={() => setSubscriptionTier('premium')}
+      onSuccess={async () => {
+        const status = await checkSubscriptionStatus();
+        setSubscriptionTier(status.tier);
+      }}
     />
     </>
   );

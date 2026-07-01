@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/colors';
 import {
+  getPackageSubscriptionTier,
   getSubscriptionOfferings,
   purchaseSubscription,
   restorePurchases,
@@ -57,10 +58,10 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
     const offerings = await getSubscriptionOfferings();
     if (offerings?.availablePackages) {
       const monthly = offerings.availablePackages.find(pkg =>
-        pkg.packageType === 'MONTHLY' || pkg.identifier.toLowerCase().includes('monthly')
+        getPackageSubscriptionTier(pkg) === 'monthly'
       );
       const annual = offerings.availablePackages.find(pkg =>
-        pkg.packageType === 'ANNUAL' || pkg.identifier.toLowerCase().includes('annual')
+        getPackageSubscriptionTier(pkg) === 'annual'
       );
       setMonthlyPackage(monthly || null);
       setAnnualPackage(annual || null);
@@ -75,11 +76,9 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
     const packageToPurchase = selectedPlan === 'annual' ? annualPackage : monthlyPackage;
 
     if (!packageToPurchase) {
-      // Fallback to mock purchase if RevenueCat not configured
       Alert.alert(
-        '🎉 Success!',
-        `You're now on the ${selectedPlan === 'annual' ? 'Annual' : 'Monthly'} plan.\n\nEnjoy unlimited interviews!`,
-        [{ text: 'OK', onPress: () => { onClose(); onSuccess?.(); } }]
+        'Subscription Unavailable',
+        'Subscription products are not available right now. Please try again later.'
       );
       setLoading(false);
       return;

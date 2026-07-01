@@ -16,7 +16,7 @@ const loadSound = async () => {
         playsInSilentMode: true,
       });
       cachedPlayer = createAudioPlayer(require('../../assets/sounds/pop.mp3'));
-      cachedPlayer.volume = 0.1;
+      cachedPlayer.volume = 0.009;
       audioReady = true;
       console.log('🔊 Pop sound loaded successfully');
     } catch (error) {

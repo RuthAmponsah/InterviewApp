@@ -11,7 +11,7 @@ import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from '../config/supabase';
-import { syncSubscriptionStatus } from '../services/purchaseService';
+import { checkSubscriptionStatus as getSubscriptionStatus, syncSubscriptionStatus } from '../services/purchaseService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'InterviewType'>;
 
@@ -34,18 +34,8 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
   const checkSubscriptionStatus = async () => {
     try {
       await syncSubscriptionStatus();
-      const userId = await AsyncStorage.getItem('userId');
-      if (!userId) return;
-
-      const { data: prefs } = await supabase
-        .from('user_preferences')
-        .select('subscription_tier')
-        .eq('user_id', userId)
-        .single();
-
-      if (prefs?.subscription_tier === 'monthly' || prefs?.subscription_tier === 'annual') {
-        setIsPremium(true);
-      }
+      const status = await getSubscriptionStatus();
+      setIsPremium(status.isActive);
     } catch (error) {
       console.log('Error checking subscription:', error);
     }

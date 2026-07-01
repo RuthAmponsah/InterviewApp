@@ -37,7 +37,7 @@ const SUPPORT_KB = `APP CONTEXT (My Interview)
 - Start interview: Home -> choose mode (text/voice), then questions and feedback.
 - Feedback screen: shows summary and transcript after an interview.
 - Job Preferences: Settings -> Job Preferences, set or change target role.
-- CV: paste CV text -> Analyze CV -> suggestions and improved CV.
+- CV: paste CV text -> Analyse CV -> suggestions and improved CV.
 - Jobs: browse jobs, filter by location and work type, save jobs.
 - Interview History: view past sessions, delete entries.
 - Progress Dashboard: stats and milestones.
@@ -848,7 +848,245 @@ export const stopSpeaking = async () => {
   }
 };
 
-const MAX_CV_CHUNK_CHARS = 6000;
+const MAX_CV_CHUNK_CHARS = 12000;
+const MAX_FULL_CV_ANALYSIS_CHARS = 20000;
+
+const cleanJsonResponse = (responseText: string) => {
+  let cleaned = responseText.trim();
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+  } else if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/```\n?/g, '');
+  }
+
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
+
+  return cleaned;
+};
+
+export const cleanGeneratedCVText = (text: string) => {
+  let cleaned = text
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
+    .replace(/```(?:text|markdown)?/gi, '')
+    .replace(/```/g, '')
+    .trim();
+
+  const finalMarkers = [
+    /(?:^|\n)\s*(?:final cv|final answer|rewritten cv|improved cv|complete improved cv)\s*:\s*/i,
+    /(?:^|\n)\s*(?:here is the final cv|here is the improved cv)\s*:?\s*/i,
+  ];
+
+  for (const marker of finalMarkers) {
+    const match = cleaned.match(marker);
+    if (match?.index !== undefined && match.index > 0) {
+      cleaned = cleaned.slice(match.index + match[0].length).trim();
+      break;
+    }
+  }
+
+  cleaned = cleaned
+    .replace(/^\s*(?:thinking process|reasoning|analysis)\s*:[\s\S]*?(?=\n\s*(?:[A-Z][A-Z\s/&-]{2,}|Personal Profile|Profile|Summary|Contact|Name)\b)/i, '')
+    .replace(/^\s*(?:sure|of course)[,.! ]+/i, '')
+    .replace(/\n?\s*Please assist in rewriting this CV[\s\S]*$/i, '')
+    .replace(/\bAvailableuponrequest\b/gi, 'Available upon request')
+    .replace(/\bConflictResolution\b/g, 'Conflict Resolution')
+    .replace(/\bDataProtection\b/g, 'Data Protection')
+    .replace(/\bEqualityandDiversity\b/g, 'Equality and Diversity')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  cleaned = repairMergedCVWords(cleaned);
+
+  return cleaned;
+};
+
+const normalizeCVSuggestions = (parsed: any): { category: string; suggestion: string }[] => {
+  const source =
+    Array.isArray(parsed?.suggestions) ? parsed.suggestions :
+    Array.isArray(parsed?.analysis?.suggestions) ? parsed.analysis.suggestions :
+    Array.isArray(parsed?.feedback) ? parsed.feedback :
+    Array.isArray(parsed) ? parsed :
+    [];
+
+  return source
+    .map((item: any, index: number) => {
+      if (typeof item === 'string') {
+        return { category: 'Suggestion', suggestion: item };
+      }
+
+      const suggestion =
+        item?.suggestion ||
+        item?.feedback ||
+        item?.advice ||
+        item?.recommendation ||
+        item?.improvement ||
+        item?.text;
+
+      if (!suggestion || typeof suggestion !== 'string') return null;
+
+      return {
+        category: String(item?.category || item?.section || item?.area || `Suggestion ${index + 1}`),
+        suggestion,
+      };
+    })
+    .filter(Boolean) as { category: string; suggestion: string }[];
+};
+
+const getFallbackCVSuggestions = (jobRole: string, cvContent: string) => {
+  const hasEducation = /education|degree|bachelor|master|certificate|qualification/i.test(cvContent);
+  const hasSkills = /skills|communication|teamwork|leadership|planning|time management/i.test(cvContent);
+  const hasExperience = /experience|teacher|teaching|school|classroom|student|lesson/i.test(cvContent);
+
+  return {
+    suggestions: [
+      {
+        category: "Achievements",
+        suggestion: `Add measurable outcomes for your ${jobRole} experience, such as student progress, class size, lesson outcomes, attendance improvements, or parent feedback where true.`
+      },
+      {
+        category: "Experience",
+        suggestion: hasExperience
+          ? `Expand the teaching experience section with specific classroom responsibilities, age groups, subjects, teaching methods, and examples of how you supported learners.`
+          : `Add a clear experience section showing responsibilities and examples relevant to ${jobRole} roles.`
+      },
+      {
+        category: "Skills",
+        suggestion: hasSkills
+          ? `Group skills into role-focused categories such as classroom management, lesson planning, safeguarding, communication, assessment, and inclusive learning.`
+          : `Add a dedicated skills section tailored to ${jobRole}, including role-specific technical and interpersonal skills.`
+      },
+      {
+        category: "Education",
+        suggestion: hasEducation
+          ? `Keep the education and certificates section, but add dates, institutions, and any relevant modules or training that support your ${jobRole} target.`
+          : `Add education, certifications, and training details that support your ${jobRole} application.`
+      },
+      {
+        category: "Keywords",
+        suggestion: `Include ATS keywords from ${jobRole} job adverts, such as curriculum planning, differentiation, assessment, behaviour management, safeguarding, learner progress, and SEND support where accurate.`
+      },
+      {
+        category: "Formatting",
+        suggestion: "Use consistent section headings, bullet points, dates, and spacing so recruiters can scan your CV quickly."
+      },
+    ],
+  };
+};
+
+const CV_WORDS = new Set([
+  'a', 'an', 'and', 'as', 'at', 'for', 'from', 'in', 'of', 'on', 'or', 'the', 'to', 'upon', 'with',
+  'available', 'request', 'developed', 'strong', 'relationships', 'relationship', 'patients',
+  'patient', 'colleagues', 'families', 'family', 'communication', 'conflict', 'resolution',
+  'data', 'protection', 'equality', 'diversity', 'team', 'work', 'teamwork', 'adaptability',
+  'time', 'management', 'safeguarding', 'teaching', 'teacher', 'education', 'classroom',
+  'lesson', 'planning', 'assessment', 'behaviour', 'support', 'student', 'students', 'learner',
+  'learners', 'curriculum', 'differentiation', 'send', 'care', 'professional', 'profile',
+  'skills', 'experience', 'employment', 'certificates', 'certificate', 'training', 'references',
+  'english', 'language', 'bachelor', 'master', 'arts', 'completion', 'appreciation', 'outstanding',
+  'practice', 'programme', 'program', 'health', 'social', 'assistant', 'communication', 'organisation',
+  'organised', 'organising', 'responsible', 'responsibilities', 'supporting', 'delivering',
+  'maintaining', 'ensuring', 'working', 'within', 'across', 'needs', 'progress', 'positive',
+]);
+
+const segmentMergedWord = (value: string): string | null => {
+  if (value.length < 14 || /[^A-Za-z]/.test(value)) return null;
+
+  const lower = value.toLowerCase();
+  const memo = new Map<number, string[] | null>();
+
+  const solve = (index: number): string[] | null => {
+    if (index === lower.length) return [];
+    if (memo.has(index)) return memo.get(index) || null;
+
+    for (let end = lower.length; end > index + 1; end -= 1) {
+      const word = lower.slice(index, end);
+      if (!CV_WORDS.has(word)) continue;
+
+      const rest = solve(end);
+      if (rest) {
+        const result = [word, ...rest];
+        memo.set(index, result);
+        return result;
+      }
+    }
+
+    memo.set(index, null);
+    return null;
+  };
+
+  const parts = solve(0);
+  if (!parts || parts.length < 2) return null;
+
+  const segmented = parts.join(' ');
+  return /^[A-Z]/.test(value)
+    ? segmented.charAt(0).toUpperCase() + segmented.slice(1)
+    : segmented;
+};
+
+const repairMergedCVWords = (text: string) =>
+  text.replace(/\b[A-Za-z]{14,}\b/g, (word) => segmentMergedWord(word) || word);
+
+const repairFragmentedCVLine = (line: string) => {
+  const segments = line.split(/([ \t]{2,})/);
+
+  return segments
+    .map((segment) => {
+      if (/^[ \t]{2,}$/.test(segment)) return ' ';
+
+      const tokens = segment.match(/[A-Za-z]+/g) || [];
+      const shortTokens = tokens.filter((token) => token.length <= 2).length;
+      const averageLength = tokens.length
+        ? tokens.reduce((sum, token) => sum + token.length, 0) / tokens.length
+        : 0;
+      const looksFragmented =
+        tokens.length >= 4 &&
+        shortTokens / tokens.length > 0.55 &&
+        averageLength < 3.2;
+
+      return looksFragmented
+        ? segment.replace(/([A-Za-z])[\t ]+(?=[A-Za-z])/g, '$1')
+        : segment;
+    })
+    .join('')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+};
+
+export const normalizeCVText = (text: string) => {
+  let normalized = text
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map(repairFragmentedCVLine)
+    .join('\n')
+    .replace(/\s+([,.;:!?])/g, '$1')
+    .replace(/([(\[])\s+/g, '$1')
+    .replace(/\s+([)\]])/g, '$1')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  const commonPhraseFixes: Array<[RegExp, string]> = [
+    [/Communicationskills/gi, 'Communication skills'],
+    [/Timemanagement/gi, 'Time management'],
+    [/BachelorofArtsinEducation/gi, 'Bachelor of Arts in Education'],
+    [/MasterofArtsinEducation/gi, 'Master of Arts in Education'],
+    [/CertificateinTeachingEnglishasaSecondLanguage/gi, 'Certificate in Teaching English as a Second Language'],
+    [/CertificateofAppreciationforoutstandingteachingpractice/gi, 'Certificate of Appreciation for outstanding teaching practice'],
+    [/CertificateofCompletionforteachertrainingprogram/gi, 'Certificate of Completion for teacher training program'],
+    [/Availableuponrequest/gi, 'Available upon request'],
+  ];
+
+  for (const [pattern, replacement] of commonPhraseFixes) {
+    normalized = normalized.replace(pattern, replacement);
+  }
+
+  return repairMergedCVWords(normalized);
+};
 
 const splitCvIntoChunks = (text: string) => {
   const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
@@ -881,7 +1119,7 @@ const splitCvIntoChunks = (text: string) => {
 };
 
 const analyzeCvChunk = async (cvChunk: string, jobRole: string, index: number, total: number) => {
-  const prompt = `You are Aya, an expert CV/resume consultant. I will provide you with PART ${index + 1} of ${total} of someone's CV content and their target job role. Analyze ONLY this part and provide 2-3 SPECIFIC suggestions based on what you see in this chunk.
+  const prompt = `You are Aya, an expert UK CV consultant. I will provide you with PART ${index + 1} of ${total} of someone's CV content and their target job role. Analyse ONLY this part and provide 2-3 SPECIFIC suggestions based on what you see in this chunk.
 
 Target Job Role: ${jobRole}
 
@@ -896,11 +1134,14 @@ You MUST respond with ONLY valid JSON in this EXACT format (no other text):
 }
 
 IMPORTANT:
+- Use UK English spelling and wording throughout. Use terms like CV, role, organisation, programme, centre, analyse, optimise, tailored and professional.
 - Base ALL suggestions on the CV chunk provided above
 - Reference specific parts of their CV in your suggestions
 - Give personalized, actionable advice, NOT generic tips
 - Focus on what's missing, what's weak, and what could be stronger for ${jobRole} roles
 - Suggest specific keywords, skills, or improvements based on their content
+- Do NOT invent roles, employers, qualifications, dates, metrics, or achievements
+- Prioritize ATS keywords, quantified impact, role fit, clarity, and evidence
 
 Respond with ONLY the JSON object, no markdown, no code blocks, no explanations.`;
 
@@ -908,7 +1149,7 @@ Respond with ONLY the JSON object, no markdown, no code blocks, no explanations.
     messages: [
       {
         role: 'system',
-        content: 'You are Aya, a professional CV advisor. Analyze the provided CV content and give SPECIFIC feedback. Respond with ONLY valid JSON.',
+        content: 'You are Aya, a professional UK CV adviser. Analyse the provided CV content and give SPECIFIC feedback. Use UK English. Respond with ONLY valid JSON.',
       },
       {
         role: 'user',
@@ -916,25 +1157,21 @@ Respond with ONLY the JSON object, no markdown, no code blocks, no explanations.
       },
     ],
     model: 'llama-3.3-70b-versatile',
-    temperature: 0.7,
+    temperature: 0.4,
     max_tokens: 700,
-    response_format: { type: 'json_object' },
   });
 
   const responseText = completion.choices[0]?.message?.content || '{}';
-  let cleanedResponse = responseText.trim();
-  if (cleanedResponse.startsWith('```json')) {
-    cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
-  } else if (cleanedResponse.startsWith('```')) {
-    cleanedResponse = cleanedResponse.replace(/```\n?/g, '');
-  }
+  const cleanedResponse = cleanJsonResponse(responseText);
 
-  const parsed = JSON.parse(cleanedResponse);
-  if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
+  try {
+    const parsed = JSON.parse(cleanedResponse);
+    const suggestions = normalizeCVSuggestions(parsed);
+    return suggestions;
+  } catch {
+    console.warn('CV chunk response was not parseable JSON; skipping chunk.');
     return [] as { category: string; suggestion: string }[];
   }
-
-  return parsed.suggestions as { category: string; suggestion: string }[];
 };
 
 const mergeSuggestions = (chunks: { category: string; suggestion: string }[][]) => {
@@ -957,8 +1194,10 @@ const mergeSuggestions = (chunks: { category: string; suggestion: string }[][]) 
 // CV Analysis Function
 export const analyzeCVWithAI = async (cvContent: string, jobRole: string) => {
   try {
-    if (cvContent.length > MAX_CV_CHUNK_CHARS) {
-      const chunks = splitCvIntoChunks(cvContent);
+    const normalizedCV = normalizeCVText(cvContent);
+
+    if (normalizedCV.length > MAX_FULL_CV_ANALYSIS_CHARS) {
+      const chunks = splitCvIntoChunks(normalizedCV);
       const chunkResults: { category: string; suggestion: string }[][] = [];
 
       for (let i = 0; i < chunks.length; i += 1) {
@@ -972,12 +1211,12 @@ export const analyzeCVWithAI = async (cvContent: string, jobRole: string) => {
       }
     }
 
-    const prompt = `You are Aya, an expert CV/resume consultant. I will provide you with someone's CV content and their target job role. Analyze their ACTUAL CV and provide 6-8 SPECIFIC suggestions based on what you see in their CV.
+    const prompt = `You are Aya, an expert UK CV consultant. I will provide you with someone's CV content and their target job role. Analyse their ACTUAL CV and provide 6-8 SPECIFIC suggestions based on what you see in their CV.
 
 Target Job Role: ${jobRole}
 
 CV Content:
-${cvContent}
+${normalizedCV}
 
 You MUST respond with ONLY valid JSON in this EXACT format (no other text):
 {
@@ -992,11 +1231,17 @@ You MUST respond with ONLY valid JSON in this EXACT format (no other text):
 }
 
 IMPORTANT: 
+- Use UK English spelling and wording throughout. Use terms like CV, role, organisation, programme, centre, analyse, optimise, tailored and professional.
 - Base ALL suggestions on the ACTUAL CV content provided above
+- Read the ENTIRE CV content from top to bottom, including any text after page markers like "--- PDF PAGE 2 OF 2 ---" or "--- ADDITIONAL PDF TEXT RECOVERED ---"
+- Do not ignore sidebars, second pages, certificates, education, skills, references, or later sections just because the layout/text order is imperfect
 - Reference specific parts of their CV in your suggestions
 - Give personalized, actionable advice, NOT generic tips
 - Focus on what's missing, what's weak, and what could be stronger for ${jobRole} roles
 - Suggest specific keywords, skills, or improvements based on their content
+- Do NOT invent roles, employers, qualifications, dates, metrics, or achievements
+- Prioritize ATS keywords, quantified impact, role fit, clarity, and evidence
+- If a metric is missing, suggest where the user could add one rather than making it up
 
 Respond with ONLY the JSON object, no markdown, no code blocks, no explanations.`;
 
@@ -1004,7 +1249,7 @@ Respond with ONLY the JSON object, no markdown, no code blocks, no explanations.
       messages: [
         {
           role: 'system',
-          content: 'You are Aya, a professional CV advisor. Analyze the provided CV content and give SPECIFIC feedback. Respond with ONLY valid JSON.',
+          content: 'You are Aya, a professional UK CV adviser. Analyse the provided CV content and give SPECIFIC feedback. Use UK English. Respond with ONLY valid JSON.',
         },
         {
           role: 'user',
@@ -1012,54 +1257,27 @@ Respond with ONLY the JSON object, no markdown, no code blocks, no explanations.
         },
       ],
       model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
+      temperature: 0.4,
       max_tokens: 1500,
-      response_format: { type: 'json_object' },
     });
 
     const responseText = completion.choices[0]?.message?.content || '{}';
     
-    // Clean up response - remove markdown code blocks if present
-    let cleanedResponse = responseText.trim();
-    if (cleanedResponse.startsWith('```json')) {
-      cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
-    } else if (cleanedResponse.startsWith('```')) {
-      cleanedResponse = cleanedResponse.replace(/```\n?/g, '');
-    }
+    const cleanedResponse = cleanJsonResponse(responseText);
     
     // Parse JSON response
     try {
-      const analysis = JSON.parse(cleanedResponse);
-      
-      // Validate that suggestions exist and is an array
-      if (!analysis.suggestions || !Array.isArray(analysis.suggestions) || analysis.suggestions.length === 0) {
+      const parsed = JSON.parse(cleanedResponse);
+      const suggestions = normalizeCVSuggestions(parsed);
+
+      if (suggestions.length === 0) {
         throw new Error('Invalid suggestions format');
       }
       
-      return analysis;
+      return { suggestions };
     } catch (parseError) {
-      console.error('Error parsing AI response:', parseError);
-      // Return fallback suggestions if parsing fails
-      return {
-        suggestions: [
-          {
-            category: "Skills",
-            suggestion: `Add specific ${jobRole}-related technical skills and certifications`
-          },
-          {
-            category: "Experience",
-            suggestion: "Quantify your achievements with numbers and metrics"
-          },
-          {
-            category: "Keywords",
-            suggestion: `Include industry keywords for ${jobRole} roles to pass ATS systems`
-          },
-          {
-            category: "Action Verbs",
-            suggestion: "Use strong action verbs like 'Led', 'Implemented', 'Achieved'"
-          }
-        ]
-      };
+      console.warn('CV analysis response was not valid suggestions JSON; using fallback suggestions.', parseError);
+      return getFallbackCVSuggestions(jobRole, normalizedCV);
     }
   } catch (error) {
     console.error('Error analyzing CV with AI:', error);
@@ -1070,37 +1288,56 @@ Respond with ONLY the JSON object, no markdown, no code blocks, no explanations.
 // Improve CV Function - Generates a rewritten, enhanced version
 export const improveCV = async (cvContent: string, jobRole: string): Promise<string> => {
   try {
-    const prompt = `You are Aya, an expert CV/resume writer. I will provide you with someone's CV content and their target job role. Your task is to REWRITE and IMPROVE their CV to make it more professional, impactful, and optimized for ${jobRole} positions.
+    const normalizedCV = normalizeCVText(cvContent);
+
+    const prompt = `You are Aya, an elite UK CV writer. I will provide extracted CV text and a target job role. The extraction may be messy because PDFs can contain columns, tables, missing spaces, odd line breaks, page markers, or duplicated fragments.
+
+Your task is to reconstruct the readable facts into a polished, outstanding, human-sounding UK CV for ${jobRole} roles.
 
 Target Job Role: ${jobRole}
 
-Current CV Content:
-${cvContent}
+Extracted CV Content:
+${normalizedCV}
 
-Please REWRITE this CV with the following improvements:
-1. Enhanced readability with clear sections and bullet points
-2. Stronger action verbs and quantifiable achievements
-3. Better formatting and structure
-4. Optimized keywords for ${jobRole} roles (ATS-friendly)
-5. More impactful language and professional tone
-6. Highlight relevant skills and experience for ${jobRole}
-7. Remove redundancies and improve conciseness
+Create a complete CV with these sections where the source supports them:
+- Name and contact details
+- Professional Profile
+- Key Skills
+- Employment / Relevant Experience
+- Education and Qualifications
+- Certifications / Training
+- Achievements
+- Additional Information
+- References
 
 IMPORTANT INSTRUCTIONS:
-- Keep all factual information (names, dates, companies, education) from the original
-- Only improve the writing, formatting, and presentation
-- Make it ready to copy-paste into a document
-- Use professional formatting with clear section headers
-- Keep the same general structure but make it more impactful
+- Use UK English spelling and wording throughout. Use terms like CV, role, organisation, programme, centre, analyse, optimise, tailored and professional.
+- Do not reveal hidden reasoning, chain-of-thought, planning notes, or analysis steps
+- Read and preserve the ENTIRE CV, including every page marker and any recovered PDF text section
+- Do NOT only rewrite the first page or the first obvious section
+- Repair extraction artefacts before writing. Examples: "ConflictResolution" becomes "Conflict Resolution", "Availableuponrequest" becomes "Available upon request", spaced-out names become normal names, and broken lines are merged sensibly.
+- Remove any user instruction text accidentally included in the extraction, such as "Please assist in rewriting this CV..."
+- Keep factual information (names, dates, employers, education, qualifications, certifications) from the original when readable
+- Do NOT invent new employers, dates, qualifications, certifications, metrics, or achievements
+- If impact numbers are missing, write strong but truthful bullets without fake numbers
+- If a line is unreadable or obviously corrupted, omit it rather than copying broken text
+- Make the CV sound confident, warm, capable and employable without sounding robotic
+- Use polished bullet points that "plump up" the user's real experience and skills while staying truthful
+- Make it ready to copy-paste into a Word document
+- Use professional plain-text formatting with clear section headers
+- Keep all original sections where useful, including profile, skills, experience, education, certificates, awards, projects, volunteering, languages, interests, and references
+- You may reorganise the CV into a stronger structure if the extracted order is poor
 - Output plain text with line breaks for readability (no markdown)
+- Tailor wording and skills toward ${jobRole} while staying faithful to the original CV
+- Before returning, check that every non-empty original section has either been preserved or intentionally merged into a better section
 
-Return the COMPLETE improved CV text.`;
+Return ONLY the finished CV text. Do not include commentary, apologies, prompt text, instructions, analysis, or notes.`;
 
     const completion = await groq.chat.completions.create({
       messages: [
         {
           role: 'system',
-          content: 'You are Aya, a professional CV writer. Rewrite the provided CV to be more professional and impactful. Output plain text only.',
+          content: 'You are Aya, an expert UK CV writer. Transform messy extracted CV text into a polished, truthful, professional CV. Use UK English. Output only the finished CV text.',
         },
         {
           role: 'user',
@@ -1108,11 +1345,11 @@ Return the COMPLETE improved CV text.`;
         },
       ],
       model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-      max_tokens: 3000,
+      temperature: 0.4,
+      max_tokens: 8000,
     });
 
-    const improvedCVText = completion.choices[0]?.message?.content || '';
+    const improvedCVText = cleanGeneratedCVText(completion.choices[0]?.message?.content || '');
     
     if (!improvedCVText) {
       throw new Error('No improved CV returned from AI');
@@ -1123,4 +1360,87 @@ Return the COMPLETE improved CV text.`;
     console.error('Error improving CV with AI:', error);
     throw error;
   }
+};
+
+export type NewCVDetails = {
+  fullName: string;
+  targetRole: string;
+  contact: string;
+  profile: string;
+  experience: string;
+  education: string;
+  skills: string;
+  certifications: string;
+  achievements: string;
+  extraDetails: string;
+};
+
+export const createCVFromDetails = async (details: NewCVDetails): Promise<string> => {
+  const prompt = `You are Aya, an elite UK CV writer who creates outstanding, human-sounding CVs that feel confident, specific, polished and employable without sounding robotic.
+
+Target role: ${details.targetRole}
+Full name: ${details.fullName}
+Contact details: ${details.contact}
+Professional profile / goals:
+${details.profile}
+
+Experience:
+${details.experience}
+
+Education:
+${details.education}
+
+Skills:
+${details.skills}
+
+Certifications / training:
+${details.certifications}
+
+Achievements:
+${details.achievements}
+
+Extra details:
+${details.extraDetails}
+
+Instructions:
+- Use UK English spelling and wording throughout. Use terms like CV, role, organisation, programme, centre, analyse, optimise, tailored and professional.
+- Return ONLY the finished CV text
+- Do not reveal hidden reasoning, chain-of-thought, planning notes, or analysis steps
+- Create an outstanding CV, not a basic template
+- Make the writing sound human, natural, confident and professional
+- Strengthen and "plump up" the user's details by expanding thin notes into richer, clearer achievement-focused bullets
+- Use strong action verbs and role-relevant language
+- Make responsibilities sound purposeful and valuable, while staying truthful
+- Turn rough notes into polished statements a recruiter would understand quickly
+- Add professional section headings and concise bullet points
+- Do not invent employers, dates, qualifications, or achievements
+- Do not invent exact metrics, numbers, awards, certifications, software, employers, schools or dates
+- If the user gives vague work, describe the likely responsibility in neutral terms without adding false specifics
+- If a detail is missing, leave it out rather than making it up
+- Tailor the wording toward ${details.targetRole || 'the target role'}
+- Prioritize profile, key skills, experience, education, certifications/training, achievements and additional information where supplied
+- Output plain text only, no markdown fences`;
+
+  const completion = await groq.chat.completions.create({
+    messages: [
+      {
+        role: 'system',
+        content: 'You are Aya, a professional UK CV writer. Use UK English. Output only the finished CV text, never reasoning or hidden thinking.',
+      },
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
+    model: 'llama-3.3-70b-versatile',
+    temperature: 0.35,
+    max_tokens: 5000,
+  });
+
+  const cvText = cleanGeneratedCVText(completion.choices[0]?.message?.content || '');
+  if (!cvText) {
+    throw new Error('No CV returned from AI');
+  }
+
+  return cvText;
 };

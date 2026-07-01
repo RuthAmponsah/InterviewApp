@@ -6,7 +6,7 @@ import { ThemeProvider } from './src/theme/ThemeContext';
 import { useFonts, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
 import { initializePurchases } from './src/services/purchaseService';
 import { initializeNotifications } from './src/services/notificationService';
-import AnimatedSplash from './src/components/AnimatedSplash';
+import LaunchAnimation from './src/components/LaunchAnimation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './src/config/supabase';
 
@@ -96,7 +96,7 @@ export default function App() {
       </ThemeProvider>
       {showSplash && (
         <View style={StyleSheet.absoluteFill}>
-          <AnimatedSplash onFinish={() => setShowSplash(false)} />
+          <LaunchAnimation onFinish={() => setShowSplash(false)} />
         </View>
       )}
     </View>

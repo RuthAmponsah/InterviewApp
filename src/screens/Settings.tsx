@@ -17,7 +17,7 @@ import { supabase } from "../config/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import AppTutorial from "../components/AppTutorial";
 import PaywallModal from "../components/PaywallModal";
-import { syncSubscriptionStatus } from "../services/purchaseService";
+import { checkSubscriptionStatus, isPremiumTier, syncSubscriptionStatus } from "../services/purchaseService";
 import AppHeader from "../components/AppHeader";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -61,29 +61,22 @@ const Settings = () => {
       // Sync from RevenueCat first to ensure DB is up-to-date
       await syncSubscriptionStatus();
 
-      const { data } = await supabase
-        .from('user_preferences')
-        .select('subscription_tier')
-        .eq('user_id', userId)
-        .single();
-
-      if (data) {
-        setSubscriptionTier(data.subscription_tier || 'free');
-      }
+      const status = await checkSubscriptionStatus();
+      setSubscriptionTier(status.tier);
     } catch (error) {
       console.error('Error fetching subscription:', error);
     }
   };
 
   const getSubscriptionBadge = () => {
-    if (subscriptionTier === 'annual' || subscriptionTier === 'monthly') {
+    if (isPremiumTier(subscriptionTier)) {
       return 'PREMIUM';
     }
     return 'FREE';
   };
 
   const getSubscriptionHelper = () => {
-    if (subscriptionTier === 'annual' || subscriptionTier === 'monthly') {
+    if (isPremiumTier(subscriptionTier)) {
       return 'Unlimited interviews • Premium features';
     }
     return '2 interviews per month • Upgrade for unlimited';

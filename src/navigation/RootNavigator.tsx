@@ -44,6 +44,7 @@ import AllFeedback from "../screens/AllFeedback";
 import Subscription from "../screens/Subscription";
 import SectorPacks from "../screens/SectorPacks";
 import ViewCV from "../screens/ViewCV";
+import CreateCV from "../screens/CreateCV";
 
 // -----------------------------
 // STACK NAV TYPES
@@ -55,6 +56,7 @@ export type RootStackParamList = {
   ResetPassword: undefined;
   ResetPasswordViaEmail: {
     token?: string;
+    email?: string;
     accessToken?: string;
     refreshToken?: string;
     tokenHash?: string;
@@ -88,6 +90,7 @@ export type RootStackParamList = {
   Subscription: { showClose?: boolean } | undefined;
   SectorPacks: undefined;
   ViewCV: undefined;
+  CreateCV: undefined;
 };
 
 // -----------------------------
@@ -231,6 +234,7 @@ const RootNavigator = () => {
 
     return {
       token: parsedParams.token,
+      email: parsedParams.email,
       accessToken: parsedParams.access_token,
       refreshToken: parsedParams.refresh_token,
       tokenHash: parsedParams.token_hash,
@@ -442,6 +446,7 @@ const RootNavigator = () => {
       <Stack.Screen name="MyProfile" component={MyProfile} />
       <Stack.Screen name="EditProfile" component={EditProfile} />
       <Stack.Screen name="ViewCV" component={ViewCV} />
+      <Stack.Screen name="CreateCV" component={CreateCV} />
       <Stack.Screen name="ChangePassword" component={ChangePassword} />
       <Stack.Screen name="Notifications" component={Notifications} />
 

@@ -21,6 +21,7 @@ import PaywallModal from '../components/PaywallModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
 import * as Haptics from 'expo-haptics';
+import { checkSubscriptionStatus, isPremiumTier } from '../services/purchaseService';
 
 interface FeedbackItem {
   id: string;
@@ -67,21 +68,9 @@ const AllFeedback: React.FC = () => {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('subscription_tier')
-        .eq('user_id', userId)
-        .single();
-
-      console.log('✅ Subscription data:', data);
-      console.log('❌ Subscription error:', error);
-
-      if (data?.subscription_tier) {
-        console.log('🎯 Setting subscription tier to:', data.subscription_tier);
-        setSubscriptionTier(data.subscription_tier);
-      } else {
-        console.log('⚠️ No subscription_tier in response, staying as:', subscriptionTier);
-      }
+      const status = await checkSubscriptionStatus();
+      console.log('✅ Subscription status:', status);
+      setSubscriptionTier(status.tier);
     } catch (error) {
       console.error('Error loading subscription tier:', error);
     }
@@ -376,10 +365,10 @@ const AllFeedback: React.FC = () => {
                 
                 {item.transcript && (
                   <TouchableOpacity 
-                    disabled={subscriptionTier === 'free'}
-                    style={[styles.transcriptButton, subscriptionTier === 'free' && styles.transcriptButtonDisabled]}
+                    disabled={!isPremiumTier(subscriptionTier)}
+                    style={[styles.transcriptButton, !isPremiumTier(subscriptionTier) && styles.transcriptButtonDisabled]}
                     onPress={() => {
-                      if (subscriptionTier === 'free') {
+                      if (!isPremiumTier(subscriptionTier)) {
                         setShowPaywall(true);
                         return;
                       }
@@ -389,17 +378,17 @@ const AllFeedback: React.FC = () => {
                     }}
                   >
                     <Ionicons 
-                      name={subscriptionTier === 'free' ? "lock-closed" : "document-text-outline"} 
+                      name={!isPremiumTier(subscriptionTier) ? "lock-closed" : "document-text-outline"} 
                       size={16} 
-                      color={subscriptionTier === 'free' ? colors.textMuted : colors.primaryBlue} 
+                      color={!isPremiumTier(subscriptionTier) ? colors.textMuted : colors.primaryBlue} 
                     />
-                    <Text style={[styles.transcriptButtonText, subscriptionTier === 'free' && styles.transcriptButtonTextDisabled]}>
-                      {subscriptionTier === 'free' ? 'View transcript (Premium)' : 'View transcript'}
+                    <Text style={[styles.transcriptButtonText, !isPremiumTier(subscriptionTier) && styles.transcriptButtonTextDisabled]}>
+                      {!isPremiumTier(subscriptionTier) ? 'View transcript (Premium)' : 'View transcript'}
                     </Text>
                     <Ionicons 
                       name="chevron-forward" 
                       size={16} 
-                      color={subscriptionTier === 'free' ? colors.textMuted : colors.primaryBlue} 
+                      color={!isPremiumTier(subscriptionTier) ? colors.textMuted : colors.primaryBlue} 
                     />
                   </TouchableOpacity>
                 )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FlatList,
   Linking,
@@ -37,13 +37,14 @@ const Jobs: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [apiError, setApiError] = useState(false);
+  const [apiErrorMessage, setApiErrorMessage] = useState('');
   const [remoteFilter, setRemoteFilter] = useState<string>('All');
   const [locationFilter, setLocationFilter] = useState<string>('');
+  const didRunLocationSearch = useRef(false);
 
-  // Load saved jobs and fetch real jobs on mount
+  // Load saved jobs on mount. Job fetching is handled by the filter effect below.
   useEffect(() => {
     loadSavedJobs();
-    fetchJobs();
   }, []);
 
   // Fetch new jobs when category or remote filter changes
@@ -56,6 +57,11 @@ const Jobs: React.FC = () => {
   // Debounce location filter to avoid too many API calls
   useEffect(() => {
     if (selectedCategory === 'Saved Jobs') return;
+
+    if (!didRunLocationSearch.current) {
+      didRunLocationSearch.current = true;
+      return;
+    }
     
     const timeoutId = setTimeout(() => {
       fetchJobs();
@@ -68,6 +74,7 @@ const Jobs: React.FC = () => {
     try {
       setLoading(true);
       setApiError(false);
+      setApiErrorMessage('');
       const { jobs: fetchedJobs, totalResults: total } = await searchJobs(
         selectedCategory,
         1,
@@ -81,6 +88,7 @@ const Jobs: React.FC = () => {
     } catch (error) {
       console.error('Error fetching jobs:', error);
       setApiError(true);
+      setApiErrorMessage(error instanceof Error ? error.message : 'Could not fetch jobs right now.');
       setJobs([]);
       setLoading(false);
     }
@@ -166,7 +174,7 @@ const Jobs: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}
     >
-      <AppHeader />
+      <AppHeader horizontalPadding={20} />
 
       {/* Header */}
       <View style={styles.headerRow}>
@@ -321,7 +329,9 @@ const Jobs: React.FC = () => {
             <View style={styles.emptyDotB} />
           </View>
           <Text style={styles.emptyTitle}>
-            {selectedCategory === 'Saved Jobs' 
+            {apiError
+              ? 'Jobs are unavailable'
+              : selectedCategory === 'Saved Jobs' 
               ? 'No saved jobs yet'
               : remoteFilter !== 'All'
                 ? `No ${remoteFilter.toLowerCase()} jobs found`
@@ -329,14 +339,23 @@ const Jobs: React.FC = () => {
             }
           </Text>
           <Text style={styles.emptySubtitle}>
-            {selectedCategory === 'Saved Jobs'
+            {apiError
+              ? apiErrorMessage || 'Adzuna could not return jobs right now. Please try again shortly.'
+              : selectedCategory === 'Saved Jobs'
               ? 'Tap the bookmark icon on any job to save it here'
               : remoteFilter !== 'All'
                 ? `Try selecting a different work type or category`
                 : 'Try adjusting your filters or search criteria'
             }
           </Text>
-          {remoteFilter !== 'All' && (
+          {apiError ? (
+            <TouchableOpacity 
+              style={styles.emptyButton}
+              onPress={fetchJobs}
+            >
+              <Text style={styles.emptyButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          ) : remoteFilter !== 'All' && (
             <TouchableOpacity 
               style={styles.emptyButton}
               onPress={() => setRemoteFilter('All')}

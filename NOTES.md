@@ -50,7 +50,14 @@ EXPO_PUBLIC_ADZUNA_API_KEY=
 - **Monthly**: `MONTHLY` packageType or identifier contains `monthly`
 - **Annual**: `ANNUAL` packageType or identifier contains `annual`
 - Entitlement name: `premium`
-- Sector pack product IDs: `nhs_care_pack`, `graduate_pack`, `retail_pack`, `management_pack`
+- Sector pack product IDs: `myinterview_nhs_care_v2`, `myinterview_graduate_v2`, `myinterview_retail_v2`, `myinterview_management_v2`
+- Sector pack receipt validation:
+  - RevenueCat webhook URL: `https://urewxbnmubmkceuplctd.supabase.co/functions/v1/revenuecat-webhook`
+  - RevenueCat webhook should send `Authorization: Bearer <REVENUECAT_WEBHOOK_AUTH_TOKEN>`
+  - Supabase Edge Function secrets required:
+    - `REVENUECAT_WEBHOOK_AUTH_TOKEN`
+    - `REVENUECAT_SECRET_API_KEY`
+  - App restore flow calls `sync-sector-packs`, which verifies purchases server-side against RevenueCat before updating `user_preferences.purchased_packs`.
 - ⚠️ Use **production** key (`appl_...`) for App Store builds — test key will fail Apple review
 
 ---

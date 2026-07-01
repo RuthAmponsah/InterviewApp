@@ -1,9 +1,10 @@
-const baseConfig = require('./app.json');
+const baseConfig = require('./app.json').expo;
 
-module.exports = () => ({
-  ...baseConfig.expo,
+module.exports = ({ config }) => ({
+  ...config,
+  ...baseConfig,
   extra: {
-    ...baseConfig.expo.extra,
+    ...baseConfig.extra,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
     groqApiKey: process.env.EXPO_PUBLIC_GROQ_API_KEY || '',

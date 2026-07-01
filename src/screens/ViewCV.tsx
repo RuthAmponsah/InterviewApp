@@ -12,14 +12,26 @@ import {
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 import ScreenHeader from "../components/ScreenHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
-import { analyzeCVWithAI, improveCV } from "../services/aiService";
+import { analyzeCVWithAI, cleanGeneratedCVText, improveCV, normalizeCVText } from "../services/aiService";
 import * as Clipboard from 'expo-clipboard';
+
+const MAX_CV_FILE_BYTES = 5 * 1024 * 1024;
+const SUPPORTED_CV_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+  "text/plain",
+];
 
 type Suggestion = {
   id: string;
@@ -32,6 +44,7 @@ const ViewCV: React.FC = () => {
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
   const styles = makeStyles(colors, isDark);
+  const navigation = useNavigation<any>();
 
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzed, setAnalyzed] = useState(false);
@@ -41,6 +54,10 @@ const ViewCV: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [improvedCV, setImprovedCV] = useState<string | null>(null);
   const [improving, setImproving] = useState(false);
+  const [extractingFile, setExtractingFile] = useState(false);
+  const [cvFileName, setCvFileName] = useState<string | null>(null);
+  const [layoutWarning, setLayoutWarning] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
   const [copied, setCopied] = useState(false);
 
 
@@ -54,11 +71,27 @@ const ViewCV: React.FC = () => {
     setRefreshing(false);
   };
 
+  const resetCVInput = async (showPasteBox = true) => {
+    setCvText("");
+    setCvFileName(null);
+    setLayoutWarning(false);
+    setShowManualInput(showPasteBox);
+    setAnalyzed(false);
+    setSuggestions([]);
+    setImprovedCV(null);
+    setCopied(false);
+    await AsyncStorage.removeItem("cvText");
+    await AsyncStorage.removeItem("cvFileName");
+  };
+
   const loadCVData = async () => {
     const role = await AsyncStorage.getItem("jobRole");
     const savedCvText = await AsyncStorage.getItem("cvText");
+    const savedCvFileName = await AsyncStorage.getItem("cvFileName");
     
     setJobRole(role || "");
+    setCvFileName(savedCvFileName);
+    setShowManualInput(!savedCvFileName);
     
     // If we have saved text, use it
     if (savedCvText) {
@@ -87,12 +120,97 @@ const ViewCV: React.FC = () => {
     }
   };
 
+  const handlePickCVFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: SUPPORTED_CV_TYPES,
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (result.canceled) return;
+
+      const file = result.assets?.[0];
+      if (!file?.uri) {
+        Alert.alert("Upload Failed", "Aya couldn't read that file. Please try again.");
+        return;
+      }
+
+      if (file.size && file.size > MAX_CV_FILE_BYTES) {
+        Alert.alert("File Too Large", "Please upload a CV smaller than 5 MB.");
+        return;
+      }
+
+      setAnalyzed(false);
+      setSuggestions([]);
+      setImprovedCV(null);
+      setCopied(false);
+      setExtractingFile(true);
+      const base64 = await FileSystem.readAsStringAsync(file.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const { data, error } = await supabase.functions.invoke("extract-cv-text", {
+        body: {
+          fileName: file.name,
+          mimeType: file.mimeType,
+          base64,
+        },
+      });
+
+      if (error) {
+        console.error("CV extraction function error:", error);
+        Alert.alert("Upload Failed", error.message || "Aya couldn't extract text from that file.");
+        return;
+      }
+
+      const extractedText = normalizeCVText(data?.text || "");
+      if (data?.metadata) {
+        console.log("📄 CV extraction metadata:", data.metadata);
+      }
+      const hasComplexLayout =
+        Number(data?.metadata?.complexLayoutPages || 0) > 0 ||
+        Number(data?.metadata?.recoveredExtraText || 0) > 0;
+      if (!extractedText || extractedText.length < 50) {
+        Alert.alert(
+          "No CV Text Found",
+          data?.warning || "Aya couldn't find enough readable text in that file. Please try a different PDF/DOCX or paste your CV text."
+        );
+        return;
+      }
+
+      setCvText(extractedText);
+      setCvFileName(file.name || "Uploaded CV");
+      setLayoutWarning(hasComplexLayout);
+      setShowManualInput(false);
+      await AsyncStorage.setItem("cvText", extractedText);
+      await AsyncStorage.setItem("cvFileName", file.name || "Uploaded CV");
+
+      const pagesRead = data?.metadata?.pagesRead || data?.metadata?.pageCount;
+      const pageCount = data?.metadata?.pageCount;
+      const pagesWithText = data?.metadata?.pagesWithText;
+
+      console.log(
+        `📄 CV uploaded: checked ${pagesRead || pageCount || 1}${pageCount ? ` of ${pageCount}` : ""} page(s), text pages: ${pagesWithText || "unknown"}`
+      );
+      setAnalyzing(true);
+      await handleAnalyzeCVDirect(extractedText);
+    } catch (error) {
+      console.error("CV upload error:", error);
+      Alert.alert("Upload Failed", "Aya couldn't process that file. Please try again.");
+    } finally {
+      setExtractingFile(false);
+    }
+  };
+
 
   const handleAnalyzeCVDirect = async (rawText: string) => {
-    if (!rawText || rawText.trim().length < 50) {
+    const cleanedText = normalizeCVText(rawText || "");
+
+    if (!cleanedText || cleanedText.length < 50) {
       Alert.alert(
         "CV Content Required",
-        "The CV file was too short to analyze. Please try a different file.",
+        "The CV file was too short to analyse. Please try a different file.",
         [{ text: "OK" }]
       );
       setAnalyzing(false);
@@ -110,16 +228,16 @@ const ViewCV: React.FC = () => {
     }
 
     console.log('🔍 Starting CV analysis...');
-    console.log('📝 CV text length:', rawText.length);
+    console.log('📝 CV text length:', cleanedText.length);
     console.log('💼 Job role:', jobRole);
 
     try {
       // Save CV text for future use
-      await AsyncStorage.setItem("cvText", rawText);
-      setCvText(rawText);
+      await AsyncStorage.setItem("cvText", cleanedText);
+      setCvText(cleanedText);
 
       // Call AI service with actual CV content
-      const analysis = await analyzeCVWithAI(rawText, jobRole);
+      const analysis = await analyzeCVWithAI(cleanedText, jobRole);
       
       console.log('✅ AI analysis complete, suggestions:', analysis.suggestions?.length);
       
@@ -166,7 +284,7 @@ const ViewCV: React.FC = () => {
         }
       } else if (analysis.suggestions) {
         const mappedSuggestions = analysis.suggestions.map((s: any, idx: number) => ({
-          id: idx,
+          id: String(idx),
           category: s.category,
           suggestion: s.suggestion,
           completed: false,
@@ -187,7 +305,7 @@ const ViewCV: React.FC = () => {
     if (!cvText || cvText.trim().length < 50) {
       Alert.alert(
         "CV Content Required",
-        "Please paste your CV content in the text box. We need at least 50 characters to analyze.",
+        "Please paste your CV content in the text box. We need at least 50 characters to analyse.",
         [{ text: "OK" }]
       );
       return;
@@ -251,7 +369,7 @@ const ViewCV: React.FC = () => {
       console.log('🎨 Generating improved CV for role:', jobRole);
       
       // Call AI service to improve CV
-      const improvedCVText = await improveCV(cvText, jobRole);
+      const improvedCVText = cleanGeneratedCVText(await improveCV(cvText, jobRole));
       
       console.log('✅ Improved CV generated, length:', improvedCVText.length);
       
@@ -292,7 +410,7 @@ const ViewCV: React.FC = () => {
     if (!improvedCV) return;
     
     try {
-      await Clipboard.setStringAsync(improvedCV);
+      await Clipboard.setStringAsync(cleanGeneratedCVText(improvedCV));
       setCopied(true);
       Alert.alert("Copied! 📋", "Improved CV copied to clipboard. You can now paste it anywhere!");
       
@@ -304,7 +422,63 @@ const ViewCV: React.FC = () => {
     }
   };
 
+  const handleDownloadImprovedCV = async () => {
+    if (!improvedCV) return;
+
+    try {
+      const escapeHtml = (value: string) =>
+        value
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+
+      const bodyHtml = cleanGeneratedCVText(improvedCV)
+        .split(/\n{2,}/)
+        .map((block) => `<p>${escapeHtml(block.trim()).replace(/\n/g, "<br />")}</p>`)
+        .join("\n");
+
+      const htmlDoc = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Improved CV</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.45; color: #111827; }
+    h1 { font-size: 18pt; margin-bottom: 18px; }
+    p { margin: 0 0 10px; }
+  </style>
+</head>
+<body>
+  <h1>Improved CV</h1>
+  ${bodyHtml}
+</body>
+</html>`;
+
+      const fileUri = `${FileSystem.cacheDirectory}my-interview-improved-cv.doc`;
+      await FileSystem.writeAsStringAsync(fileUri, htmlDoc, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: "application/msword",
+          dialogTitle: "Save your improved CV",
+          UTI: "com.microsoft.word.doc",
+        });
+      } else {
+        Alert.alert("CV Ready", `Your improved CV was saved here:\n${fileUri}`);
+      }
+    } catch (error) {
+      console.error("Error exporting improved CV:", error);
+      Alert.alert("Export Failed", "Aya couldn't create the Word document. Please copy the CV instead.");
+    }
+  };
+
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const shouldShowManualInput = showManualInput || !cvFileName;
+  const hasUploadedCV = Boolean(cvFileName && cvText && !showManualInput);
 
   return (
     <ScrollView 
@@ -323,7 +497,7 @@ const ViewCV: React.FC = () => {
 
       <Text style={styles.title}>Your CV</Text>
       <Text style={styles.subtitle}>
-        Let Aya analyze your CV and suggest improvements for {jobRole || "your target role"}
+        Let Aya analyse your CV and suggest improvements for {jobRole || "your target role"}
       </Text>
 
       {/* CV Info Card */}
@@ -331,65 +505,120 @@ const ViewCV: React.FC = () => {
         <View style={styles.cvHeader}>
           <Ionicons name="document-text" size={40} color={colors.primaryBlue} />
           <View style={{ flex: 1, marginLeft: 16 }}>
-            <Text style={styles.cvFileName}>CV Upload (Coming Soon)</Text>
+            <Text style={styles.cvFileName}>{cvFileName || "Upload or Paste CV"}</Text>
             <Text style={styles.cvSubtext}>
-              Paste your CV below to get started
+              Upload PDF/DOCX or paste your CV below
             </Text>
           </View>
         </View>
 
-        {/* Upload CV Button - Coming Soon */}
         <TouchableOpacity
-          style={styles.uploadButtonDisabled}
-          disabled={true}
+          style={[styles.uploadButton, extractingFile && styles.uploadButtonDisabled]}
+          disabled={extractingFile || analyzing}
+          onPress={handlePickCVFile}
         >
-          <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
-          <Text style={styles.uploadButtonText}>Upload CV File</Text>
+          {extractingFile ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
+          )}
+          <Text style={styles.uploadButtonText}>
+            {extractingFile ? "Reading CV..." : "Upload CV File"}
+          </Text>
         </TouchableOpacity>
         
-        {/* File Type Info */}
         <View style={styles.comingSoonBanner}>
           <Ionicons name="checkmark-circle" size={18} color={colors.primaryBlue} />
           <Text style={styles.comingSoonText}>
-            CV upload is coming soon. For now, paste your CV below.
+            Supports PDF, DOCX, DOC and TXT files up to 5 MB.
           </Text>
         </View>
 
-        <View style={styles.textInputContainer}>
-          <View style={styles.inputHeader}>
-            <Text style={styles.inputLabel}>Paste your CV content</Text>
-            {!!cvText && (
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={() => {
-                  setCvText("");
-                  AsyncStorage.removeItem("cvText");
-                }}
-              >
-                <Ionicons name="close-circle" size={16} color={isDark ? "#666" : "#999"} />
-                <Text style={styles.clearButtonText}>Clear</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          <TextInput
-            style={styles.cvTextInput}
-            value={cvText}
-            onChangeText={(text) => {
-              setCvText(text);
-              AsyncStorage.setItem("cvText", text);
-            }}
-            placeholder="Paste your CV content here..."
-            placeholderTextColor={isDark ? "#666" : "#999"}
-            multiline
-          />
-          <Text style={styles.inputHint}>Minimum 50 characters required for analysis.</Text>
+        <View style={styles.warningBanner}>
+          <Ionicons name="warning-outline" size={18} color="#B45309" />
+          <Text style={styles.warningText}>
+            For best results, upload a simple linear CV. Non-linear layouts with columns, tables or heavy design can cause Aya to misread dates, sections or spacing, so please double-check the improved CV.
+          </Text>
         </View>
 
-        <PrimaryButton
-          title={analyzing ? "Analyzing..." : "Analyze CV"}
-          onPress={handleAnalyzeCV}
-          loading={analyzing}
-        />
+        <TouchableOpacity
+          style={styles.scratchButton}
+          onPress={() => navigation.navigate("CreateCV")}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="create-outline" size={20} color={colors.primaryBlue} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.scratchButtonTitle}>Create a new CV from scratch</Text>
+            <Text style={styles.scratchButtonText}>Add your details and let Aya build a fresh CV.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        {hasUploadedCV && (
+          <View style={styles.uploadActions}>
+            <TouchableOpacity
+              style={styles.secondaryActionButton}
+              onPress={() => resetCVInput(true)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="clipboard-outline" size={18} color={colors.primaryBlue} />
+              <Text style={styles.secondaryActionText}>Paste CV text instead</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.clearUploadedButton}
+              onPress={() => resetCVInput(true)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="close-circle" size={18} color={isDark ? "#888" : "#64748B"} />
+              <Text style={styles.clearUploadedText}>Clear upload</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {shouldShowManualInput && (
+          <View style={styles.textInputContainer}>
+            <View style={styles.inputHeader}>
+              <Text style={styles.inputLabel}>Paste your CV content</Text>
+              {!!cvText && (
+                <TouchableOpacity
+                  style={styles.clearButton}
+                  onPress={() => resetCVInput(true)}
+                >
+                  <Ionicons name="close-circle" size={16} color={isDark ? "#666" : "#999"} />
+                  <Text style={styles.clearButtonText}>Clear</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <TextInput
+              style={styles.cvTextInput}
+              value={cvText}
+              onChangeText={(text) => {
+                setCvText(text);
+                setCvFileName(null);
+                setLayoutWarning(false);
+                setShowManualInput(true);
+                setAnalyzed(false);
+                setSuggestions([]);
+                setImprovedCV(null);
+                setCopied(false);
+                AsyncStorage.setItem("cvText", text);
+                AsyncStorage.removeItem("cvFileName");
+              }}
+              placeholder="Paste your CV content here..."
+              placeholderTextColor={isDark ? "#666" : "#999"}
+              multiline
+            />
+            <Text style={styles.inputHint}>Minimum 50 characters required for analysis.</Text>
+          </View>
+        )}
+
+        {(shouldShowManualInput || !analyzed) && (
+          <PrimaryButton
+            title={analyzing ? "Analysing..." : hasUploadedCV ? "Analyse Uploaded CV" : "Analyse CV"}
+            onPress={handleAnalyzeCV}
+            loading={analyzing}
+          />
+        )}
 
 
         {analyzing && (
@@ -444,11 +673,11 @@ const ViewCV: React.FC = () => {
                   </View>
                   <TouchableOpacity
                     style={styles.downloadButton}
-                    onPress={handleCopyImprovedCV}
+                    onPress={handleDownloadImprovedCV}
                   >
                     <Ionicons name="download" size={20} color="#fff" />
                     <Text style={styles.downloadButtonText}>
-                      {copied ? "Copied!" : "Copy Improved CV"}
+                      Download Word CV
                     </Text>
                   </TouchableOpacity>
                   <View style={styles.improvedCVContainer}>
@@ -513,14 +742,14 @@ const ViewCV: React.FC = () => {
               ))}
             </View>
 
-            {/* Re-analyze Button */}
+            {/* Re-analyse Button */}
             <TouchableOpacity
               style={styles.reanalyzeButton}
               onPress={handleAnalyzeCV}
               disabled={analyzing}
             >
               <Ionicons name="refresh" size={20} color={colors.primaryBlue} />
-              <Text style={styles.reanalyzeText}>Re-analyze CV</Text>
+              <Text style={styles.reanalyzeText}>Re-analyse CV</Text>
             </TouchableOpacity>
           </>
         )}
@@ -607,6 +836,55 @@ const makeStyles = (colors: any, isDark: boolean) =>
       flex: 1,
       lineHeight: 18,
     },
+    warningBanner: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      backgroundColor: isDark ? "#33220f" : "#FFFBEB",
+      borderWidth: 1,
+      borderColor: isDark ? "#92400E" : "#FCD34D",
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 16,
+      gap: 8,
+    },
+    warningText: {
+      ...typography.caption,
+      color: isDark ? "#FBBF24" : "#92400E",
+      flex: 1,
+      lineHeight: 18,
+    },
+    scratchButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: isDark ? "#151b24" : "#F8FAFC",
+      borderWidth: 1,
+      borderColor: isDark ? "#2b3848" : "#E2E8F0",
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 16,
+    },
+    scratchButtonTitle: {
+      ...typography.bodySmall,
+      color: isDark ? "#fff" : colors.textDark,
+      fontWeight: "700",
+    },
+    scratchButtonText: {
+      ...typography.caption,
+      color: isDark ? "#aaa" : colors.textMuted,
+      marginTop: 2,
+    },
+    uploadButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primaryBlue,
+      borderRadius: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      marginBottom: 8,
+      gap: 10,
+    },
     uploadButtonDisabled: {
       flexDirection: "row",
       alignItems: "center",
@@ -629,6 +907,41 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: isDark ? "#888" : colors.textMuted,
       textAlign: "center",
       marginBottom: 16,
+    },
+    uploadActions: {
+      flexDirection: "row",
+      gap: 10,
+      marginBottom: 16,
+    },
+    secondaryActionButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      flex: 1,
+      gap: 8,
+      borderWidth: 1,
+      borderColor: isDark ? "#2b3848" : "#CBD5E1",
+      borderRadius: 10,
+      paddingVertical: 10,
+      backgroundColor: isDark ? "#101820" : "#F8FAFC",
+    },
+    secondaryActionText: {
+      ...typography.caption,
+      color: colors.primaryBlue,
+      fontWeight: "700",
+    },
+    clearUploadedButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 10,
+    },
+    clearUploadedText: {
+      ...typography.caption,
+      color: isDark ? "#aaa" : colors.textMuted,
+      fontWeight: "600",
     },
     textInputContainer: {
       marginVertical: 16,

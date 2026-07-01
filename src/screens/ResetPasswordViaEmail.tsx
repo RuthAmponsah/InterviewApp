@@ -66,6 +66,22 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
           setValidatingToken(false);
           return;
         }
+      } else if (resetParams.token && resetParams.email) {
+        const { error } = await supabase.auth.verifyOtp({
+          email: resetParams.email,
+          token: resetParams.token,
+          type: 'recovery',
+        });
+
+        if (error) {
+          Alert.alert('Error', error.message || 'Invalid or expired reset link.');
+          setValidatingToken(false);
+          return;
+        }
+      } else {
+        Alert.alert('Error', 'Invalid reset link. Please request a new password reset.');
+        setValidatingToken(false);
+        return;
       }
 
       setTokenValid(true);

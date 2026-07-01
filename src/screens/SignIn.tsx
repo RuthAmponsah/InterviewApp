@@ -20,7 +20,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
-import { syncSubscriptionStatus } from '../services/purchaseService';
+import { syncSectorPacksFromServer, syncSubscriptionStatus } from '../services/purchaseService';
 import Purchases from 'react-native-purchases';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
@@ -235,6 +235,7 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       try {
         await Purchases.logIn(userData.id);
         await syncSubscriptionStatus();
+        await syncSectorPacksFromServer();
       } catch (error) {
         console.log('RevenueCat sync skipped:', error);
       }

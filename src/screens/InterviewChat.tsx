@@ -25,6 +25,7 @@ import { incrementWeeklyCount, checkAndSendStreakMilestone, scheduleStreakWarnin
 import { queueInterview } from '../services/offlineQueue';
 import NetInfo from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
+import { checkSubscriptionStatus as getSubscriptionStatus } from '../services/purchaseService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'InterviewChat'>;
 
@@ -99,19 +100,19 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       const userId = await AsyncStorage.getItem('userId');
       if (!userId) return;
 
+      const subscriptionStatus = await getSubscriptionStatus();
+      if (subscriptionStatus.isActive) {
+        return;
+      }
+
       // Get user preferences
       const { data: prefs } = await supabase
         .from('user_preferences')
-        .select('subscription_tier, interviews_this_month, last_interview_date')
+        .select('interviews_this_month, last_interview_date')
         .eq('user_id', userId)
         .single();
 
       if (!prefs) return;
-
-      // If premium, no limit
-      if (prefs.subscription_tier === 'monthly' || prefs.subscription_tier === 'annual') {
-        return;
-      }
 
       // Check if we need to reset monthly count
       const lastInterview = prefs.last_interview_date ? new Date(prefs.last_interview_date) : null;

@@ -5,6 +5,42 @@ import Constants from 'expo-constants';
 const ADZUNA_APP_ID = Constants.expoConfig?.extra?.adzunaAppId || process.env.EXPO_PUBLIC_ADZUNA_APP_ID || '';
 const ADZUNA_APP_KEY = Constants.expoConfig?.extra?.adzunaAppKey || process.env.EXPO_PUBLIC_ADZUNA_APP_KEY || '';
 const BASE_URL = 'https://api.adzuna.com/v1/api/jobs/gb/search';
+const RETRYABLE_STATUS_CODES = [502, 503, 504];
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const fetchAdzuna = async (url: string): Promise<Response> => {
+  const response = await fetch(url);
+
+  if (RETRYABLE_STATUS_CODES.includes(response.status)) {
+    await delay(700);
+    return fetch(url);
+  }
+
+  return response;
+};
+
+const getAdzunaError = async (response: Response) => {
+  let message = `API error: ${response.status}`;
+  try {
+    const body = await response.json();
+    if (body?.display) {
+      message = `Adzuna error: ${body.display}`;
+    }
+  } catch {
+    // Keep the status-only message if Adzuna does not return JSON.
+  }
+
+  if (response.status === 401) {
+    return new Error('Adzuna authorisation failed. Check EXPO_PUBLIC_ADZUNA_APP_ID and EXPO_PUBLIC_ADZUNA_APP_KEY.');
+  }
+
+  if (RETRYABLE_STATUS_CODES.includes(response.status)) {
+    return new Error('Adzuna is temporarily unavailable. Please try again in a moment.');
+  }
+
+  return new Error(message);
+};
 
 if (!ADZUNA_APP_ID || !ADZUNA_APP_KEY) {
   console.warn('⚠️ Adzuna API credentials not found. Job search will be disabled.');
@@ -174,10 +210,10 @@ export const searchJobs = async (
 
     const url = `${BASE_URL}/${page}?${params.toString()}`;
     
-    const response = await fetch(url);
+    const response = await fetchAdzuna(url);
     
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      throw await getAdzunaError(response);
     }
 
     const data = await response.json();
@@ -209,10 +245,10 @@ export const searchJobsByKeyword = async (
     });
 
     const url = `${BASE_URL}/${page}?${params.toString()}`;
-    const response = await fetch(url);
+    const response = await fetchAdzuna(url);
     
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      throw await getAdzunaError(response);
     }
 
     const data = await response.json();

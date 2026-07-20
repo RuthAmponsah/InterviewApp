@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import {
     FlatList,
     KeyboardAvoidingView,
-    Platform,
     StyleSheet,
     Text,
     TextInput,
@@ -26,6 +25,7 @@ import { queueInterview } from '../services/offlineQueue';
 import NetInfo from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
 import { checkSubscriptionStatus as getSubscriptionStatus } from '../services/purchaseService';
+import { keyboardAwareScrollProps, keyboardAvoidingBehavior, keyboardVerticalOffset } from '../utils/keyboard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'InterviewChat'>;
 
@@ -441,7 +441,8 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   return (
     <KeyboardAvoidingView
       style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={keyboardAvoidingBehavior}
+      keyboardVerticalOffset={keyboardVerticalOffset}
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -462,6 +463,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         contentContainerStyle={styles.listContent}
         data={messages}
         keyExtractor={(item) => item.id}
+        {...keyboardAwareScrollProps}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         renderItem={({ item }) => (
           <View style={styles.messageContainer}>

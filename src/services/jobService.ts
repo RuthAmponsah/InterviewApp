@@ -1,9 +1,16 @@
 // Adzuna Job Search API Service
 // Sign up for free API keys at: https://developer.adzuna.com/
 import Constants from 'expo-constants';
+import { firstConfigValue } from '../utils/env';
 
-const ADZUNA_APP_ID = Constants.expoConfig?.extra?.adzunaAppId || process.env.EXPO_PUBLIC_ADZUNA_APP_ID || '';
-const ADZUNA_APP_KEY = Constants.expoConfig?.extra?.adzunaAppKey || process.env.EXPO_PUBLIC_ADZUNA_APP_KEY || '';
+const ADZUNA_APP_ID = firstConfigValue(
+  Constants.expoConfig?.extra?.adzunaAppId,
+  process.env.EXPO_PUBLIC_ADZUNA_APP_ID,
+);
+const ADZUNA_APP_KEY = firstConfigValue(
+  Constants.expoConfig?.extra?.adzunaAppKey,
+  process.env.EXPO_PUBLIC_ADZUNA_APP_KEY,
+);
 const BASE_URL = 'https://api.adzuna.com/v1/api/jobs/gb/search';
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
 

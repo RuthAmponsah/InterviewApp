@@ -6,7 +6,6 @@ import {
   ScrollView,
   Alert,
   KeyboardAvoidingView,
-  Platform,
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
@@ -17,6 +16,7 @@ import PrimaryButton from "../components/PrimaryButton";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
+import { keyboardAwareScrollProps, keyboardAvoidingBehavior, keyboardVerticalOffset } from "../utils/keyboard";
 
 const ChangePassword: React.FC = () => {
   const { colors, theme } = useTheme();
@@ -95,7 +95,8 @@ const ChangePassword: React.FC = () => {
   return (
     <KeyboardAvoidingView
       style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={keyboardAvoidingBehavior}
+      keyboardVerticalOffset={keyboardVerticalOffset}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
@@ -103,6 +104,7 @@ const ChangePassword: React.FC = () => {
             style={styles.root}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
+            {...keyboardAwareScrollProps}
           >
         <ScreenHeader />
 
@@ -166,7 +168,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-            paddingBottom: 32,
+      paddingBottom: 120,
     },
     logoText: {
       ...typography.brandMark,

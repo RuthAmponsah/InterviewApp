@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
@@ -16,6 +17,7 @@ import { typography } from '../theme/colors';
 import ScreenHeader from "../components/ScreenHeader";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
+import { keyboardAvoidingBehavior, keyboardAwareScrollProps, keyboardVerticalOffset } from '../utils/keyboard';
 
 const AddStory: React.FC = () => {
   const navigation = useNavigation();
@@ -144,13 +146,18 @@ const AddStory: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={keyboardAvoidingBehavior}
+      keyboardVerticalOffset={keyboardVerticalOffset}
+    >
       <ScreenHeader />
       
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        {...keyboardAwareScrollProps}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -244,7 +251,7 @@ const AddStory: React.FC = () => {
           </Text>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -259,7 +266,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-            paddingBottom: 40,
+      paddingBottom: 120,
     },
     logoText: {
       ...typography.brandMark,

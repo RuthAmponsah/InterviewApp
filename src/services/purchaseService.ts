@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { firstConfigValue } from '../utils/env';
 
 export type SubscriptionTier = 'free' | 'monthly' | 'annual' | 'premium';
 export type PaidSubscriptionTier = Exclude<SubscriptionTier, 'free' | 'premium'>;
@@ -108,8 +109,14 @@ const saveSubscriptionStatus = async (
 
 // RevenueCat API Keys
 const envExtra = ((Constants.expoConfig as any)?.extra || (Constants.manifest as any)?.extra || {}) as Record<string, any>;
-const REVENUECAT_IOS_KEY = envExtra.revenuecatIosKey || process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
-const REVENUECAT_ANDROID_KEY = envExtra.revenuecatAndroidKey || process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';
+const REVENUECAT_IOS_KEY = firstConfigValue(
+  envExtra.revenuecatIosKey,
+  process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY,
+);
+const REVENUECAT_ANDROID_KEY = firstConfigValue(
+  envExtra.revenuecatAndroidKey,
+  process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY,
+);
 
 if (!REVENUECAT_IOS_KEY || !REVENUECAT_ANDROID_KEY) {
   console.warn('⚠️ RevenueCat API keys not found. Subscription functionality will be limited.');

@@ -14,6 +14,7 @@ import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { getSupportAgentReply } from "../services/aiService";
+import { keyboardDismissMode } from "../utils/keyboard";
 
 const KNOWLEDGE_BASE = [
   {
@@ -228,6 +229,7 @@ const SupportChat: React.FC = () => {
         ref={scrollRef}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={keyboardDismissMode}
         onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
       >
         <ScreenHeader />

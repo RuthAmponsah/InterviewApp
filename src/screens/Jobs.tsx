@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   TextInput,
   KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,6 +20,7 @@ import AppHeader from "../components/AppHeader";
 import { supabase } from "../config/supabase";
 import { searchJobs, Job } from "../services/jobService";
 import { JOB_ROLES } from "../constants/jobRoles";
+import { keyboardAwareScrollProps, keyboardAvoidingBehavior, keyboardVerticalOffset } from "../utils/keyboard";
 
 const BASE_CATEGORIES = ['All Jobs', 'Saved Jobs'];
 
@@ -171,8 +171,8 @@ const Jobs: React.FC = () => {
   return (
     <KeyboardAvoidingView 
       style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
+      behavior={keyboardAvoidingBehavior}
+      keyboardVerticalOffset={keyboardVerticalOffset}
     >
       <AppHeader horizontalPadding={20} />
 
@@ -224,7 +224,7 @@ const Jobs: React.FC = () => {
                 </TouchableOpacity>
               ) : null}
             </View>
-            <ScrollView nestedScrollEnabled>
+            <ScrollView nestedScrollEnabled {...keyboardAwareScrollProps}>
               {BASE_CATEGORIES.concat(
                 JOB_ROLES.filter((role) =>
                   role.toLowerCase().includes(dropdownSearch.trim().toLowerCase())
@@ -286,6 +286,7 @@ const Jobs: React.FC = () => {
           horizontal 
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filtersScroll}
+          {...keyboardAwareScrollProps}
         >
           {['All', 'Remote', 'Hybrid', 'On-site'].map((type) => (
             <TouchableOpacity

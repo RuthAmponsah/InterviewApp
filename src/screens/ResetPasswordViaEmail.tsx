@@ -10,6 +10,7 @@ import {
   Keyboard,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import PrimaryButton from '../components/PrimaryButton';
 import TextInputField from '../components/TextInputField';
@@ -17,6 +18,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
+import { authKeyboardVerticalOffset, keyboardAwareScrollProps } from '../utils/keyboard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ResetPasswordViaEmail'>;
 
@@ -177,46 +179,54 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
     <KeyboardAvoidingView
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={authKeyboardVerticalOffset}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-          <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        {...keyboardAwareScrollProps}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+            <Text style={styles.logoText}>MY INTERVIEW</Text>
 
-          <Text style={styles.title}>Reset password</Text>
-          <Text style={styles.subtitle}>
-            Enter your new password below.
-          </Text>
-
-          <View style={styles.form}>
-            <TextInputField
-              label="New password"
-              placeholder="Enter new password"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry
-            />
-
-            <TextInputField
-              label="Confirm password"
-              placeholder="Re-enter new password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-            />
-
-            <Text style={styles.hintText}>
-              Password must be at least 8 characters long.
+            <Text style={styles.title}>Reset password</Text>
+            <Text style={styles.subtitle}>
+              Enter your new password below.
             </Text>
 
-            <PrimaryButton
-              title="Reset password"
-              onPress={onResetPassword}
-              loading={loading}
-              disabled={!newPassword || !confirmPassword}
-            />
+            <View style={styles.form}>
+              <TextInputField
+                label="New password"
+                placeholder="Enter new password"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry
+              />
+
+              <TextInputField
+                label="Confirm password"
+                placeholder="Re-enter new password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+              />
+
+              <Text style={styles.hintText}>
+                Password must be at least 8 characters long.
+              </Text>
+
+              <PrimaryButton
+                title="Reset password"
+                onPress={onResetPassword}
+                loading={loading}
+                disabled={!newPassword || !confirmPassword}
+              />
+            </View>
           </View>
-        </View>
-      </TouchableWithoutFeedback>
+        </TouchableWithoutFeedback>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -224,8 +234,11 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
 const makeStyles = (colors: any, isDark: boolean) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: isDark ? '#0f0f0f' : colors.background },
+    scrollContent: {
+      flexGrow: 1,
+      paddingBottom: 40,
+    },
     container: {
-      flex: 1,
       paddingHorizontal: 24,
       paddingTop: 70,
     },

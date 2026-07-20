@@ -10,6 +10,7 @@ import {
   TextInput,
   Platform,
   RefreshControl,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -24,6 +25,7 @@ import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
 import { analyzeCVWithAI, cleanGeneratedCVText, improveCV, normalizeCVText } from "../services/aiService";
 import * as Clipboard from 'expo-clipboard';
+import { keyboardAvoidingBehavior, keyboardAwareScrollProps, keyboardVerticalOffset } from "../utils/keyboard";
 
 const MAX_CV_FILE_BYTES = 5 * 1024 * 1024;
 const SUPPORTED_CV_TYPES = [
@@ -481,19 +483,25 @@ const ViewCV: React.FC = () => {
   const hasUploadedCV = Boolean(cvFileName && cvText && !showManualInput);
 
   return (
-    <ScrollView 
-      style={styles.root} 
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={colors.primaryBlue}
-          colors={[colors.primaryBlue]}
-        />
-      }
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={keyboardAvoidingBehavior}
+      keyboardVerticalOffset={keyboardVerticalOffset}
     >
-      <ScreenHeader />
+      <ScrollView 
+        style={styles.root} 
+        contentContainerStyle={styles.content}
+        {...keyboardAwareScrollProps}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primaryBlue}
+            colors={[colors.primaryBlue]}
+          />
+        }
+      >
+        <ScreenHeader />
 
       <Text style={styles.title}>Your CV</Text>
       <Text style={styles.subtitle}>
@@ -763,7 +771,8 @@ const ViewCV: React.FC = () => {
           </View>
         )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -775,7 +784,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-            paddingBottom: 32,
+      paddingBottom: 120,
     },
     logoText: {
       ...typography.brandMark,

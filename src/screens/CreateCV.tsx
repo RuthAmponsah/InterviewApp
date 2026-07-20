@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,6 +19,7 @@ import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { cleanGeneratedCVText, createCVFromDetails, NewCVDetails } from "../services/aiService";
 import { supabase } from "../config/supabase";
+import { keyboardAwareScrollProps, keyboardAvoidingBehavior, keyboardVerticalOffset } from "../utils/keyboard";
 
 const DRAFT_KEY = "createCVDraft";
 
@@ -258,9 +258,10 @@ export default function CreateCV({ navigation }: any) {
   return (
     <KeyboardAvoidingView
       style={styles.root}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={keyboardAvoidingBehavior}
+      keyboardVerticalOffset={keyboardVerticalOffset}
     >
-      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.root} contentContainerStyle={styles.content} {...keyboardAwareScrollProps}>
         <ScreenHeader />
 
         <Text style={styles.title}>Create CV</Text>
@@ -384,7 +385,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-      paddingBottom: 32,
+      paddingBottom: 120,
     },
     title: {
       ...typography.headingMedium,

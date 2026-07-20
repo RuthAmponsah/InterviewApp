@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
-  Platform,
   TouchableOpacity,
   Alert,
   Image,
@@ -25,6 +24,7 @@ import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
 import SuccessAnimation from "../components/SuccessAnimation";
+import { keyboardAwareScrollProps, keyboardAvoidingBehavior, keyboardVerticalOffset } from "../utils/keyboard";
 
 export default function EditProfile({ navigation }: any) {
   const { colors, theme } = useTheme();
@@ -214,7 +214,8 @@ export default function EditProfile({ navigation }: any) {
   return (
     <KeyboardAvoidingView
       style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={keyboardAvoidingBehavior}
+      keyboardVerticalOffset={keyboardVerticalOffset}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
@@ -222,6 +223,7 @@ export default function EditProfile({ navigation }: any) {
             style={styles.root}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
+            {...keyboardAwareScrollProps}
           >
         <ScreenHeader />
 
@@ -332,7 +334,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 20,
-            paddingBottom: 32,
+      paddingBottom: 120,
     },
     logoText: {
       ...typography.brandMark,

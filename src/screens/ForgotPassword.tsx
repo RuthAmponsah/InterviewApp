@@ -10,6 +10,7 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
     Alert,
+    ScrollView,
 } from 'react-native';
 import PrimaryButton from '../components/PrimaryButton';
 import TextInputField from '../components/TextInputField';
@@ -17,6 +18,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
+import { authKeyboardVerticalOffset, keyboardAwareScrollProps } from '../utils/keyboard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 
@@ -70,45 +72,53 @@ const ForgotPassword: React.FC<Props> = ({ navigation }) => {
     <KeyboardAvoidingView
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={authKeyboardVerticalOffset}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        {...keyboardAwareScrollProps}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+          <Text style={styles.logoText}>MY INTERVIEW</Text>
 
-        <Text style={styles.title}>Forgot password</Text>
-        <Text style={styles.subtitle}>
-          Enter your email and we’ll send you a password reset link.
-        </Text>
+          <Text style={styles.title}>Forgot password</Text>
+          <Text style={styles.subtitle}>
+            Enter your email and we’ll send you a password reset link.
+          </Text>
 
-        <View style={styles.form}>
-          <TextInputField
-            label="Email"
-            placeholder="Your email address"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-          />
+          <View style={styles.form}>
+            <TextInputField
+              label="Email"
+              placeholder="Your email address"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+            />
 
-          <PrimaryButton
-            title={sent ? 'Link sent' : 'Send link'}
-            onPress={onSendLink}
-            loading={loading}
-            disabled={!email}
-          />
+            <PrimaryButton
+              title={sent ? 'Link sent' : 'Send link'}
+              onPress={onSendLink}
+              loading={loading}
+              disabled={!email}
+            />
 
-          {sent && (
-            <Text style={styles.infoText}>
-              If an account exists with this email, a recovery link has been
-              sent.
-            </Text>
-          )}
-        </View>
+            {sent && (
+              <Text style={styles.infoText}>
+                If an account exists with this email, a recovery link has been
+                sent.
+              </Text>
+            )}
+          </View>
 
-        <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
-          <Text style={styles.backLink}>Back to sign in</Text>
-        </TouchableOpacity>
-        </View>
-      </TouchableWithoutFeedback>
+          <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
+            <Text style={styles.backLink}>Back to sign in</Text>
+          </TouchableOpacity>
+          </View>
+        </TouchableWithoutFeedback>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -116,8 +126,11 @@ const ForgotPassword: React.FC<Props> = ({ navigation }) => {
 const makeStyles = (colors: any, isDark: boolean) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: isDark ? '#0f0f0f' : colors.background },
+    scrollContent: {
+      flexGrow: 1,
+      paddingBottom: 40,
+    },
     container: {
-      flex: 1,
       paddingHorizontal: 24,
       paddingTop: 70,
     },
@@ -161,4 +174,3 @@ const makeStyles = (colors: any, isDark: boolean) =>
   });
 
 export default ForgotPassword;
-

@@ -11,6 +11,7 @@ import {
     Modal,
     Keyboard,
     TouchableWithoutFeedback,
+    ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import PrimaryButton from '../components/PrimaryButton';
@@ -19,6 +20,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
+import { authKeyboardVerticalOffset, keyboardAwareScrollProps } from '../utils/keyboard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
@@ -161,87 +163,95 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
     <KeyboardAvoidingView
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={authKeyboardVerticalOffset}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <Animated.View
-          style={[
-            styles.container,
-            { opacity: fadeAnim, transform: [{ translateY }] },
-          ]}
-        >
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        {...keyboardAwareScrollProps}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <Animated.View
+            style={[
+              styles.container,
+              { opacity: fadeAnim, transform: [{ translateY }] },
+            ]}
+          >
+          <Text style={styles.logoText}>MY INTERVIEW</Text>
 
-        <Text style={styles.title}>Create your account</Text>
-        <Text style={styles.subtitle}>
-          Set up your profile so Aya can personalise your interview journey.
-        </Text>
-
-        <View style={styles.form}>
-          <TextInputField
-            label="Name"
-            placeholder="Enter your name"
-            value={name}
-            onChangeText={setName}
-          />
-
-          <TextInputField
-            label="Email"
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-
-          <View style={styles.passwordContainer}>
-            <TextInputField
-              label="Password"
-              placeholder="Create a password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={22}
-                color={isDark ? '#888' : '#6B7280'}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.hintText}>
-            Password must be at least 8 characters and include 1 special character.
+          <Text style={styles.title}>Create your account</Text>
+          <Text style={styles.subtitle}>
+            Set up your profile so Aya can personalise your interview journey.
           </Text>
 
-          <TextInputField
-            label="Age"
-            placeholder="Your age"
-            value={age}
-            onChangeText={setAge}
-            keyboardType="numeric"
-          />
+          <View style={styles.form}>
+            <TextInputField
+              label="Name"
+              placeholder="Enter your name"
+              value={name}
+              onChangeText={setName}
+            />
 
-          <PrimaryButton
-            title="Sign up"
-            onPress={handleSignUp}
-            loading={loading}
-            disabled={!name || !email || !password}
-          />
-        </View>
+            <TextInputField
+              label="Email"
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
 
-        <TouchableOpacity
-          style={styles.backToSignIn}
-          onPress={() => navigation.navigate('SignIn')}
-        >
-          <Text style={styles.backText}>Back to sign in</Text>
-        </TouchableOpacity>
-      </Animated.View>
-      </TouchableWithoutFeedback>
+            <View style={styles.passwordContainer}>
+              <TextInputField
+                label="Password"
+                placeholder="Create a password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={22}
+                  color={isDark ? '#888' : '#6B7280'}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.hintText}>
+              Password must be at least 8 characters and include 1 special character.
+            </Text>
+
+            <TextInputField
+              label="Age"
+              placeholder="Your age"
+              value={age}
+              onChangeText={setAge}
+              keyboardType="numeric"
+            />
+
+            <PrimaryButton
+              title="Sign up"
+              onPress={handleSignUp}
+              loading={loading}
+              disabled={!name || !email || !password}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.backToSignIn}
+            onPress={() => navigation.navigate('SignIn')}
+          >
+            <Text style={styles.backText}>Back to sign in</Text>
+          </TouchableOpacity>
+        </Animated.View>
+        </TouchableWithoutFeedback>
+      </ScrollView>
 
       {/* ⚠️ WARNING/SUCCESS POPUP MODAL */}
       <Modal transparent visible={warningVisible} animationType="fade">
@@ -282,8 +292,14 @@ const makeStyles = (colors: any, isDark: boolean) =>
     flex: 1,
     backgroundColor: isDark ? '#0f0f0f' : colors.background,
   },
-  container: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  container: {
     paddingHorizontal: 24,
     paddingTop: 70,
   },

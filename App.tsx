@@ -10,6 +10,16 @@ import LaunchAnimation from './src/components/LaunchAnimation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './src/config/supabase';
 
+const BRAND_BLUE = '#1E3A6E';
+
+const AppLoadingScreen = ({ isDark, message = 'Loading My Interview...' }: { isDark: boolean; message?: string }) => (
+  <View style={[styles.loadingScreen, { backgroundColor: isDark ? '#0f0f0f' : '#FFFFFF' }]}>
+    <Text style={styles.loadingBrand}>MY INTERVIEW</Text>
+    <ActivityIndicator size="large" color={BRAND_BLUE} />
+    <Text style={[styles.loadingText, { color: isDark ? '#e5e5e5' : '#4B5563' }]}>{message}</Text>
+  </View>
+);
+
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 interface ErrorBoundaryState { hasError: boolean; error: string; }
 class ErrorBoundary extends Component<{ children: React.ReactNode }, ErrorBoundaryState> {
@@ -118,7 +128,7 @@ function AppContent() {
 
   if (fontError) {
     return (
-      <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
+      <View style={[styles.loadingScreen, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
         <Text style={{ color: isDark ? '#ffffff' : '#000000', fontSize: 16, textAlign: 'center', marginHorizontal: 20 }}>
           ⚠️ Loading Error
           {'\n\n'}
@@ -129,11 +139,7 @@ function AppContent() {
   }
 
   if (!fontsLoaded) {
-    return (
-      <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
-        <ActivityIndicator size="large" color={isDark ? '#ffffff' : '#0f0f0f'} />
-      </View>
-    );
+    return <AppLoadingScreen isDark={isDark} message="Preparing your app..." />;
   }
 
   return (
@@ -155,5 +161,23 @@ function AppContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  loadingBrand: {
+    color: BRAND_BLUE,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 3,
+    marginBottom: 24,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

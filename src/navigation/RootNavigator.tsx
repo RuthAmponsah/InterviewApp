@@ -242,6 +242,15 @@ const RootNavigator = () => {
     };
   };
 
+  const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<T>((resolve) => {
+        setTimeout(() => resolve(fallback), timeoutMs);
+      }),
+    ]);
+  };
+
   const syncUserContextFromSession = async (session: any) => {
     const userId = session?.user?.id;
     const userEmail = session?.user?.email;
@@ -253,11 +262,24 @@ const RootNavigator = () => {
       await AsyncStorage.setItem('userEmail', userEmail.toLowerCase());
     }
 
-    const { data: userData } = await supabase
-      .from('users')
-      .select('name, email, job_role, profile_photo')
-      .eq('id', userId)
-      .single();
+    const profileResult = await withTimeout(
+      Promise.resolve(
+        supabase
+          .from('users')
+          .select('name, email, job_role, profile_photo')
+          .eq('id', userId)
+          .maybeSingle()
+      ),
+      2500,
+      { data: null, error: null } as any,
+    );
+
+    const userData = profileResult?.data;
+    if (!userData) {
+      console.warn('⚠️ Profile sync skipped or timed out during startup');
+      await AsyncStorage.setItem('isLoggedIn', 'true');
+      return;
+    }
 
     if (userData?.name) {
       await AsyncStorage.setItem('userName', userData.name);
@@ -331,10 +353,9 @@ const RootNavigator = () => {
         console.log('📱 App loaded - Supabase session:', session ? 'Active ✅' : 'None ❌');
 
         if (session) {
-          await syncUserContextFromSession(session);
-          // Logged in, go to main app
           console.log('✅ User has valid session, showing MainTabs');
           setInitialRoute("MainTabs");
+          await syncUserContextFromSession(session);
         } else {
           await clearLocalAuthContext();
           // Logged out, show sign in
@@ -360,9 +381,31 @@ const RootNavigator = () => {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: colors.background,
+          paddingHorizontal: 24,
         }}
       >
+        <Text
+          style={{
+            color: colors.primaryBlue,
+            fontSize: 13,
+            fontWeight: "800",
+            letterSpacing: 3,
+            marginBottom: 24,
+          }}
+        >
+          MY INTERVIEW
+        </Text>
         <ActivityIndicator size="large" color={colors.primaryBlue} />
+        <Text
+          style={{
+            color: colors.textMuted,
+            fontSize: 14,
+            textAlign: "center",
+            marginTop: 16,
+          }}
+        >
+          Getting things ready...
+        </Text>
       </View>
     );
   }

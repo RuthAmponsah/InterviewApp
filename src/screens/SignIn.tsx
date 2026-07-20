@@ -11,6 +11,7 @@ import {
     Modal,
     TouchableWithoutFeedback,
     Keyboard,
+    ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,6 +23,7 @@ import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
 import { syncSectorPacksFromServer, syncSubscriptionStatus } from '../services/purchaseService';
 import Purchases from 'react-native-purchases';
+import { authKeyboardVerticalOffset, keyboardAwareScrollProps } from '../utils/keyboard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
@@ -268,82 +270,90 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
     <KeyboardAvoidingView
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={authKeyboardVerticalOffset}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.background} />
       </TouchableWithoutFeedback>
 
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <Animated.View
-          style={[
-            styles.container,
-            { opacity: fadeAnim, transform: [{ translateY }] },
-          ]}
-        >
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        {...keyboardAwareScrollProps}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <Animated.View
+            style={[
+              styles.container,
+              { opacity: fadeAnim, transform: [{ translateY }] },
+            ]}
+          >
+          <Text style={styles.logoText}>MY INTERVIEW</Text>
 
-        <Text style={styles.title}>Sign in</Text>
-        <Text style={styles.subtitle}>
-          Welcome back. Let’s get you ready for your next interview.
-        </Text>
+          <Text style={styles.title}>Sign in</Text>
+          <Text style={styles.subtitle}>
+            Welcome back. Let’s get you ready for your next interview.
+          </Text>
 
-        <View style={styles.form}>
-          <TextInputField
-            label="Email"
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            returnKeyType="next"
-          />
-
-          <View style={styles.passwordContainer}>
+          <View style={styles.form}>
             <TextInputField
-              label="Password"
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              returnKeyType="done"
-              onSubmitEditing={onSignIn}
+              label="Email"
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              returnKeyType="next"
             />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={22}
-                color={isDark ? '#888' : '#6B7280'}
+
+            <View style={styles.passwordContainer}>
+              <TextInputField
+                label="Password"
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                returnKeyType="done"
+                onSubmitEditing={onSignIn}
               />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={22}
+                  color={isDark ? '#888' : '#6B7280'}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ForgotPassword')}
+              style={styles.forgotLinkContainer}
+            >
+              <Text style={styles.forgotLink}>Forgot password?</Text>
             </TouchableOpacity>
+
+            <PrimaryButton
+              title="Sign in"
+              onPress={onSignIn}
+              loading={loading}
+              disabled={!email || !password}
+            />
           </View>
 
-          <TouchableOpacity
-            onPress={() => navigation.navigate('ForgotPassword')}
-            style={styles.forgotLinkContainer}
-          >
-            <Text style={styles.forgotLink}>Forgot password?</Text>
-          </TouchableOpacity>
-
-          <PrimaryButton
-            title="Sign in"
-            onPress={onSignIn}
-            loading={loading}
-            disabled={!email || !password}
-          />
-        </View>
-
-        <View style={styles.bottomRow}>
-          <Text style={styles.bottomText}>Don't have an account?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-            <Text style={styles.bottomLink}>Sign up</Text>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
-      </TouchableWithoutFeedback>
+          <View style={styles.bottomRow}>
+            <Text style={styles.bottomText}>Don't have an account?</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+              <Text style={styles.bottomLink}>Sign up</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+        </TouchableWithoutFeedback>
+      </ScrollView>
 
       {/* Error Modal - Same style as SignUp */}
       <Modal transparent visible={errorVisible} animationType="fade">
@@ -394,8 +404,14 @@ const makeStyles = (colors: any, isDark: boolean) =>
     ...StyleSheet.absoluteFillObject,
     backgroundColor: isDark ? '#0f0f0f' : '#F3F4F6',
   },
-  container: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  container: {
     paddingHorizontal: 24,
     paddingTop: 70,
   },

@@ -1,17 +1,28 @@
 const baseConfig = require('./app.json').expo;
 
+const readEnv = (...names) => {
+  for (const name of names) {
+    const value = process.env[name];
+    if (typeof value === 'string' && value.trim() && !value.trim().startsWith('@')) {
+      return value.trim();
+    }
+  }
+
+  return '';
+};
+
 module.exports = ({ config }) => ({
   ...config,
   ...baseConfig,
   extra: {
     ...baseConfig.extra,
-    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.supabaseUrl || '',
-    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.supabaseAnonKey || '',
-    groqApiKey: process.env.EXPO_PUBLIC_GROQ_API_KEY || process.env.groqApiKey || '',
-    adzunaAppId: process.env.EXPO_PUBLIC_ADZUNA_APP_ID || process.env.adzunaAppId || '',
-    adzunaAppKey: process.env.EXPO_PUBLIC_ADZUNA_APP_KEY || process.env.adzunaAppKey || '',
-    elevenlabsApiKey: process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY || process.env.elevenlabsApiKey || '',
-    revenuecatIosKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || process.env.revenuecatIosKey || '',
-    revenuecatAndroidKey: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || process.env.revenuecatAndroidKey || '',
+    supabaseUrl: readEnv('EXPO_PUBLIC_SUPABASE_URL', 'supabaseUrl'),
+    supabaseAnonKey: readEnv('EXPO_PUBLIC_SUPABASE_ANON_KEY', 'supabaseAnonKey'),
+    groqApiKey: readEnv('EXPO_PUBLIC_GROQ_API_KEY', 'groqApiKey'),
+    adzunaAppId: readEnv('EXPO_PUBLIC_ADZUNA_APP_ID', 'adzunaAppId'),
+    adzunaAppKey: readEnv('EXPO_PUBLIC_ADZUNA_APP_KEY', 'adzunaAppKey'),
+    elevenlabsApiKey: readEnv('EXPO_PUBLIC_ELEVENLABS_API_KEY', 'elevenlabsApiKey'),
+    revenuecatIosKey: readEnv('EXPO_PUBLIC_REVENUECAT_IOS_KEY', 'revenuecatIosKey'),
+    revenuecatAndroidKey: readEnv('EXPO_PUBLIC_REVENUECAT_ANDROID_KEY', 'revenuecatAndroidKey'),
   },
 });

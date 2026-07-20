@@ -10,7 +10,6 @@ import {
   Modal,
   RefreshControl,
   KeyboardAvoidingView,
-  Platform,
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
@@ -24,6 +23,7 @@ import { supabase } from '../config/supabase';
 import { getQuestionAnswerFeedback, type QuestionAnswerFeedback } from "../services/aiService";
 import PaywallModal from "../components/PaywallModal";
 import { checkSubscriptionStatus, isPremiumTier } from "../services/purchaseService";
+import { keyboardAwareScrollProps, keyboardAvoidingBehavior, keyboardVerticalOffset } from "../utils/keyboard";
 
 type QuestionCategory = 'Behavioral' | 'Technical' | 'Situational' | 'Strengths' | 'Role-Specific' | 'Custom';
 
@@ -504,13 +504,14 @@ export default function QuestionBank({ navigation }: any) {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      behavior={keyboardAvoidingBehavior}
+      keyboardVerticalOffset={keyboardVerticalOffset}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.root}>
           <ScrollView 
             contentContainerStyle={styles.content}
+            {...keyboardAwareScrollProps}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -753,15 +754,6 @@ export default function QuestionBank({ navigation }: any) {
                 )}
 
                 <Text style={styles.answerLabel}>Your Answer (STAR Method)</Text>
-                <View style={styles.keyboardHeader}>
-                  <TouchableOpacity 
-                    style={styles.keyboardDismissButton}
-                    onPress={() => Keyboard.dismiss()}
-                  >
-                    <Ionicons name="chevron-down" size={20} color={colors.primaryBlue} />
-                    <Text style={styles.keyboardDismissText}>Close Keyboard</Text>
-                  </TouchableOpacity>
-                </View>
                 <TextInput
                   style={styles.answerInput}
                   placeholder="Situation: Describe the context...
@@ -839,7 +831,11 @@ Result: What was the outcome?"
             onRequestClose={() => setShowAddModal(false)}
           >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-              <View style={styles.modalOverlay}>
+              <KeyboardAvoidingView
+                style={styles.modalOverlay}
+                behavior={keyboardAvoidingBehavior}
+                keyboardVerticalOffset={0}
+              >
                 <View style={styles.modalContent}>
                   <Text style={styles.modalTitle}>Add Custom Question</Text>
                   <Text style={styles.inputLabel}>Question</Text>
@@ -891,7 +887,7 @@ Result: What was the outcome?"
                     </TouchableOpacity>
                   </View>
                 </View>
-              </View>
+              </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
           </Modal>
         </View>
@@ -908,7 +904,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     content: {
       paddingHorizontal: 24,
-            paddingBottom: 32,
+      paddingBottom: 120,
     },
     headerRow: {
       flexDirection: 'row',
@@ -1187,28 +1183,6 @@ const makeStyles = (colors: any, isDark: boolean) =>
     previousAnswerText: {
       ...typography.bodySmall,
       lineHeight: 20,
-    },
-    keyboardHeader: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      marginTop: 8,
-      marginBottom: 8,
-    },
-    keyboardDismissButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: isDark ? '#222' : '#f0f9ff',
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.primaryBlue,
-    },
-    keyboardDismissText: {
-      ...typography.caption,
-      color: colors.primaryBlue,
-      fontWeight: '600',
-      marginLeft: 4,
     },
     answerInput: {
       backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',

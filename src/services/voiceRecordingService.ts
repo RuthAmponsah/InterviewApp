@@ -7,8 +7,12 @@ import { Audio } from 'expo-av';
 import { getInfoAsync } from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
 import { AppState, AppStateStatus } from 'react-native';
+import { firstConfigValue } from '../utils/env';
 
-const GROQ_API_KEY = Constants.expoConfig?.extra?.groqApiKey || process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
+const GROQ_API_KEY = firstConfigValue(
+  Constants.expoConfig?.extra?.groqApiKey,
+  process.env.EXPO_PUBLIC_GROQ_API_KEY,
+);
 
 let recording: Audio.Recording | null = null;
 

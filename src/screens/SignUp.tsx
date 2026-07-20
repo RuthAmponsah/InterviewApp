@@ -107,7 +107,7 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         email: email.toLowerCase(),
         password: password,
         options: {
-          emailRedirectTo: undefined,
+          emailRedirectTo: 'interviewapp://',
           data: {
             name: name,
             age: ageNum.toString(),

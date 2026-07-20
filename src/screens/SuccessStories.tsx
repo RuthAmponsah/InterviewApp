@@ -92,6 +92,15 @@ const SuccessStories: React.FC = () => {
           Real people who practiced with Aya and landed their dream jobs
         </Text>
 
+        <TouchableOpacity
+          style={styles.addStoryButton}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('AddStory' as never)}
+        >
+          <Ionicons name="add-circle-outline" size={20} color="#fff" />
+          <Text style={styles.addStoryButtonText}>Add Your Story</Text>
+        </TouchableOpacity>
+
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primaryBlue} />
@@ -113,15 +122,6 @@ const SuccessStories: React.FC = () => {
           </View>
         ) : (
           <>
-        <TouchableOpacity
-          style={styles.addStoryButton}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('AddStory' as never)}
-        >
-          <Ionicons name="add-circle-outline" size={20} color="#fff" />
-          <Text style={styles.addStoryButtonText}>Add Your Story Now</Text>
-        </TouchableOpacity>
-
         {stories.map((story, index) => {
           const isExpanded = expandedId === story.id;
           const previewText = story.story.slice(0, 120) + '...';

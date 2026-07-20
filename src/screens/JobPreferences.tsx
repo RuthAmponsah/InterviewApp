@@ -15,7 +15,7 @@ import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import { supabase } from "../config/supabase";
 import { JOB_ROLES } from "../constants/jobRoles";
-import { speakText, stopSpeaking } from "../services/aiService";
+
 
 const JobPreferences: React.FC = () => {
   const { colors, theme } = useTheme();
@@ -33,20 +33,7 @@ const JobPreferences: React.FC = () => {
     load();
   }, []);
 
-  // Ava speaks the question when page opens
-  useEffect(() => {
-    const speakQuestion = async () => {
-      await stopSpeaking();
-      await speakText("What job role are you applying for");
-    };
-    
-    // Small delay to ensure page is ready
-    const timeout = setTimeout(() => {
-      speakQuestion();
-    }, 300);
-    
-    return () => clearTimeout(timeout);
-  }, []);
+
 
   const handleSave = async () => {
     if (!job) return;

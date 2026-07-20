@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, useColorScheme, ActivityIndicator, Text } from 'react-native';
+import React, { useEffect, useRef, useState, Component } from 'react';
+import { View, StyleSheet, useColorScheme, ActivityIndicator, Text, ScrollView } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeContext';
@@ -9,6 +9,33 @@ import { initializeNotifications } from './src/services/notificationService';
 import LaunchAnimation from './src/components/LaunchAnimation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './src/config/supabase';
+
+// ─── Error Boundary ───────────────────────────────────────────────────────────
+interface ErrorBoundaryState { hasError: boolean; error: string; }
+class ErrorBoundary extends Component<{ children: React.ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: '' };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error?.message || String(error) };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('❌ App crashed:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <ScrollView contentContainerStyle={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#fff' }}>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Something went wrong</Text>
+          <Text style={{ fontSize: 13, color: '#555', textAlign: 'center' }}>{this.state.error}</Text>
+          <Text style={{ fontSize: 12, color: '#999', marginTop: 16, textAlign: 'center' }}>Please close and reopen the app. If this keeps happening, contact support.</Text>
+        </ScrollView>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function App() {
   const colorScheme = useColorScheme();
@@ -88,18 +115,20 @@ export default function App() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
-      <ThemeProvider>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-      </ThemeProvider>
-      {showSplash && (
-        <View style={StyleSheet.absoluteFill}>
-          <LaunchAnimation onFinish={() => setShowSplash(false)} />
-        </View>
-      )}
-    </View>
+    <ErrorBoundary>
+      <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
+        <ThemeProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        </ThemeProvider>
+        {showSplash && (
+          <View style={StyleSheet.absoluteFill}>
+            <LaunchAnimation onFinish={() => setShowSplash(false)} />
+          </View>
+        )}
+      </View>
+    </ErrorBoundary>
   );
 }
 

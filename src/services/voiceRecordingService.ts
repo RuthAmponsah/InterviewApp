@@ -6,10 +6,47 @@
 import { Audio } from 'expo-av';
 import { getInfoAsync } from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
+import { AppState, AppStateStatus } from 'react-native';
 
 const GROQ_API_KEY = Constants.expoConfig?.extra?.groqApiKey || process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
 
 let recording: Audio.Recording | null = null;
+
+const waitForActiveAppState = async (timeoutMs = 1500): Promise<boolean> => {
+  if (AppState.currentState === 'active') {
+    return true;
+  }
+
+  return new Promise((resolve) => {
+    let resolved = false;
+    const finish = (value: boolean) => {
+      if (resolved) return;
+      resolved = true;
+      subscription.remove();
+      clearTimeout(timeout);
+      resolve(value);
+    };
+
+    const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') {
+        finish(true);
+      }
+    });
+
+    const timeout = setTimeout(() => finish(AppState.currentState === 'active'), timeoutMs);
+  });
+};
+
+const resetAudioModeAfterRecording = async () => {
+  try {
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+    });
+  } catch (error) {
+    console.log('Could not reset audio mode:', error);
+  }
+};
 
 /**
  * Request microphone permissions from the user
@@ -37,6 +74,12 @@ export const requestMicrophonePermissions = async (): Promise<boolean> => {
  */
 export const startRecording = async (): Promise<boolean> => {
   try {
+    const appIsActive = await waitForActiveAppState();
+    if (!appIsActive) {
+      console.warn('🎤 Cannot start recording because the app is not active.');
+      return false;
+    }
+
     const hasPermission = await requestMicrophonePermissions();
     
     if (!hasPermission) {
@@ -75,6 +118,7 @@ export const startRecording = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Error starting recording:', error);
+    await resetAudioModeAfterRecording();
     recording = null;
     return false;
   }
@@ -95,10 +139,7 @@ export const stopRecording = async (): Promise<string | null> => {
     await recording.stopAndUnloadAsync();
     
     // Reset audio mode but keep playsInSilentMode for TTS
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-    });
+    await resetAudioModeAfterRecording();
     
     const uri = recording.getURI();
     console.log('✅ Recording stopped. URI:', uri);
@@ -224,10 +265,7 @@ export const cancelRecording = async (): Promise<void> => {
       await recording.stopAndUnloadAsync();
       
       // Reset audio mode
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-      });
+      await resetAudioModeAfterRecording();
       
       recording = null;
     }

@@ -16,7 +16,9 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/colors';
 import {
+  getPackageDisplayPrice,
   getPackageSubscriptionTier,
+  getSubscriptionPackageForTier,
   getSubscriptionOfferings,
   purchaseSubscription,
   restorePurchases,
@@ -47,6 +49,10 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
   const [loading, setLoading] = useState(false);
   const [monthlyPackage, setMonthlyPackage] = useState<PurchasesPackage | null>(null);
   const [annualPackage, setAnnualPackage] = useState<PurchasesPackage | null>(null);
+  const selectedPackage = selectedPlan === 'annual' ? annualPackage : monthlyPackage;
+  const selectedPrice = getPackageDisplayPrice(selectedPackage, selectedPlan === 'annual' ? '£59.99' : '£7.99');
+  const annualPrice = getPackageDisplayPrice(annualPackage, '£59.99');
+  const monthlyPrice = getPackageDisplayPrice(monthlyPackage, '£7.99');
 
   useEffect(() => {
     if (visible) {
@@ -57,15 +63,18 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
   const loadOfferings = async () => {
     const offerings = await getSubscriptionOfferings();
     if (offerings?.availablePackages) {
-      const monthly = offerings.availablePackages.find(pkg =>
-        getPackageSubscriptionTier(pkg) === 'monthly'
-      );
-      const annual = offerings.availablePackages.find(pkg =>
-        getPackageSubscriptionTier(pkg) === 'annual'
-      );
+      const monthly = getSubscriptionPackageForTier(offerings.availablePackages, 'monthly');
+      const annual = getSubscriptionPackageForTier(offerings.availablePackages, 'annual');
       setMonthlyPackage(monthly || null);
       setAnnualPackage(annual || null);
-      console.log('PaywallModal packages loaded - monthly:', monthly?.identifier, 'annual:', annual?.identifier);
+      console.log('PaywallModal packages loaded:', {
+        monthly: monthly?.identifier,
+        monthlyTier: monthly ? getPackageSubscriptionTier(monthly) : null,
+        monthlyPrice: getPackageDisplayPrice(monthly, 'missing'),
+        annual: annual?.identifier,
+        annualTier: annual ? getPackageSubscriptionTier(annual) : null,
+        annualPrice: getPackageDisplayPrice(annual, 'missing'),
+      });
     }
   };
 
@@ -79,6 +88,16 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
       Alert.alert(
         'Subscription Unavailable',
         'Subscription products are not available right now. Please try again later.'
+      );
+      setLoading(false);
+      return;
+    }
+
+    const packageTier = getPackageSubscriptionTier(packageToPurchase);
+    if (packageTier !== selectedPlan) {
+      Alert.alert(
+        'Subscription Unavailable',
+        `The ${selectedPlan} plan is not linked correctly right now. Please try again later.`
       );
       setLoading(false);
       return;
@@ -139,14 +158,16 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
           {/* Header */}
           <LinearGradient
             colors={isDark
-              ? ['#1e3a5f', '#2d5a87', '#1e3a5f']
-              : ['#667eea', '#764ba2']
+              ? ['#0E1A2E', '#162035']
+              : ['#102A4C', '#1C3A6B']
             }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.header}
           >
-            <Ionicons name="diamond" size={40} color="#fff" />
+            <View style={styles.headerIcon}>
+              <Ionicons name="diamond-outline" size={26} color="#fff" />
+            </View>
             <Text style={styles.headerTitle}>Unlock Premium</Text>
             <Text style={styles.headerSubtitle}>
               Get unlimited practice to ace any interview
@@ -196,7 +217,7 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
                     <Text style={styles.planSavings}>Save 37%</Text>
                   </View>
                   <View style={styles.planPriceContainer}>
-                    <Text style={styles.planPrice}>£59.99</Text>
+                    <Text style={styles.planPrice}>{annualPrice}</Text>
                     <Text style={styles.planPeriod}>per year</Text>
                   </View>
                 </View>
@@ -219,7 +240,7 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
                     <Text style={styles.planName}>Monthly</Text>
                   </View>
                   <View style={styles.planPriceContainer}>
-                    <Text style={styles.planPrice}>£7.99</Text>
+                    <Text style={styles.planPrice}>{monthlyPrice}</Text>
                     <Text style={styles.planPeriod}>per month</Text>
                   </View>
                 </View>
@@ -237,7 +258,7 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.subscribeButtonText}>
-                  Start {selectedPlan === 'annual' ? 'Annual' : 'Monthly'} Plan
+                  Start {selectedPlan === 'annual' ? 'Annual' : 'Monthly'} Plan - {selectedPrice}
                 </Text>
               )}
             </TouchableOpacity>
@@ -290,16 +311,26 @@ const makeStyles = (colors: any, isDark: boolean) =>
       zIndex: 10,
     },
     header: {
-      paddingTop: 28,
-      paddingBottom: 20,
+      paddingTop: 26,
+      paddingBottom: 18,
       paddingHorizontal: 24,
       alignItems: 'center',
     },
+    headerIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.22)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     headerTitle: {
-      fontSize: 24,
+      fontSize: 22,
       fontWeight: '800',
       color: '#fff',
-      marginTop: 12,
+      marginTop: 10,
       marginBottom: 4,
     },
     headerSubtitle: {

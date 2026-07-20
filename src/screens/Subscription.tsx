@@ -16,7 +16,9 @@ import { useTheme } from '../theme/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
+  getPackageDisplayPrice,
   getPackageSubscriptionTier,
+  getSubscriptionPackageForTier,
   getSubscriptionOfferings, 
   purchaseSubscription, 
   restorePurchases 
@@ -37,6 +39,10 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
   const [monthlyPackage, setMonthlyPackage] = useState<PurchasesPackage | null>(null);
   const [annualPackage, setAnnualPackage] = useState<PurchasesPackage | null>(null);
   const showCloseButton = route.params?.showClose !== false;
+  const selectedPackage = selectedPlan === 'annual' ? annualPackage : monthlyPackage;
+  const selectedPrice = getPackageDisplayPrice(selectedPackage, selectedPlan === 'annual' ? '£59.99' : '£7.99');
+  const annualPrice = getPackageDisplayPrice(annualPackage, '£59.99');
+  const monthlyPrice = getPackageDisplayPrice(monthlyPackage, '£7.99');
 
   useEffect(() => {
     loadOfferings();
@@ -45,15 +51,18 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
   const loadOfferings = async () => {
     const offerings = await getSubscriptionOfferings();
     if (offerings?.availablePackages) {
-      const monthly = offerings.availablePackages.find(pkg =>
-        getPackageSubscriptionTier(pkg) === 'monthly'
-      );
-      const annual = offerings.availablePackages.find(pkg =>
-        getPackageSubscriptionTier(pkg) === 'annual'
-      );
+      const monthly = getSubscriptionPackageForTier(offerings.availablePackages, 'monthly');
+      const annual = getSubscriptionPackageForTier(offerings.availablePackages, 'annual');
       setMonthlyPackage(monthly || null);
       setAnnualPackage(annual || null);
-      console.log('Subscription packages loaded - monthly:', monthly?.identifier, 'annual:', annual?.identifier);
+      console.log('Subscription packages loaded:', {
+        monthly: monthly?.identifier,
+        monthlyTier: monthly ? getPackageSubscriptionTier(monthly) : null,
+        monthlyPrice: getPackageDisplayPrice(monthly, 'missing'),
+        annual: annual?.identifier,
+        annualTier: annual ? getPackageSubscriptionTier(annual) : null,
+        annualPrice: getPackageDisplayPrice(annual, 'missing'),
+      });
     }
   };
 
@@ -66,6 +75,16 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
       Alert.alert(
         'Subscription Unavailable',
         'Subscription products are not available right now. Please try again later.'
+      );
+      setLoading(false);
+      return;
+    }
+
+    const packageTier = getPackageSubscriptionTier(packageToPurchase);
+    if (packageTier !== selectedPlan) {
+      Alert.alert(
+        'Subscription Unavailable',
+        `The ${selectedPlan} plan is not linked correctly right now. Please try again later.`
       );
       setLoading(false);
       return;
@@ -109,8 +128,8 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
     <View style={styles.container}>
       <LinearGradient
         colors={isDark 
-          ? ['#1a1a2e', '#16213e', '#0f3460']
-          : ['#667eea', '#764ba2', '#f093fb']
+          ? ['#0E1A2E', '#162035']
+          : ['#102A4C', '#1C3A6B']
         }
         style={styles.gradientHeader}
       >
@@ -124,6 +143,9 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
         )}
 
         <View style={styles.headerContent}>
+          <View style={styles.headerIcon}>
+            <Ionicons name="diamond-outline" size={28} color="#fff" />
+          </View>
           <Text style={styles.headerTitle}>Unlock Premium</Text>
           <Text style={styles.headerSubtitle}>
             Unlimited interviews, transcripts, and AI analysis
@@ -168,7 +190,7 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
                 <Text style={styles.planSavings}>Save 37%</Text>
               </View>
               <View>
-                <Text style={styles.planPrice}>£59.99</Text>
+                <Text style={styles.planPrice}>{annualPrice}</Text>
                 <Text style={styles.planPeriod}>per year</Text>
               </View>
             </View>
@@ -191,7 +213,7 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
                 <Text style={styles.planName}>Monthly</Text>
               </View>
               <View>
-                <Text style={styles.planPrice}>£7.99</Text>
+                <Text style={styles.planPrice}>{monthlyPrice}</Text>
                 <Text style={styles.planPeriod}>per month</Text>
               </View>
             </View>
@@ -208,7 +230,7 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
           onPress={handleSubscribe}
         >
           <Text style={styles.subscribeButtonText}>
-            Start {selectedPlan === 'annual' ? 'Annual' : 'Monthly'} Plan
+            Start {selectedPlan === 'annual' ? 'Annual' : 'Monthly'} Plan - {selectedPrice}
           </Text>
         </TouchableOpacity>
 
@@ -233,10 +255,10 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
     gradientHeader: {
       paddingTop: 60,
-      paddingBottom: 40,
+      paddingBottom: 32,
       paddingHorizontal: 24,
-      borderBottomLeftRadius: 30,
-      borderBottomRightRadius: 30,
+      borderBottomLeftRadius: 22,
+      borderBottomRightRadius: 22,
     },
     closeButton: {
       position: 'absolute',
@@ -253,8 +275,19 @@ const makeStyles = (colors: any, isDark: boolean) =>
     headerContent: {
       alignItems: 'center',
     },
+    headerIcon: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.22)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 14,
+    },
     headerTitle: {
-      fontSize: 32,
+      fontSize: 28,
       fontWeight: '800',
       color: '#fff',
       marginBottom: 8,

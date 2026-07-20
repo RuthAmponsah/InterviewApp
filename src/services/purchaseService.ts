@@ -5,12 +5,13 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 export type SubscriptionTier = 'free' | 'monthly' | 'annual' | 'premium';
+export type PaidSubscriptionTier = Exclude<SubscriptionTier, 'free' | 'premium'>;
 
 const SUBSCRIPTION_TIER_CACHE_KEY = 'subscriptionTier';
 
-export const getPackageSubscriptionTier = (pkg: PurchasesPackage): Exclude<SubscriptionTier, 'free' | 'premium'> => {
+const getPackageSignals = (pkg: PurchasesPackage) => {
   const product = (pkg as any).product || {};
-  const signals = [
+  return [
     product.identifier,
     product.productIdentifier,
     product.title,
@@ -23,12 +24,41 @@ export const getPackageSubscriptionTier = (pkg: PurchasesPackage): Exclude<Subsc
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
+};
+
+export const getPackageSubscriptionTier = (pkg: PurchasesPackage): PaidSubscriptionTier => {
+  const packageType = String((pkg as any).packageType || '').toLowerCase();
+  if (packageType.includes('annual')) return 'annual';
+  if (packageType.includes('monthly')) return 'monthly';
+
+  const signals = getPackageSignals(pkg);
 
   if (/year|yearly|annual|annually|12\s*month|p1y/.test(signals)) {
     return 'annual';
   }
 
   return 'monthly';
+};
+
+export const getSubscriptionPackageForTier = (
+  packages: PurchasesPackage[],
+  tier: PaidSubscriptionTier,
+): PurchasesPackage | null => {
+  const packageTypeMatch = packages.find((pkg) => {
+    const packageType = String((pkg as any).packageType || '').toLowerCase();
+    return tier === 'annual'
+      ? packageType.includes('annual')
+      : packageType.includes('monthly');
+  });
+
+  if (packageTypeMatch) return packageTypeMatch;
+
+  return packages.find((pkg) => getPackageSubscriptionTier(pkg) === tier) || null;
+};
+
+export const getPackageDisplayPrice = (pkg: PurchasesPackage | null, fallback: string) => {
+  const product = (pkg as any)?.product || {};
+  return product.priceString || product.localizedPriceString || product.priceStringWithCurrencyCode || fallback;
 };
 
 export const isPremiumTier = (tier?: string | null) =>

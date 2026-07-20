@@ -72,6 +72,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       clearInterval(interval);
       // Stop any audio when leaving screen
       stopSpeaking();
+      cancelRecording();
     };
   }, []);
 
@@ -227,6 +228,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         }
       } else {
         // Start recording
+        await stopSpeaking();
         const started = await startRecording();
         if (started) {
           setIsRecording(true);
@@ -524,11 +526,11 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
           <TouchableOpacity 
             style={[
               styles.voiceButton, 
-              (isSpeaking || isAiTyping) && styles.voiceButtonDisabled,
+              (isSpeaking || isAiTyping || isTranscribing) && styles.voiceButtonDisabled,
               isRecording && styles.voiceButtonRecording
             ]}
             onPress={handleVoicePress}
-            disabled={isSpeaking || isAiTyping}
+            disabled={isSpeaking || isAiTyping || isTranscribing}
             accessibilityLabel={isRecording ? 'Stop recording' : isTranscribing ? 'Transcribing' : isSpeaking ? 'Aya is speaking' : 'Start voice recording'}
             accessibilityRole="button"
           >

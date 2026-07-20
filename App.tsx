@@ -37,7 +37,29 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, ErrorBounda
   }
 }
 
+// Catch fatal JS errors that happen outside React's render cycle (event handlers,
+// promises, timers, native module init) — ErrorBoundary alone cannot catch these,
+// and in production/release builds an uncaught error here shows as a blank white
+// screen with no visible log. Logging it at least gets it into device logs.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const globalObj = globalThis as any;
+if (globalObj.ErrorUtils) {
+  const defaultHandler = globalObj.ErrorUtils.getGlobalHandler();
+  globalObj.ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+    console.error('❌ Uncaught global error:', isFatal, error);
+    defaultHandler(error, isFatal);
+  });
+}
+
 export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
+  );
+}
+
+function AppContent() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   
@@ -115,20 +137,18 @@ export default function App() {
   }
 
   return (
-    <ErrorBoundary>
-      <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
-        <ThemeProvider>
-          <NavigationContainer>
-            <RootNavigator />
-          </NavigationContainer>
-        </ThemeProvider>
-        {showSplash && (
-          <View style={StyleSheet.absoluteFill}>
-            <LaunchAnimation onFinish={() => setShowSplash(false)} />
-          </View>
-        )}
-      </View>
-    </ErrorBoundary>
+    <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
+      <ThemeProvider>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+      </ThemeProvider>
+      {showSplash && (
+        <View style={StyleSheet.absoluteFill}>
+          <LaunchAnimation onFinish={() => setShowSplash(false)} />
+        </View>
+      )}
+    </View>
   );
 }
 

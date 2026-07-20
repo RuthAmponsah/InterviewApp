@@ -224,7 +224,19 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
             setTimeout(() => {
               sendMessageWithText(transcript);
             }, 500);
+          } else {
+            Alert.alert(
+              'Could not hear that',
+              'Aya could not transcribe your recording. Please try again, speak clearly, or type your answer instead.',
+              [{ text: 'OK' }]
+            );
           }
+        } else {
+          Alert.alert(
+            'Recording failed',
+            'Aya could not save that recording. Please try again.',
+            [{ text: 'OK' }]
+          );
         }
       } else {
         // Start recording

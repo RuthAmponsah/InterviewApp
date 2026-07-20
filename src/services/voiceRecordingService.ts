@@ -4,7 +4,12 @@
  * Uses Groq Whisper API for transcription
  */
 import { Audio } from 'expo-av';
-import { getInfoAsync } from 'expo-file-system/legacy';
+import {
+  FileSystemSessionType,
+  FileSystemUploadType,
+  getInfoAsync,
+  uploadAsync,
+} from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
 import { AppState, AppStateStatus } from 'react-native';
 import { firstConfigValue } from '../utils/env';
@@ -187,34 +192,63 @@ export const transcribeAudio = async (uri: string): Promise<string | null> => {
       return null;
     }
     
-    // In React Native, we use the URI directly in FormData
-    // React Native's FormData handles file:// URIs natively
-    console.log('📤 Creating FormData with file URI...');
-    const formData = new FormData();
-    formData.append('file', {
-      uri: uri,
-      type: 'audio/m4a',
-      name: 'recording.m4a',
-    } as any);
-    formData.append('model', 'whisper-large-v3-turbo');
-    formData.append('language', 'en');
-    formData.append('response_format', 'json');
-    
-    // Send to Groq using XMLHttpRequest for better React Native compatibility
-    console.log('📤 Sending to Groq Whisper API...');
-    
-    const result = await new Promise<string | null>((resolve) => {
+    const parseTranscriptionResponse = (body: string) => {
+      const response = JSON.parse(body);
+      console.log('📥 Response:', JSON.stringify(response).substring(0, 200));
+      const text = response.text || '';
+      console.log('✅ Transcription:', text);
+      return text;
+    };
+
+    const transcribeWithNativeUpload = async () => {
+      console.log('📤 Sending to Groq Whisper API with native upload...');
+      const response = await uploadAsync('https://api.groq.com/openai/v1/audio/transcriptions', uri, {
+        httpMethod: 'POST',
+        uploadType: FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType: 'audio/m4a',
+        sessionType: FileSystemSessionType.FOREGROUND,
+        headers: {
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        parameters: {
+          model: 'whisper-large-v3-turbo',
+          language: 'en',
+          response_format: 'json',
+        },
+      });
+
+      console.log('📥 Native upload status:', response.status);
+      if (response.status >= 200 && response.status < 300) {
+        return parseTranscriptionResponse(response.body);
+      }
+
+      console.error('❌ Native upload API error:', response.status, response.body.substring(0, 500));
+      return null;
+    };
+
+    const transcribeWithXHR = async () => {
+      // In React Native, we use the URI directly in FormData.
+      console.log('📤 Creating FormData with file URI...');
+      const formData = new FormData();
+      formData.append('file', {
+        uri: uri,
+        type: 'audio/m4a',
+        name: 'recording.m4a',
+      } as any);
+      formData.append('model', 'whisper-large-v3-turbo');
+      formData.append('language', 'en');
+      formData.append('response_format', 'json');
+
+      console.log('📤 Sending to Groq Whisper API with XHR...');
+      return new Promise<string | null>((resolve) => {
       const xhr = new XMLHttpRequest();
       
       xhr.onload = () => {
         console.log('📥 Response status:', xhr.status);
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
-            const response = JSON.parse(xhr.responseText);
-            console.log('📥 Response:', JSON.stringify(response).substring(0, 200));
-            const text = response.text || '';
-            console.log('✅ Transcription:', text);
-            resolve(text);
+            resolve(parseTranscriptionResponse(xhr.responseText));
           } catch (parseError) {
             console.error('❌ Parse error:', parseError);
             console.log('📥 Raw response:', xhr.responseText.substring(0, 500));
@@ -240,7 +274,14 @@ export const transcribeAudio = async (uri: string): Promise<string | null> => {
       xhr.open('POST', 'https://api.groq.com/openai/v1/audio/transcriptions');
       xhr.setRequestHeader('Authorization', `Bearer ${GROQ_API_KEY}`);
       xhr.send(formData);
-    });
+      });
+    };
+    
+    let result = await transcribeWithNativeUpload();
+    if (!result) {
+      console.log('🔁 Native upload did not return transcription, trying XHR fallback...');
+      result = await transcribeWithXHR();
+    }
     
     cleanupRecording();
     return result;

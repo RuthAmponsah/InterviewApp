@@ -20,7 +20,11 @@ const ELEVENLABS_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Rachel - warm, calm voice
 
 if (!GROQ_API_KEY) {
   console.error('⚠️ Groq API key not found. Please check your .env file.');
+} else {
+  console.log('✅ Groq config loaded:', { apiKey: true });
 }
+
+console.log('✅ ElevenLabs config loaded:', { apiKey: Boolean(ELEVENLABS_API_KEY) });
 
 const groq = new Groq({
   apiKey: GROQ_API_KEY,

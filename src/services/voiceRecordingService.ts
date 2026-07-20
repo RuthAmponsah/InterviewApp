@@ -14,6 +14,8 @@ const GROQ_API_KEY = firstConfigValue(
   process.env.EXPO_PUBLIC_GROQ_API_KEY,
 );
 
+console.log('✅ Voice transcription config loaded:', { groqApiKey: Boolean(GROQ_API_KEY) });
+
 let recording: Audio.Recording | null = null;
 
 const waitForActiveAppState = async (timeoutMs = 1500): Promise<boolean> => {

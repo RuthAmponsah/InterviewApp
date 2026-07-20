@@ -16,6 +16,11 @@ const supabaseAnonKey = firstConfigValue(
 
 if (!supabaseUrl || !isValidHttpUrl(supabaseUrl) || !supabaseAnonKey) {
   console.error('⚠️ Supabase credentials not found. Please check your .env file.');
+} else {
+  console.log('✅ Supabase config loaded:', {
+    url: Boolean(supabaseUrl),
+    anonKey: Boolean(supabaseAnonKey),
+  });
 }
 
 // Use placeholder credentials if config is missing/invalid to avoid a startup crash.

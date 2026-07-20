@@ -11,6 +11,11 @@ const ADZUNA_APP_KEY = firstConfigValue(
   Constants.expoConfig?.extra?.adzunaAppKey,
   process.env.EXPO_PUBLIC_ADZUNA_APP_KEY,
 );
+
+console.log('✅ Adzuna config loaded:', {
+  appId: Boolean(ADZUNA_APP_ID),
+  appKey: Boolean(ADZUNA_APP_KEY),
+});
 const BASE_URL = 'https://api.adzuna.com/v1/api/jobs/gb/search';
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
 

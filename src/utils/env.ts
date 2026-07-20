@@ -16,6 +16,8 @@ export const firstConfigValue = (...values: unknown[]) => {
   return "";
 };
 
+export const hasConfigValue = (...values: unknown[]) => Boolean(firstConfigValue(...values));
+
 export const isValidHttpUrl = (value: string) => {
   try {
     const url = new URL(value);

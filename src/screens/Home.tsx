@@ -232,6 +232,7 @@ const Home: React.FC = () => {
           .from('interview_history')
           .select('feedback, created_at')
           .eq('user_id', userId)
+          .not('feedback', 'is', null)
           .order('created_at', { ascending: false })
           .limit(1);
 
@@ -242,7 +243,7 @@ const Home: React.FC = () => {
 
         if (data && data.length > 0) {
           setHasInterviews(true);
-          setLatestFeedback(data[0].feedback || 'Complete your interview to see feedback here!');
+          setLatestFeedback(data[0].feedback);
           
           // Calculate last active
           const lastDate = new Date(data[0].created_at);
@@ -262,6 +263,7 @@ const Home: React.FC = () => {
           }
         } else {
           setHasInterviews(false);
+          setLatestFeedback(null);
         }
       } catch (err) {
         console.error('Error loading feedback:', err);
@@ -335,6 +337,7 @@ const Home: React.FC = () => {
   // Flush offline-queued interviews on focus
   useFocusEffect(
     useCallback(() => {
+      loadLatestFeedback();
       flushInterviewQueue().then(count => {
         if (count > 0) setSyncedSessions(count);
       });
@@ -501,19 +504,31 @@ const Home: React.FC = () => {
         >
           {hasInterviews && latestFeedback ? (
             (() => {
-              const scoreMatch = latestFeedback.match(/Score:\s*(\d+)\/100/);
-              const strengthsMatch = latestFeedback.match(/Strengths:\s*(.+?)\s*Areas to improve:/s);
-              const improvementsMatch = latestFeedback.match(/Areas to improve:\s*(.+)$/s);
+              const scoreMatch = latestFeedback.match(/Score:\s*(\d+)\s*\/\s*100/i);
+              const strengthsMatch = latestFeedback.match(/Strengths?:\s*([\s\S]*?)(?:Areas?\s*(?:to\s*improve|for\s*improvement):|$)/i);
+              const improvementsMatch = latestFeedback.match(/Areas?\s*(?:to\s*improve|for\s*improvement):\s*([\s\S]*)$/i);
               const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
               const strengths = strengthsMatch ? strengthsMatch[1].trim() : '';
               const improvements = improvementsMatch ? improvementsMatch[1].trim() : '';
+              const fallbackPreview = latestFeedback
+                .replace(/Score:\s*\d+\s*\/\s*100\.?/i, '')
+                .replace(/Strengths?:/gi, '')
+                .replace(/Areas?\s*(?:to\s*improve|for\s*improvement):/gi, '')
+                .replace(/\s+/g, ' ')
+                .trim();
               return (
                 <View style={styles.feedbackEmptyRow}>
                   <View style={[styles.scoreCircle, { borderColor: colors.primaryBlue }]}>
                     <Text style={[styles.scoreCircleText, { color: colors.primaryBlue }]}>{score ?? '—'}</Text>
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    {strengths ? <Text style={styles.feedbackBodyText} numberOfLines={3}>{strengths}</Text> : null}
+                    {strengths ? (
+                      <Text style={styles.feedbackBodyText} numberOfLines={3}>{strengths}</Text>
+                    ) : (
+                      <Text style={styles.feedbackBodyText} numberOfLines={3}>
+                        {fallbackPreview || 'Tap to view your latest feedback'}
+                      </Text>
+                    )}
                     {improvements ? <Text style={[styles.feedbackBodyText, { marginTop: 4, color: isDark ? '#aaa' : colors.textMuted }]} numberOfLines={2}>{improvements}</Text> : null}
                   </View>
                 </View>

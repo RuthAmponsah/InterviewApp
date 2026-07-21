@@ -195,86 +195,15 @@
       border-radius: 42px;
       background: #F3F4F6;
       box-shadow: var(--shadow);
-      padding: 24px 18px;
-      min-height: 620px;
+      overflow: hidden;
+      aspect-ratio: 1290 / 2796;
     }
 
-    .phone-top {
-      display: flex;
-      justify-content: space-between;
-      color: var(--ink);
-      font-size: 13px;
-      font-weight: 800;
-      margin-bottom: 26px;
-    }
-
-    .app-mark {
-      color: var(--navy);
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: 0.32em;
-      margin-bottom: 28px;
-    }
-
-    .app-title {
-      font-size: 28px;
-      line-height: 1.1;
-      font-weight: 900;
-      margin-bottom: 8px;
-    }
-
-    .app-subtitle {
-      color: var(--muted);
-      font-size: 16px;
-      margin-bottom: 22px;
-    }
-
-    .start-card {
-      background: linear-gradient(140deg, var(--navy), #10254A);
-      color: var(--white);
-      border-radius: 24px;
-      padding: 24px;
-      margin-bottom: 18px;
-    }
-
-    .start-card small {
+    .phone img {
       display: block;
-      letter-spacing: 0.28em;
-      color: rgba(255,255,255,0.62);
-      font-weight: 900;
-      margin-bottom: 12px;
-    }
-
-    .start-card strong {
-      display: block;
-      font-size: 27px;
-      line-height: 1.05;
-      margin-bottom: 6px;
-    }
-
-    .mini-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .mini-card {
-      background: var(--white);
-      border-radius: 20px;
-      padding: 18px;
-      min-height: 118px;
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
-    }
-
-    .mini-card b {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 15px;
-    }
-
-    .mini-card span {
-      color: var(--muted);
-      font-size: 13px;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .section {
@@ -495,33 +424,7 @@
         </div>
 
         <div class="phone" aria-label="App preview">
-          <div class="phone-top"><span>09:42</span><span>5G 100%</span></div>
-          <div class="app-mark">MY INTERVIEW</div>
-          <div class="app-title">Good morning</div>
-          <div class="app-subtitle">Ready for your next interview?</div>
-          <div class="start-card">
-            <small>PRACTICE SESSION</small>
-            <strong>Start AI interview</strong>
-            <span>Tailored to your role</span>
-          </div>
-          <div class="mini-grid">
-            <div class="mini-card">
-              <b>Question bank</b>
-              <span>250+ questions plus custom practice.</span>
-            </div>
-            <div class="mini-card">
-              <b>Your streak</b>
-              <span>Build a steady practice habit.</span>
-            </div>
-            <div class="mini-card">
-              <b>CV tools</b>
-              <span>Upload, paste, analyse and improve.</span>
-            </div>
-            <div class="mini-card">
-              <b>Jobs</b>
-              <span>Search, save and track applications.</span>
-            </div>
-          </div>
+          <img src="assets/home-preview.png" alt="My Interview app home screen preview" />
         </div>
       </section>
 

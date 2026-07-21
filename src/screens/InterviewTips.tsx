@@ -123,7 +123,7 @@ const TIPS: Tip[] = [
     id: '10',
     category: 'After',
     title: 'Send Thank You Email',
-    description: 'Within 24 hours, send a personalized thank you email. Reference specific topics discussed and reiterate your interest.',
+    description: 'Within 24 hours, send a personalised thank you email. Reference specific topics discussed and reiterate your interest.',
     icon: 'mail-outline',
   },
   {

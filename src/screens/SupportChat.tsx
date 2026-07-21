@@ -20,7 +20,7 @@ const KNOWLEDGE_BASE = [
   {
     keywords: ["what is", "my interview", "app"],
     answer:
-      "My Interview is an AI-powered mock interview coach to help you practice, get feedback, and build confidence.",
+      "My Interview is an AI-powered mock interview coach to help you practise, get feedback, and build confidence.",
   },
   {
     keywords: ["aya", "questions", "generate"],

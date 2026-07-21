@@ -139,7 +139,7 @@ const PRACTICE_QUESTIONS: Question[] = [
   // Technical  
   { id: '9', category: 'Technical', text: 'What programming languages are you proficient in?' },
   { id: '10', category: 'Technical', text: 'Explain the difference between SQL and NoSQL databases.' },
-  { id: '11', category: 'Technical', text: 'How would you optimize a slow database query?' },
+  { id: '11', category: 'Technical', text: 'How would you optimise a slow database query?' },
   { id: '12', category: 'Technical', text: 'What is your experience with cloud platforms?' },
   { id: '13', category: 'Technical', text: 'Explain what RESTful APIs are.' },
   { id: '14', category: 'Technical', text: 'How do you handle errors in your code?' },
@@ -149,7 +149,7 @@ const PRACTICE_QUESTIONS: Question[] = [
   // Situational
   { id: '17', category: 'Situational', text: 'How would you handle an angry customer?' },
   { id: '18', category: 'Situational', text: 'What would you do if you disagreed with your manager?' },
-  { id: '19', category: 'Situational', text: 'How would you prioritize multiple urgent tasks?' },
+  { id: '19', category: 'Situational', text: 'How would you prioritise multiple urgent tasks?' },
   { id: '20', category: 'Situational', text: 'What would you do if you made a mistake at work?' },
   { id: '21', category: 'Situational', text: 'How would you handle a team member not pulling their weight?' },
   { id: '22', category: 'Situational', text: 'What would you do if asked to do something unethical?' },
@@ -192,7 +192,7 @@ const PRACTICE_QUESTIONS: Question[] = [
   
   // Role-Specific (Premium) - Marketing
   { id: 'rs-17', category: 'Role-Specific', text: 'Describe a marketing campaign you created from scratch and how you measured its success.', isPremium: true },
-  { id: 'rs-18', category: 'Role-Specific', text: 'Walk me through your approach to A/B testing and optimizing marketing performance.', isPremium: true },
+  { id: 'rs-18', category: 'Role-Specific', text: 'Walk me through your approach to A/B testing and optimising marketing performance.', isPremium: true },
   { id: 'rs-19', category: 'Role-Specific', text: 'Tell me about a time you had to pivot a marketing strategy based on data or market changes.', isPremium: true },
   { id: 'rs-20', category: 'Role-Specific', text: 'How do you collaborate with sales and product teams to ensure aligned messaging and targets?', isPremium: true },
 ];
@@ -227,7 +227,6 @@ const FREQUENT_QUESTION_PRIORITY: string[] = [
   'tell me about a time you showed leadership',
   'describe a time you worked on a team',
   'describe a time you had to meet a tight deadline',
-  'prioritize multiple urgent tasks',
   'prioritise multiple urgent tasks',
   'angry customer',
   'difficult or unhappy customer',
@@ -1054,7 +1053,7 @@ export default function QuestionBank({ navigation }: any) {
                   style={{ marginRight: 4 }}
                 />
                 <Text style={[styles.filterText, selectedCategory === 'Favorites' && styles.filterTextActive]}>
-                  Favorites ({favorites.size})
+                  Favourites ({favorites.size})
                 </Text>
               </TouchableOpacity>
               {CATEGORIES.map((cat) => (

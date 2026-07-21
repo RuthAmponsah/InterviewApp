@@ -89,7 +89,7 @@ const SuccessStories: React.FC = () => {
       >
         <Text style={styles.title}>Success Stories</Text>
         <Text style={styles.subtitle}>
-          Real people who practiced with Aya and landed their dream jobs
+          Real people who practised with Aya and landed their dream jobs
         </Text>
 
         <TouchableOpacity
@@ -170,7 +170,7 @@ const SuccessStories: React.FC = () => {
         <View style={styles.encouragement}>
           <Text style={styles.encouragementTitle}>Your story starts today</Text>
           <Text style={styles.encouragementText}>
-            Every expert was once a beginner. Start practicing now and you could be our next success story!
+            Every expert was once a beginner. Start practising now and you could be our next success story!
           </Text>
         </View>
           </>

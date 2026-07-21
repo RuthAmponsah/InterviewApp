@@ -7,7 +7,7 @@
 
 Welcome to My Interview ("we," "our," or "us"). We are committed to protecting your privacy and personal data. This Privacy Policy explains how we collect, use, store, and protect your information when you use our mobile application.
 
-My Interview is designed for users aged 16 and over who are seeking employment and want to practice interview skills.
+My Interview is designed for users aged 16 and over who are seeking employment and want to practise interview skills.
 
 ## Information We Collect
 
@@ -15,7 +15,7 @@ My Interview is designed for users aged 16 and over who are seeking employment a
 
 - **Account Information**: Email address, full name and authentication information. Passwords are handled by Supabase Auth and are never stored by us in plain text.
 - **Profile Information**: Job preferences, target sectors, career goals
-- **CV/Resume**: Document uploads for AI analysis (stored securely)
+- **CV**: Document uploads for AI analysis (stored securely)
 - **Interview Practice Data**: Questions attempted, responses, practice history
 - **Feedback Submissions**: Your comments and suggestions about the app
 - **Success Stories**: User-submitted success stories (optional, may be published with consent)
@@ -24,8 +24,8 @@ My Interview is designed for users aged 16 and over who are seeking employment a
 
 - **Usage Data**: App interactions, features used, session duration
 - **Device Information**: Device type, OS version, app version
-- **Performance Data**: Crash reports, error logs (anonymized)
-- **Network Information**: Connection type for service optimization
+- **Performance Data**: Crash reports, error logs (anonymised)
+- **Network Information**: Connection type for service optimisation
 
 ### Voice Interview Data
 
@@ -52,7 +52,7 @@ When you use the **Voice Interview** feature (optional, Premium only):
 ### Primary Purposes
 
 1. **Provide Core Services**: Deliver AI-powered interview practice and feedback
-2. **Personalization**: Customize interview questions based on your job preferences
+2. **Personalisation**: Personalise interview questions based on your job preferences
 3. **Account Management**: Authentication, subscription management, profile updates
 4. **AI Analysis**: Analyze CV content to provide improvement suggestions
 5. **Progress Tracking**: Store interview history and performance metrics
@@ -61,7 +61,7 @@ When you use the **Voice Interview** feature (optional, Premium only):
 ### Secondary Purposes
 
 - **Service Improvement**: Analyze usage patterns to enhance features
-- **Customer Support**: Respond to inquiries and technical issues
+- **Customer Support**: Respond to enquiries and technical issues
 - **Legal Compliance**: Meet regulatory requirements (UK GDPR, Data Protection Act 2018)
 - **Security**: Detect and prevent fraud, abuse, or security incidents
 
@@ -78,7 +78,7 @@ We process your personal data under the following legal bases:
 
 ### Storage Location
 
-- **Database**: Supabase (PostgreSQL) hosted in EU/UK data centers
+- **Database**: Supabase (PostgreSQL) hosted in EU/UK data centres
 - **AI Processing**: Groq AI (data processed, not stored long-term)
 - **Job Data**: Adzuna API (cached temporarily, 24-hour retention)
 - **Subscription Data**: RevenueCat (PCI-DSS compliant)
@@ -174,11 +174,11 @@ If we discover we've collected data from a child under 16, we will delete it imm
 
 ## International Data Transfers
 
-Your data is primarily stored in **EU/UK data centers**. If we transfer data outside the UK/EU, we ensure:
+Your data is primarily stored in **EU/UK data centres**. If we transfer data outside the UK/EU, we ensure:
 
 1. **Adequacy Decisions**: Transfers only to countries with adequate data protection
 2. **Standard Contractual Clauses (SCCs)**: For transfers to non-adequate countries
-3. **Additional Safeguards**: Encryption, pseudonymization where possible
+3. **Additional Safeguards**: Encryption, pseudonymisation where possible
 
 ## Data Breach Notification
 
@@ -216,7 +216,7 @@ Support: info@interviewappcom.com
 
 ### Data Protection Officer (DPO)
 
-For data protection inquiries:  
+For data protection enquiries:
 Email: info@interviewappcom.com
 
 ### Response Times

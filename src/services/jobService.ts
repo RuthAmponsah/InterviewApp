@@ -1,62 +1,8 @@
 // Adzuna Job Search API Service
 // Sign up for free API keys at: https://developer.adzuna.com/
-import Constants from 'expo-constants';
-import { firstConfigValue } from '../utils/env';
+import { supabase } from '../config/supabase';
 
-const ADZUNA_APP_ID = firstConfigValue(
-  Constants.expoConfig?.extra?.adzunaAppId,
-  process.env.EXPO_PUBLIC_ADZUNA_APP_ID,
-);
-const ADZUNA_APP_KEY = firstConfigValue(
-  Constants.expoConfig?.extra?.adzunaAppKey,
-  process.env.EXPO_PUBLIC_ADZUNA_APP_KEY,
-);
-
-console.log('✅ Adzuna config loaded:', {
-  appId: Boolean(ADZUNA_APP_ID),
-  appKey: Boolean(ADZUNA_APP_KEY),
-});
-const BASE_URL = 'https://api.adzuna.com/v1/api/jobs/gb/search';
-const RETRYABLE_STATUS_CODES = [502, 503, 504];
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const fetchAdzuna = async (url: string): Promise<Response> => {
-  const response = await fetch(url);
-
-  if (RETRYABLE_STATUS_CODES.includes(response.status)) {
-    await delay(700);
-    return fetch(url);
-  }
-
-  return response;
-};
-
-const getAdzunaError = async (response: Response) => {
-  let message = `API error: ${response.status}`;
-  try {
-    const body = await response.json();
-    if (body?.display) {
-      message = `Adzuna error: ${body.display}`;
-    }
-  } catch {
-    // Keep the status-only message if Adzuna does not return JSON.
-  }
-
-  if (response.status === 401) {
-    return new Error('Adzuna authorisation failed. Check EXPO_PUBLIC_ADZUNA_APP_ID and EXPO_PUBLIC_ADZUNA_APP_KEY.');
-  }
-
-  if (RETRYABLE_STATUS_CODES.includes(response.status)) {
-    return new Error('Adzuna is temporarily unavailable. Please try again in a moment.');
-  }
-
-  return new Error(message);
-};
-
-if (!ADZUNA_APP_ID || !ADZUNA_APP_KEY) {
-  console.warn('⚠️ Adzuna API credentials not found. Job search will be disabled.');
-}
+console.log('✅ Adzuna job search will use Supabase Edge Function secrets.');
 
 export type Job = {
   id: string;
@@ -93,6 +39,42 @@ type AdzunaJob = {
   redirect_url: string;
   created: string;
   description: string;
+};
+
+type AdzunaSearchResponse = {
+  count?: number;
+  results?: AdzunaJob[];
+  error?: string;
+  display?: string;
+};
+
+type SearchJobsFunctionParams = {
+  page: number;
+  resultsPerPage: number;
+  keywords: string;
+  location: string;
+  categoryTag?: string;
+};
+
+const invokeSearchJobsFunction = async (body: SearchJobsFunctionParams): Promise<AdzunaSearchResponse> => {
+  const { data, error } = await supabase.functions.invoke<AdzunaSearchResponse>('search-jobs', {
+    method: 'POST',
+    body,
+  });
+
+  if (error) {
+    const message = String(error.message || '').toLowerCase();
+    if (message.includes('temporarily unavailable') || message.includes('503')) {
+      throw new Error('Adzuna is temporarily unavailable. Please try again in a moment.');
+    }
+    throw new Error(error.message || 'Job search is unavailable right now.');
+  }
+
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  return data || {};
 };
 
 // Category mapping from app categories to Adzuna tags
@@ -278,31 +260,20 @@ export const searchJobs = async (
       keywords = keywords ? `${keywords} hybrid` : 'hybrid';
     }
 
-    // Build query parameters
-    const params = new URLSearchParams({
-      app_id: ADZUNA_APP_ID,
-      app_key: ADZUNA_APP_KEY,
-      results_per_page: resultsPerPage.toString(),
-      what: keywords,
-      where: locationSearch || 'uk', // Use provided location or default to UK
+    const categoryTag =
+      !titleSearch && category !== 'All Jobs' && category !== 'Saved Jobs' && category !== 'Applied Jobs'
+        ? CATEGORY_MAP[category]
+        : undefined;
+
+    const data = await invokeSearchJobsFunction({
+      page,
+      resultsPerPage,
+      keywords,
+      location: locationSearch || 'uk',
+      categoryTag,
     });
-
-    // Also add category tag filter for more precise results
-    if (!titleSearch && category !== 'All Jobs' && category !== 'Saved Jobs' && category !== 'Applied Jobs' && CATEGORY_MAP[category]) {
-      params.append('category', CATEGORY_MAP[category]);
-    }
-
-    const url = `${BASE_URL}/${page}?${params.toString()}`;
     
-    const response = await fetchAdzuna(url);
-    
-    if (!response.ok) {
-      throw await getAdzunaError(response);
-    }
-
-    const data = await response.json();
-    
-    const jobs: Job[] = data.results.map(transformAdzunaJob);
+    const jobs: Job[] = (data.results || []).map(transformAdzunaJob);
     
     return {
       jobs,
@@ -320,23 +291,13 @@ export const searchJobsByKeyword = async (
   page: number = 1
 ): Promise<{ jobs: Job[]; totalResults: number }> => {
   try {
-    const params = new URLSearchParams({
-      app_id: ADZUNA_APP_ID,
-      app_key: ADZUNA_APP_KEY,
-      results_per_page: '20',
-      what: keyword,
-      where: location,
+    const data = await invokeSearchJobsFunction({
+      page,
+      resultsPerPage: 20,
+      keywords: keyword,
+      location,
     });
-
-    const url = `${BASE_URL}/${page}?${params.toString()}`;
-    const response = await fetchAdzuna(url);
-    
-    if (!response.ok) {
-      throw await getAdzunaError(response);
-    }
-
-    const data = await response.json();
-    const jobs: Job[] = data.results.map(transformAdzunaJob);
+    const jobs: Job[] = (data.results || []).map(transformAdzunaJob);
     
     return {
       jobs,

@@ -218,7 +218,7 @@ const Notifications: React.FC = () => {
           <View style={styles.rowTextContainer}>
             <Text style={styles.rowTitle}>Daily Practice Reminders</Text>
             <Text style={styles.rowSubtitle}>
-              Get reminded to practice interviews daily
+              Get reminded to practise interviews daily
             </Text>
           </View>
           <Switch

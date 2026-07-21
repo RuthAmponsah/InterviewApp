@@ -49,6 +49,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const flatListRef = React.useRef<FlatList>(null);
   const messagesRef = React.useRef<Message[]>([]);
+  const interviewInitRef = React.useRef<Promise<void> | null>(null);
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [jobRole, setJobRole] = useState('');
@@ -164,22 +165,17 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
     try {
       const storedRole = await AsyncStorage.getItem('jobRole');
       const userName = await AsyncStorage.getItem('userName');
-      
+      const effectiveRole = storedRole || 'your desired position';
       let greetingText = '';
-      
+
       if (storedRole) {
         setJobRole(storedRole);
-        
-        // Initialize AI with user context (now async to load questions)
-        await initializeInterviewChat(storedRole, userName || undefined);
-        
         greetingText = `Hello${userName ? ' ' + userName : ''}! I'm Aya, your interview coach. I see you're preparing for a ${storedRole} position. Let's practice together! Feel free to ask me anything during the interview too. If your role is broad (for example, Teaching), you can specify the focus (for example, Maths, English, or Primary). Tell me about yourself and why you're interested in this role.`;
       } else {
         // Fallback if no role is set
-        await initializeInterviewChat('your desired position');
         greetingText = "Hello! I'm Aya, your interview coach. Let's practice together. Feel free to ask me anything during the interview too, and if your role is broad you can specify the focus. Tell me about yourself.";
       }
-      
+
       const greeting: Message = {
         id: '1',
         from: 'ai',
@@ -187,13 +183,18 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       };
       setMessages([greeting]);
       messagesRef.current = [greeting];
-      
+
+      interviewInitRef.current = initializeInterviewChat(effectiveRole, userName || undefined).catch((error) => {
+        console.error('Error initialising interview chat:', error);
+      });
+
       // Speak the greeting in voice mode
       if (mode === 'voice') {
         console.log('Speaking initial greeting in voice mode...');
-        setIsSpeaking(true);
-        await speakText(greetingText);
-        setIsSpeaking(false);
+        requestAnimationFrame(() => {
+          setIsSpeaking(true);
+          speakText(greetingText).finally(() => setIsSpeaking(false));
+        });
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -285,6 +286,9 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
 
     // Send to AI
     setIsAiTyping(true);
+    if (interviewInitRef.current) {
+      await interviewInitRef.current;
+    }
     const aiResponse = await sendMessageToAI(userInput);
     setIsAiTyping(false);
 

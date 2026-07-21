@@ -122,7 +122,7 @@ const TUTORIAL_CATEGORIES: TutorialCategory[] = [
     steps: [
       {
         title: 'Your Achievements',
-        description: 'View your badges and achievements. Unlock them by practicing regularly!',
+        description: 'View your badges and achievements. Unlock them by practising regularly!',
         image: require('../../assets/tutorial/Achivements.png'),
       },
       {
@@ -149,7 +149,7 @@ const TUTORIAL_CATEGORIES: TutorialCategory[] = [
     steps: [
       {
         title: 'Upload Your CV',
-        description: 'Paste your CV text and let Aya analyze it. Get personalized suggestions for improvement.',
+        description: 'Paste your CV text and let Aya analyse it. Get personalised suggestions for improvement.',
         image: require('../../assets/tutorial/uploadcv.png'),
       },
     ],
@@ -161,7 +161,7 @@ const TUTORIAL_CATEGORIES: TutorialCategory[] = [
     steps: [
       {
         title: 'Success Stories',
-        description: 'Read inspiring stories from people who practiced with Aya and landed their dream jobs.',
+        description: 'Read inspiring stories from people who practised with Aya and landed their dream jobs.',
         image: require('../../assets/tutorial/successstories.png'),
       },
       {
@@ -178,12 +178,12 @@ const TUTORIAL_CATEGORIES: TutorialCategory[] = [
     steps: [
       {
         title: 'App Settings',
-        description: 'Access all app features: subscription, history, progress, tips, and customization options.',
+        description: 'Access all app features: subscription, history, progress, tips, and customisation options.',
         image: require('../../assets/tutorial/settings.png'),
       },
       {
         title: 'Toggle Dark Mode',
-        description: 'Choose between Light, Dark, or Match system to customize your app appearance.',
+        description: 'Choose between Light, Dark, or Match system to customise your app appearance.',
         image: require('../../assets/tutorial/switchtodarkmode.png'),
       },
     ],

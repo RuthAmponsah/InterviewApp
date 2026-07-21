@@ -295,7 +295,7 @@ const AllFeedback: React.FC = () => {
             </View>
             <Text style={styles.emptyTitle}>Nothing to see yet</Text>
             <Text style={styles.emptyText}>
-              Complete your first interview to start receiving personalized feedback and track your progress!
+              Complete your first interview to start receiving personalised feedback and track your progress!
             </Text>
             <TouchableOpacity
               style={styles.startButton}

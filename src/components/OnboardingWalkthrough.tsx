@@ -34,7 +34,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   },
   {
     title: 'Get Smart Feedback',
-    description: 'After each interview, receive personalized feedback on your strengths and areas to improve.',
+    description: 'After each interview, receive personalised feedback on your strengths and areas to improve.',
     icon: 'checkmark-circle',
   },
   {

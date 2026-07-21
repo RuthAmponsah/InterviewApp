@@ -588,7 +588,7 @@ const Home: React.FC = () => {
         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('SuccessStories'); }}
       >
         <Text style={styles.cardTitle}>Success Stories</Text>
-        <Text style={styles.cardBody}>Read how others went from nervous to hired after practicing with Aya.</Text>
+        <Text style={styles.cardBody}>Read how others went from nervous to hired after practising with Aya.</Text>
         <Text style={styles.tapHint}>Tap to view →</Text>
       </TouchableOpacity>
     </ScrollView>

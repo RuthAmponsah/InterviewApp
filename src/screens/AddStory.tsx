@@ -168,7 +168,7 @@ const AddStory: React.FC = () => {
       >
         <Text style={styles.title}>Share Your Success Story</Text>
         <Text style={styles.subtitle}>
-          Inspire others by sharing how practicing with Aya helped you land your dream job!
+          Inspire others by sharing how practising with Aya helped you land your dream job!
         </Text>
 
         {interviewCount > 0 && (
@@ -218,13 +218,13 @@ const AddStory: React.FC = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Your Story</Text>
             <Text style={styles.helper}>
-              Share how practicing with Aya helped you succeed. What changed? What did you learn?
+              Share how practising with Aya helped you succeed. What changed? What did you learn?
             </Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={story}
               onChangeText={setStory}
-              placeholder="I was nervous about technical interviews, but after practicing with Aya for several weeks..."
+              placeholder="I was nervous about technical interviews, but after practising with Aya for several weeks..."
               placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={8}

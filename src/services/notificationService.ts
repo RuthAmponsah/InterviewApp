@@ -31,7 +31,7 @@ const DAILY_REMINDER_MESSAGES = [
   { title: "Plot twist 📖", body: "You didn't practice today. Fix that?" },
   { title: "Hey you! 👋", body: "Your future employer isn't going to interview themselves!" },
   { title: "Confidence loading... ⏳", body: "Complete an interview to finish loading!" },
-  { title: "Fun fact 🧠", body: "People who practice interviews are 40% more likely to get hired" },
+  { title: "Fun fact 🧠", body: "People who practise interviews are 40% more likely to get hired" },
   { title: "Knock knock 🚪", body: "Who's there? Your dream job. Practice to let it in!" },
   { title: "Aya's getting lonely 😢", body: "She hasn't heard from you today..." },
   { title: "Hot tip 🔥", body: "The best time to practice was yesterday. The second best is now!" },
@@ -40,7 +40,7 @@ const DAILY_REMINDER_MESSAGES = [
   { title: "Hi, it's Aya 👩‍💼", body: "I made you some new questions. Wanna see?" },
   { title: "Excuse me 🙋", body: "Your interviews won't practice themselves!" },
   { title: "Just saying... 💭", body: "Interviewing is a skill. Skills need practice!" },
-  { title: "Psst! 🤫", body: "Quick interview before bed? You'll sleep better knowing you practiced!" },
+  { title: "Psst! 🤫", body: "Quick interview before bed? You'll sleep better knowing you practised!" },
 ];
 
 const STREAK_ENDING_MESSAGES = [
@@ -180,7 +180,7 @@ export const scheduleStreakWarning = async () => {
     const lastUsedDate = await AsyncStorage.getItem('lastUsedDate');
     const today = new Date().toDateString();
     
-    if (lastUsedDate === today) return; // Already practiced today
+    if (lastUsedDate === today) return; // Already practised today
 
     // Get a random streak warning message
     const message = getRandomMessage(STREAK_ENDING_MESSAGES);

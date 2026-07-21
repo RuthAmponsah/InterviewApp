@@ -195,7 +195,7 @@ const Feedback: React.FC = () => {
       if (improvements.length === 0) {
         console.log('Using fallback improvements');
         improvements.push('Add more quantifiable results to demonstrate your impact.');
-        improvements.push('Practice using the STAR method for behavioral questions.');
+        improvements.push('Practise using the STAR method for behavioural questions.');
       }
 
       const feedbackData = {

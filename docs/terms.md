@@ -21,7 +21,7 @@ These Terms constitute a legally binding agreement between you ("User," "you," o
 ### Account Responsibility
 - You are responsible for maintaining the confidentiality of your account credentials
 - You are responsible for all activities under your account
-- You must notify us immediately of any unauthorized access
+- You must notify us immediately of any unauthorised access
 
 ## 3. Description of Service
 
@@ -29,8 +29,8 @@ My Interview provides:
 
 ### Core Features (Free & Paid)
 - ✅ AI-powered interview practice (text and voice modes)
-- ✅ Personalized feedback and improvement suggestions
-- ✅ CV/resume upload and AI analysis
+- ✅ Personalised feedback and improvement suggestions
+- ✅ CV upload and AI analysis
 - ✅ Interview question bank
 - ✅ Progress tracking and performance metrics
 - ✅ Job search integration (via Adzuna API)
@@ -74,7 +74,7 @@ My Interview provides:
 ### Account Termination by Us
 We may suspend or terminate your account if you:
 - Violate these Terms
-- Engage in fraudulent or abusive behavior
+- Engage in fraudulent or abusive behaviour
 - Use automated scripts or bots
 - Attempt to reverse engineer or hack the App
 - Provide false information or impersonate others
@@ -153,13 +153,13 @@ We may suspend or terminate your account if you:
 
 ### Your Content
 - You retain ownership of content you upload (CV, feedback, success stories)
-- By uploading, you grant us a license to:
+- By uploading, you grant us a licence to:
   - Store and process your content to provide the service
   - Display your success stories publicly (with your consent)
-  - Use anonymized data for service improvement
+  - Use anonymised data for service improvement
 
 ### Success Stories
-- By submitting a success story, you grant us a perpetual, royalty-free license to publish it
+- By submitting a success story, you grant us a perpetual, royalty-free licence to publish it
 - You can request removal at any time
 - We may edit for grammar, length, or clarity (preserving original meaning)
 
@@ -207,7 +207,7 @@ We may suspend or terminate your account if you:
 - You acknowledge the inherent risks of internet data transmission
 
 ### Data Usage
-- We may use anonymized, aggregated data for analytics and research
+- We may use anonymised, aggregated data for analytics and research
 - Individual data is never sold to third parties
 
 ## 11. Disclaimers and Limitations of Liability
@@ -300,7 +300,7 @@ Email: info@interviewappcom.com
 
 ### Response Times
 - General support: 2-3 business days
-- Legal inquiries: 5-7 business days
+- Legal enquiries: 5-7 business days
 - Urgent issues: Within 24 hours
 
 ## 19. Acknowledgment

@@ -7,7 +7,7 @@ A React Native mobile application built with Expo that helps users prepare for j
 - **AI Interview Practice**: Text and voice-based mock interviews with AI feedback
 - **CV Upload & Analysis**: Upload your CV for AI-powered analysis and improvement suggestions
 - **Interview History**: Track your practice sessions and progress over time
-- **Question Bank**: Access hundreds of common interview questions organized by category
+- **Question Bank**: Access hundreds of common interview questions organised by category
 - **Job Search**: Integrated Adzuna API for job listings
 - **Success Stories**: Learn from others' interview experiences
 - **Progress Dashboard**: Visualize your improvement with detailed analytics

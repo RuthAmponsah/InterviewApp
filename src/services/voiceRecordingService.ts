@@ -1,25 +1,18 @@
 /**
  * Voice Recording Service
  * Uses expo-av (deprecated but stable) for recording
- * Uses Groq Whisper API for transcription
+ * Uses Supabase Edge Function secrets for Groq Whisper transcription
  */
 import { Audio } from 'expo-av';
 import {
-  FileSystemSessionType,
-  FileSystemUploadType,
   getInfoAsync,
-  uploadAsync,
+  readAsStringAsync,
+  EncodingType,
 } from 'expo-file-system/legacy';
-import Constants from 'expo-constants';
 import { AppState, AppStateStatus } from 'react-native';
-import { firstConfigValue } from '../utils/env';
+import { supabase } from '../config/supabase';
 
-const GROQ_API_KEY = firstConfigValue(
-  Constants.expoConfig?.extra?.groqApiKey,
-  process.env.EXPO_PUBLIC_GROQ_API_KEY,
-);
-
-console.log('✅ Voice transcription config loaded:', { groqApiKey: Boolean(GROQ_API_KEY) });
+console.log('✅ Voice transcription will use Supabase Edge Function secrets.');
 
 let recording: Audio.Recording | null = null;
 
@@ -166,7 +159,7 @@ export const stopRecording = async (): Promise<string | null> => {
 };
 
 /**
- * Transcribe audio file using Groq Whisper API
+ * Transcribe audio file using the Groq transcription Edge Function
  * @param uri The URI of the audio file to transcribe
  * @returns The transcribed text, or null if failed
  */
@@ -174,12 +167,6 @@ export const transcribeAudio = async (uri: string): Promise<string | null> => {
   try {
     console.log('🔄 Transcribing audio...');
     console.log('📁 File URI:', uri);
-    
-    if (!GROQ_API_KEY) {
-      console.error('❌ Groq API key not configured!');
-      cleanupRecording();
-      return null;
-    }
     
     // Check if file exists
     console.log('📖 Checking file...');
@@ -192,97 +179,25 @@ export const transcribeAudio = async (uri: string): Promise<string | null> => {
       return null;
     }
     
-    const parseTranscriptionResponse = (body: string) => {
-      const response = JSON.parse(body);
-      console.log('📥 Response:', JSON.stringify(response).substring(0, 200));
-      const text = response.text || '';
-      console.log('✅ Transcription:', text);
-      return text;
-    };
-
-    const transcribeWithNativeUpload = async () => {
-      console.log('📤 Sending to Groq Whisper API with native upload...');
-      const response = await uploadAsync('https://api.groq.com/openai/v1/audio/transcriptions', uri, {
-        httpMethod: 'POST',
-        uploadType: FileSystemUploadType.MULTIPART,
-        fieldName: 'file',
+    console.log('📤 Reading audio file for Edge Function upload...');
+    const base64 = await readAsStringAsync(uri, { encoding: EncodingType.Base64 });
+    const { data, error } = await supabase.functions.invoke<{ text?: string }>('groq-transcribe', {
+      method: 'POST',
+      body: {
+        base64,
         mimeType: 'audio/m4a',
-        sessionType: FileSystemSessionType.FOREGROUND,
-        headers: {
-          Authorization: `Bearer ${GROQ_API_KEY}`,
-        },
-        parameters: {
-          model: 'whisper-large-v3-turbo',
-          language: 'en',
-          response_format: 'json',
-        },
-      });
+        fileName: 'recording.m4a',
+      },
+    });
 
-      console.log('📥 Native upload status:', response.status);
-      if (response.status >= 200 && response.status < 300) {
-        return parseTranscriptionResponse(response.body);
-      }
-
-      console.error('❌ Native upload API error:', response.status, response.body.substring(0, 500));
+    if (error) {
+      console.error('❌ Transcription Edge Function error:', error.message);
+      cleanupRecording();
       return null;
-    };
-
-    const transcribeWithXHR = async () => {
-      // In React Native, we use the URI directly in FormData.
-      console.log('📤 Creating FormData with file URI...');
-      const formData = new FormData();
-      formData.append('file', {
-        uri: uri,
-        type: 'audio/m4a',
-        name: 'recording.m4a',
-      } as any);
-      formData.append('model', 'whisper-large-v3-turbo');
-      formData.append('language', 'en');
-      formData.append('response_format', 'json');
-
-      console.log('📤 Sending to Groq Whisper API with XHR...');
-      return new Promise<string | null>((resolve) => {
-      const xhr = new XMLHttpRequest();
-      
-      xhr.onload = () => {
-        console.log('📥 Response status:', xhr.status);
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            resolve(parseTranscriptionResponse(xhr.responseText));
-          } catch (parseError) {
-            console.error('❌ Parse error:', parseError);
-            console.log('📥 Raw response:', xhr.responseText.substring(0, 500));
-            resolve(null);
-          }
-        } else {
-          console.error('❌ API error:', xhr.status, xhr.responseText.substring(0, 500));
-          resolve(null);
-        }
-      };
-      
-      xhr.onerror = () => {
-        console.error('❌ XHR network error');
-        resolve(null);
-      };
-      
-      xhr.ontimeout = () => {
-        console.error('❌ XHR timeout');
-        resolve(null);
-      };
-      
-      xhr.timeout = 60000; // 60 second timeout
-      xhr.open('POST', 'https://api.groq.com/openai/v1/audio/transcriptions');
-      xhr.setRequestHeader('Authorization', `Bearer ${GROQ_API_KEY}`);
-      xhr.send(formData);
-      });
-    };
-    
-    let result = await transcribeWithNativeUpload();
-    if (!result) {
-      console.log('🔁 Native upload did not return transcription, trying XHR fallback...');
-      result = await transcribeWithXHR();
     }
-    
+
+    const result = data?.text || null;
+    console.log('✅ Transcription:', result);
     cleanupRecording();
     return result;
   } catch (error) {

@@ -1,39 +1,45 @@
-import Groq from "groq-sdk";
 import { Audio } from 'expo-av';
-import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { firstConfigValue } from '../utils/env';
+import { supabase } from '../config/supabase';
 
-// Initialize Groq client
-// Get your free API key from: https://console.groq.com/keys
-const GROQ_API_KEY = firstConfigValue(
-  Constants.expoConfig?.extra?.groqApiKey,
-  process.env.EXPO_PUBLIC_GROQ_API_KEY,
-);
-
-// ElevenLabs for Aya's soothing voice (free: 10k chars/month at elevenlabs.io)
-const ELEVENLABS_API_KEY = firstConfigValue(
-  Constants.expoConfig?.extra?.elevenlabsApiKey,
-  process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY,
-);
-const ELEVENLABS_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Rachel - warm, calm voice
-
-if (!GROQ_API_KEY) {
-  console.error('⚠️ Groq API key not found. Please check your .env file.');
-} else {
-  console.log('✅ Groq config loaded:', { apiKey: true });
-}
-
-console.log('✅ ElevenLabs config loaded:', { apiKey: Boolean(ELEVENLABS_API_KEY) });
-
-const groq = new Groq({
-  apiKey: GROQ_API_KEY,
-});
+console.log('✅ AI services will use Supabase Edge Function secrets.');
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
+
+type GroqChatRequest = {
+  messages: ChatMessage[];
+  model: string;
+  temperature?: number;
+  max_tokens?: number;
+  top_p?: number;
+  stream?: boolean;
+  response_format?: { type: 'json_object' };
+};
+
+type GroqChatResponse = {
+  choices: Array<{
+    message: {
+      content?: string;
+    };
+  }>;
+};
+
+const createGroqChatCompletion = async (body: GroqChatRequest): Promise<GroqChatResponse> => {
+  const { data, error } = await supabase.functions.invoke<GroqChatResponse>('groq-chat', {
+    method: 'POST',
+    body,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'AI service is unavailable right now.');
+  }
+
+  return data || { choices: [] };
+};
 
 type SupportAgentReply = {
   answer: string;
@@ -83,6 +89,7 @@ const parseSupportReply = (text: string): SupportAgentReply | null => {
 export const getSupportAgentReply = async (userQuestion: string): Promise<SupportAgentReply> => {
   const prompt = `You are a support agent for the My Interview app.
 You MUST ONLY answer questions about this app. If the question is outside the app, refuse and suggest contacting support.
+Use UK English spelling and phrasing throughout.
 
 ${SUPPORT_KB}
 
@@ -104,11 +111,11 @@ Rules:
 `;
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await createGroqChatCompletion({
       messages: [
         {
           role: 'system',
-          content: 'You are a strict app-only support agent. Only answer questions about My Interview. Respond in JSON only.',
+          content: 'You are a strict app-only support agent. Only answer questions about My Interview. Use UK English. Respond in JSON only.',
         },
         {
           role: 'user',
@@ -160,7 +167,7 @@ const COMMON_QUESTIONS = {
     "What motivates you in your work?",
     "How do you handle stress and pressure?",
     "What's your ideal work environment?",
-    "How do you prioritize your tasks?",
+    "How do you prioritise your tasks?",
     "What are you most proud of in your career?",
     "What do you know about our company?",
   ],
@@ -176,10 +183,10 @@ const ROLE_SPECIFIC_SCENARIOS: Record<string, string[]> = {
     'You find a critical bug in production affecting thousands of users. Walk me through how you would approach debugging and fixing it.',
     'Describe your approach to designing scalable system architecture for a feature that needs to handle millions of requests.',
     'How would you handle a situation where a teammate\'s code quality is poor and impacting the team\'s velocity?',
-    'Tell me about a time you had to optimize code or database queries. What was the challenge and how did you solve it?',
+    'Tell me about a time you had to optimise code or database queries. What was the challenge and how did you solve it?',
   ],
   'Data Analyst': [
-    'Imagine you discover an unexpected spike in user behavior in your analytics. How would you investigate the root cause?',
+    'Imagine you discover an unexpected spike in user behaviour in your analytics. How would you investigate the root cause?',
     'Walk me through how you would approach a project to improve customer retention using data analysis.',
     'Describe a time you had to present complex data findings to non-technical stakeholders. How did you simplify it?',
     'How would you validate the accuracy of a large dataset before using it for critical business decisions?',
@@ -187,7 +194,7 @@ const ROLE_SPECIFIC_SCENARIOS: Record<string, string[]> = {
   'Cyber Security': [
     'You detect unusual network activity that could indicate a security breach. What steps would you take immediately?',
     'Walk me through your approach to conducting a security audit of a company\'s systems.',
-    'How would you prioritize security issues with limited resources? Give me an example.',
+    'How would you prioritise security issues with limited resources? Give me an example.',
     'Describe a time you had to explain security risks to management and get approval for expensive security measures.',
   ],
   'IT Support': [
@@ -218,10 +225,10 @@ const ROLE_SPECIFIC_SCENARIOS: Record<string, string[]> = {
     'You\'re launching a new campaign with a limited budget. Walk me through your strategy.',
     'Tell me about a marketing campaign you\'re proud of. What were the results?',
     'How would you measure the success of a marketing initiative? What metrics matter most?',
-    'Describe how you\'d use social media data to optimize a targeted advertising campaign.',
+    'Describe how you\'d use social media data to optimise a targeted advertising campaign.',
   ],
   'Product Manager': [
-    'You\'re prioritizing features for the next product release. How would you make that decision?',
+    'You\'re prioritising features for the next product release. How would you make that decision?',
     'Walk me through how you would approach a feature that has competing user requests.',
     'Tell me about a product decision you made that didn\'t perform as expected. How did you respond?',
     'How would you work with engineering and design teams when they disagree on a feature implementation?',
@@ -239,14 +246,14 @@ const ROLE_SPECIFIC_SCENARIOS: Record<string, string[]> = {
     'How do you measure student success and adjust your teaching methods accordingly?',
   ],
   'Finance': [
-    'You\'re analyzing a company\'s financial statements and notice concerning trends. What\'s your approach?',
+    'You\'re analysing a company\'s financial statements and notice concerning trends. What\'s your approach?',
     'Walk me through how you would build a financial forecast for a new business initiative.',
     'Tell me about a time you caught a major financial error. How did you handle it?',
     'Describe your approach to risk assessment and mitigation in financial planning.',
   ],
   'Operations Manager': [
     'You need to reduce operational costs by 20% without impacting quality. How would you approach this?',
-    'Walk me through how you would optimize a broken process.',
+    'Walk me through how you would optimise a broken process.',
     'Tell me about a time you implemented a major operational change. What were the challenges?',
     'How would you measure operational efficiency, and what metrics do you track?',
   ],
@@ -273,7 +280,7 @@ const getQuestionsForRole = async (jobRole: string): Promise<string[]> => {
       return [...allBehavioral.slice(0, 4), ...allGeneral.slice(0, 3)];
     }
     
-    // Pick 4 behavioral and 3 general questions
+    // Pick 4 behavioural and 3 general questions
     const selectedBehavioral = availableBehavioral.slice(0, 4);
     const selectedGeneral = availableGeneral.slice(0, 3);
     
@@ -303,7 +310,7 @@ export const initializeInterviewChat = async (jobRole: string, userName?: string
     'Customer Service': 'Focus on communication, empathy, problem-solving, patience, and customer satisfaction.',
     'Marketing': 'Focus on campaigns, analytics, creativity, brand strategy, and digital marketing.',
     'Accounting': 'Focus on financial reporting, compliance, attention to detail, and accounting software.',
-    'Finance': 'Focus on analysis, forecasting, budgeting, risk assessment, and financial modeling.',
+    'Finance': 'Focus on analysis, forecasting, budgeting, risk assessment, and financial modelling.',
     'Human Resources': 'Focus on recruitment, employee relations, policies, conflict resolution, and HR systems.',
     'Healthcare': 'Focus on patient care, medical knowledge, empathy, teamwork, and clinical skills.',
     'Nursing': 'Focus on patient assessment, medication administration, care planning, and communication.',
@@ -313,8 +320,8 @@ export const initializeInterviewChat = async (jobRole: string, userName?: string
     'Product Manager': 'Focus on product strategy, user research, roadmapping, cross-functional leadership, and metrics.',
     'UX/UI Designer': 'Focus on user research, wireframing, prototyping, usability, and design tools.',
     'Graphic Designer': 'Focus on creativity, design software, brand consistency, and visual communication.',
-    'Operations Manager': 'Focus on efficiency, process optimization, team management, and performance metrics.',
-    'Supply Chain': 'Focus on logistics, inventory management, vendor relations, and cost optimization.',
+    'Operations Manager': 'Focus on efficiency, process optimisation, team management, and performance metrics.',
+    'Supply Chain': 'Focus on logistics, inventory management, supplier relationships, and cost optimisation.',
     'Legal': 'Focus on legal research, contracts, compliance, analytical skills, and attention to detail.',
     'Architecture': 'Focus on design principles, technical drawings, building codes, and client communication.',
     'Consulting': 'Focus on problem-solving, client management, analytical thinking, and communication.',
@@ -348,6 +355,7 @@ Your responsibilities:
 - Provide brief constructive feedback on their answers (1 sentence)
 - Keep your responses concise (2-3 sentences max)
 - Be friendly and supportive, not intimidating
+- Use UK English spelling and phrasing throughout.
 
 QUESTIONS TO ASK (in this order):
 1. ${COMMON_QUESTIONS.opener}
@@ -389,8 +397,8 @@ export const sendMessageToAI = async (userMessage: string): Promise<string> => {
       content: userMessage,
     });
 
-    // Call Groq API
-    const chatCompletion = await groq.chat.completions.create({
+    // Call Groq through the Supabase Edge Function.
+    const chatCompletion = await createGroqChatCompletion({
       messages: conversationHistory,
       model: "llama-3.3-70b-versatile", // Latest and best model
       temperature: 0.7,
@@ -427,7 +435,7 @@ export const getConversationSummary = async (): Promise<string> => {
     
     const summaryPrompt = {
       role: 'user' as const,
-      content: `Please analyze this interview practice session and provide honest, critical feedback in this format:
+      content: `Please analyse this interview practice session and provide honest, critical feedback in this format:
 
 STRENGTHS:
 - [Specific positive observation 1]
@@ -466,10 +474,13 @@ Key factors to score HARSHLY on:
 - EXAMPLES: No concrete examples or stories = significant deduction
 - DEPTH: Surface-level responses without technical knowledge = low score
 
-Remember: The user is practicing for a REAL interview. Be critical to help them improve. Most practice sessions should score 40-60 unless truly exceptional.`,
+Language:
+- Use UK English spelling and phrasing throughout. Prefer analyse, practise, behavioural, personalised, organisation, programme, optimise and CV where relevant.
+
+Remember: The user is practising for a REAL interview. Be critical to help them improve. Most practice sessions should score 40-60 unless truly exceptional.`,
     };
 
-    const chatCompletion = await groq.chat.completions.create({
+    const chatCompletion = await createGroqChatCompletion({
       messages: [...conversationHistory, summaryPrompt],
       model: "llama-3.3-70b-versatile",
       temperature: 0.5,
@@ -538,7 +549,7 @@ Rules:
 - Make the betterAnswer 3-5 sentences, STAR-style only if applicable.
 `;
 
-    const completion = await groq.chat.completions.create({
+    const completion = await createGroqChatCompletion({
       messages: [
         { role: 'system', content: 'You are Aya, a helpful UK interview coach. Return JSON only.' },
         { role: 'user', content: prompt },
@@ -578,56 +589,38 @@ let isSpeaking = false;
 
 // Try ElevenLabs first for natural voice
 const getElevenLabsAudio = async (text: string): Promise<string | null> => {
-  if (!ELEVENLABS_API_KEY) {
-    console.log('⚠️ No ElevenLabs API key found');
-    return null;
-  }
-  
-  console.log('🎙️ ElevenLabs API key present, making request...');
-  
+  console.log('🎙️ Requesting ElevenLabs speech via Edge Function...');
+
   try {
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
-      {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': ELEVENLABS_API_KEY,
-        },
-        body: JSON.stringify({
-          text,
-          model_id: 'eleven_turbo_v2_5',
-          voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-        }),
-      }
-    );
-    
-    console.log('🎙️ ElevenLabs response status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('❌ ElevenLabs error:', errorText);
+    const { data, error } = await supabase.functions.invoke<{
+      audioBase64?: string;
+      audioDataUrl?: string;
+      mimeType?: string;
+      voiceSource?: 'custom' | 'default';
+    }>('elevenlabs-tts', {
+      method: 'POST',
+      body: { text },
+    });
+
+    if (error) {
+      console.log('❌ ElevenLabs Edge Function error, falling back to Google TTS:', error.message);
       return null;
     }
-    
-    console.log('✅ ElevenLabs audio received, converting to base64...');
-    
-    const blob = await response.blob();
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        console.log('✅ ElevenLabs base64 conversion complete');
-        resolve(reader.result as string);
-      };
-      reader.onerror = () => {
-        console.log('❌ FileReader error');
-        resolve(null);
-      };
-      reader.readAsDataURL(blob);
-    });
+
+    const audioBase64 = data?.audioBase64 || data?.audioDataUrl?.split(',')[1] || '';
+    if (audioBase64) {
+      const fileUri = `${FileSystem.cacheDirectory}aya-elevenlabs-${Date.now()}.mp3`;
+      await FileSystem.writeAsStringAsync(fileUri, audioBase64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      console.log(`✅ ElevenLabs audio saved locally (${data?.voiceSource || 'unknown'} voice):`, fileUri);
+      return fileUri;
+    }
+
+    console.log('⚠️ ElevenLabs Edge Function returned no audio, falling back to Google TTS');
+    return null;
   } catch (error) {
-    console.log('❌ ElevenLabs fetch error:', error);
+    console.log('❌ ElevenLabs Edge Function fetch error, falling back to Google TTS:', error);
     return null;
   }
 };
@@ -655,48 +648,47 @@ export const speakText = async (text: string): Promise<boolean> => {
     });
 
     // Try ElevenLabs first for beautiful voice
-    if (ELEVENLABS_API_KEY) {
-      console.log('🎙️ Trying ElevenLabs voice...');
-      const audioData = await getElevenLabsAudio(text);
-      
-      if (audioData) {
-        try {
-          const { sound } = await Audio.Sound.createAsync(
-            { uri: audioData },
-            { shouldPlay: true }
-          );
-          currentSound = sound;
-          
-          // Wait for playback to complete
-          await new Promise<void>((resolve) => {
-            const interval = setInterval(async () => {
-              if (!isSpeaking) {
-                clearInterval(interval);
-                resolve();
-                return;
-              }
-              try {
-                const status = await sound.getStatusAsync();
-                if (status.isLoaded && !status.isPlaying && status.positionMillis > 0) {
-                  clearInterval(interval);
-                  resolve();
-                }
-              } catch {
+    console.log('🎙️ Trying ElevenLabs voice...');
+    const audioData = await getElevenLabsAudio(text);
+
+    if (audioData) {
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: audioData },
+          { shouldPlay: true }
+        );
+        currentSound = sound;
+        await sound.setRateAsync(1.01, true, Audio.PitchCorrectionQuality.High);
+
+        // Wait for playback to complete
+        await new Promise<void>((resolve) => {
+          const interval = setInterval(async () => {
+            if (!isSpeaking) {
+              clearInterval(interval);
+              resolve();
+              return;
+            }
+            try {
+              const status = await sound.getStatusAsync();
+              if (status.isLoaded && !status.isPlaying && status.positionMillis > 0) {
                 clearInterval(interval);
                 resolve();
               }
-            }, 200);
-            setTimeout(() => { clearInterval(interval); resolve(); }, 120000);
-          });
-          
-          await sound.unloadAsync();
-          currentSound = null;
-          isSpeaking = false;
-          console.log('✅ ElevenLabs playback complete');
-          return true;
-        } catch (e) {
-          console.log('ElevenLabs playback failed, using Google TTS');
-        }
+            } catch {
+              clearInterval(interval);
+              resolve();
+            }
+          }, 200);
+          setTimeout(() => { clearInterval(interval); resolve(); }, 120000);
+        });
+
+        await sound.unloadAsync();
+        currentSound = null;
+        isSpeaking = false;
+        console.log('✅ ElevenLabs playback complete');
+        return true;
+      } catch (e) {
+        console.log('ElevenLabs playback failed, using Google TTS');
       }
     }
 
@@ -1106,7 +1098,7 @@ export const normalizeCVText = (text: string) => {
     [/MasterofArtsinEducation/gi, 'Master of Arts in Education'],
     [/CertificateinTeachingEnglishasaSecondLanguage/gi, 'Certificate in Teaching English as a Second Language'],
     [/CertificateofAppreciationforoutstandingteachingpractice/gi, 'Certificate of Appreciation for outstanding teaching practice'],
-    [/CertificateofCompletionforteachertrainingprogram/gi, 'Certificate of Completion for teacher training program'],
+    [/CertificateofCompletionforteachertrainingprogram/gi, 'Certificate of Completion for teacher training programme'],
     [/Availableuponrequest/gi, 'Available upon request'],
   ];
 
@@ -1166,15 +1158,15 @@ IMPORTANT:
 - Use UK English spelling and wording throughout. Use terms like CV, role, organisation, programme, centre, analyse, optimise, tailored and professional.
 - Base ALL suggestions on the CV chunk provided above
 - Reference specific parts of their CV in your suggestions
-- Give personalized, actionable advice, NOT generic tips
+- Give personalised, actionable advice, NOT generic tips
 - Focus on what's missing, what's weak, and what could be stronger for ${jobRole} roles
 - Suggest specific keywords, skills, or improvements based on their content
 - Do NOT invent roles, employers, qualifications, dates, metrics, or achievements
-- Prioritize ATS keywords, quantified impact, role fit, clarity, and evidence
+- Prioritise ATS keywords, quantified impact, role fit, clarity, and evidence
 
 Respond with ONLY the JSON object, no markdown, no code blocks, no explanations.`;
 
-  const completion = await groq.chat.completions.create({
+  const completion = await createGroqChatCompletion({
     messages: [
       {
         role: 'system',
@@ -1265,16 +1257,16 @@ IMPORTANT:
 - Read the ENTIRE CV content from top to bottom, including any text after page markers like "--- PDF PAGE 2 OF 2 ---" or "--- ADDITIONAL PDF TEXT RECOVERED ---"
 - Do not ignore sidebars, second pages, certificates, education, skills, references, or later sections just because the layout/text order is imperfect
 - Reference specific parts of their CV in your suggestions
-- Give personalized, actionable advice, NOT generic tips
+- Give personalised, actionable advice, NOT generic tips
 - Focus on what's missing, what's weak, and what could be stronger for ${jobRole} roles
 - Suggest specific keywords, skills, or improvements based on their content
 - Do NOT invent roles, employers, qualifications, dates, metrics, or achievements
-- Prioritize ATS keywords, quantified impact, role fit, clarity, and evidence
+- Prioritise ATS keywords, quantified impact, role fit, clarity, and evidence
 - If a metric is missing, suggest where the user could add one rather than making it up
 
 Respond with ONLY the JSON object, no markdown, no code blocks, no explanations.`;
 
-    const completion = await groq.chat.completions.create({
+    const completion = await createGroqChatCompletion({
       messages: [
         {
           role: 'system',
@@ -1378,7 +1370,7 @@ IMPORTANT INSTRUCTIONS:
 
 Return ONLY the finished CV text. Do not include commentary, apologies, prompt text, instructions, analysis, or notes.`;
 
-    const completion = await groq.chat.completions.create({
+    const completion = await createGroqChatCompletion({
       messages: [
         {
           role: 'system',
@@ -1463,10 +1455,10 @@ Instructions:
 - If the user gives vague work, describe the likely responsibility in neutral terms without adding false specifics
 - If a detail is missing, leave it out rather than making it up
 - Tailor the wording toward ${details.targetRole || 'the target role'}
-- Prioritize profile, key skills, experience, education, certifications/training, achievements and additional information where supplied
+- Prioritise profile, key skills, experience, education, certifications/training, achievements and additional information where supplied
 - Output plain text only, no markdown fences`;
 
-  const completion = await groq.chat.completions.create({
+  const completion = await createGroqChatCompletion({
     messages: [
       {
         role: 'system',

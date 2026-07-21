@@ -123,6 +123,73 @@ const CATEGORY_MAP: { [key: string]: string } = {
   'Consulting': 'consultancy-jobs',
 };
 
+const UK_LOCATION_TERMS = [
+  'aberdeen',
+  'belfast',
+  'birmingham',
+  'bradford',
+  'brighton',
+  'bristol',
+  'cambridge',
+  'cardiff',
+  'coventry',
+  'derby',
+  'edinburgh',
+  'glasgow',
+  'leeds',
+  'leicester',
+  'liverpool',
+  'london',
+  'manchester',
+  'milton keynes',
+  'newcastle',
+  'norwich',
+  'nottingham',
+  'oxford',
+  'plymouth',
+  'portsmouth',
+  'reading',
+  'sheffield',
+  'southampton',
+  'slough',
+  'wakefield',
+  'york',
+];
+
+const splitCombinedJobSearch = (query: string) => {
+  const cleanQuery = query.trim().replace(/\s+/g, ' ');
+  if (!cleanQuery) {
+    return { title: '', location: '' };
+  }
+
+  const commaParts = cleanQuery.split(',').map((part) => part.trim()).filter(Boolean);
+  if (commaParts.length > 1) {
+    return {
+      title: commaParts.slice(0, -1).join(' '),
+      location: commaParts[commaParts.length - 1],
+    };
+  }
+
+  const lowerQuery = cleanQuery.toLowerCase();
+  if (UK_LOCATION_TERMS.includes(lowerQuery)) {
+    return { title: '', location: cleanQuery };
+  }
+
+  const locationMatch = UK_LOCATION_TERMS
+    .sort((a, b) => b.length - a.length)
+    .find((term) => lowerQuery.endsWith(` ${term}`));
+
+  if (locationMatch) {
+    const title = cleanQuery.slice(0, cleanQuery.length - locationMatch.length).trim();
+    return {
+      title,
+      location: cleanQuery.slice(cleanQuery.length - locationMatch.length).trim(),
+    };
+  }
+
+  return { title: cleanQuery, location: '' };
+};
+
 const determineRemoteType = (title: string, description: string, location: string): 'Remote' | 'Hybrid' | 'On-site' => {
   const text = `${title} ${description} ${location}`.toLowerCase();
   if (text.includes('remote') || text.includes('work from home')) return 'Remote';
@@ -188,14 +255,19 @@ export const searchJobs = async (
   page: number = 1,
   resultsPerPage: number = 20,
   remoteFilter: string = 'All',
-  location: string = ''
+  location: string = '',
+  jobTitle: string = ''
 ): Promise<{ jobs: Job[]; totalResults: number }> => {
   try {
+    const combinedSearch = !location.trim() ? splitCombinedJobSearch(jobTitle) : null;
+    const titleSearch = combinedSearch?.title ?? jobTitle.trim();
+    const locationSearch = location.trim() || combinedSearch?.location || '';
+
     // Build search keywords - include category name for better results
-    let keywords = '';
+    let keywords = titleSearch;
     
-    // Add category as keyword search (e.g., "Data Analyst", "Software Developer")
-    if (category !== 'All Jobs' && category !== 'Saved Jobs') {
+    // Add category as keyword search when the user has not typed a specific title.
+    if (!keywords && category !== 'All Jobs' && category !== 'Saved Jobs' && category !== 'Applied Jobs') {
       keywords = category;
     }
     
@@ -212,11 +284,11 @@ export const searchJobs = async (
       app_key: ADZUNA_APP_KEY,
       results_per_page: resultsPerPage.toString(),
       what: keywords,
-      where: location.trim() || 'uk', // Use provided location or default to UK
+      where: locationSearch || 'uk', // Use provided location or default to UK
     });
 
     // Also add category tag filter for more precise results
-    if (category !== 'All Jobs' && category !== 'Saved Jobs' && CATEGORY_MAP[category]) {
+    if (!titleSearch && category !== 'All Jobs' && category !== 'Saved Jobs' && category !== 'Applied Jobs' && CATEGORY_MAP[category]) {
       params.append('category', CATEGORY_MAP[category]);
     }
 

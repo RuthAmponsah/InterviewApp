@@ -425,7 +425,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
         
         // Re-schedule streak warning for tomorrow (only if push notifications are enabled)
         const pushEnabled = await AsyncStorage.getItem('notif_push');
-        if (pushEnabled !== 'false') {
+        if (pushEnabled === 'true') {
           await scheduleStreakWarning();
         }
         

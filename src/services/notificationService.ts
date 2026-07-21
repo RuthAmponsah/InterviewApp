@@ -8,13 +8,17 @@ const EAS_PROJECT_ID = '5fe21a1b-adb5-4a48-ab5a-6d149d888986';
 
 // Configure how notifications should be displayed
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async () => {
+    const enabled = await arePushNotificationsEnabled();
+
+    return {
+      shouldShowAlert: enabled,
+      shouldPlaySound: enabled,
+      shouldSetBadge: false,
+      shouldShowBanner: enabled,
+      shouldShowList: enabled,
+    };
+  },
 });
 
 // ==========================================
@@ -66,6 +70,26 @@ const getRandomMessage = (messages: any[]) => {
   return messages[Math.floor(Math.random() * messages.length)];
 };
 
+export const NOTIFICATION_PREF_SET_KEY = 'notif_push_preference_set';
+
+export const arePushNotificationsEnabled = async (): Promise<boolean> => {
+  return (await AsyncStorage.getItem('notif_push')) === 'true';
+};
+
+const setDefaultNotificationPreferences = async () => {
+  await AsyncStorage.setItem('notif_push', 'true');
+
+  const practice = await AsyncStorage.getItem('notif_practice');
+  if (practice === null) {
+    await AsyncStorage.setItem('notif_practice', 'true');
+  }
+
+  const feedback = await AsyncStorage.getItem('notif_feedback');
+  if (feedback === null) {
+    await AsyncStorage.setItem('notif_feedback', 'true');
+  }
+};
+
 const getWeeklyEmoji = (count: number) => {
   if (count === 0) return "😴";
   if (count <= 2) return "👍";
@@ -108,6 +132,8 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
 // Schedule daily practice reminder with funny Duolingo-style messages
 export const scheduleDailyReminder = async (hour: number = 18, minute: number = 0) => {
   try {
+    if (!(await arePushNotificationsEnabled())) return null;
+
     // Cancel existing reminders first
     await cancelAllReminders();
 
@@ -144,6 +170,8 @@ export const scheduleDailyReminder = async (hour: number = 18, minute: number = 
 // Schedule streak ending warning (sent at 9 PM if no practice that day)
 export const scheduleStreakWarning = async () => {
   try {
+    if (!(await arePushNotificationsEnabled())) return;
+
     const streak = await AsyncStorage.getItem('streak');
     const streakNum = parseInt(streak || '0');
     
@@ -190,6 +218,8 @@ export const scheduleStreakWarning = async () => {
 // Schedule weekly summary (every Sunday at 6 PM)
 export const scheduleWeeklySummary = async () => {
   try {
+    if (!(await arePushNotificationsEnabled())) return null;
+
     // Cancel existing weekly summary
     const existingId = await AsyncStorage.getItem('weeklySummaryIdentifier');
     if (existingId) {
@@ -224,6 +254,8 @@ export const scheduleWeeklySummary = async () => {
 // Send streak milestone notification
 export const checkAndSendStreakMilestone = async (streak: number) => {
   try {
+    if (!(await arePushNotificationsEnabled())) return;
+
     const milestone = STREAK_MILESTONE_MESSAGES.find(m => m.days === streak);
     if (!milestone) return;
 
@@ -246,6 +278,8 @@ export const checkAndSendStreakMilestone = async (streak: number) => {
 // Send immediate weekly summary with actual data
 export const sendWeeklySummaryNow = async () => {
   try {
+    if (!(await arePushNotificationsEnabled())) return;
+
     // Get this week's interview count from AsyncStorage or calculate
     const weeklyCount = parseInt(await AsyncStorage.getItem('weeklyInterviewCount') || '0');
     const emoji = getWeeklyEmoji(weeklyCount);
@@ -302,6 +336,8 @@ export const isDailyReminderScheduled = async (): Promise<boolean> => {
 // Send immediate test notification
 export const sendTestNotification = async () => {
   try {
+    if (!(await arePushNotificationsEnabled())) return;
+
     const message = getRandomMessage(DAILY_REMINDER_MESSAGES);
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -319,20 +355,44 @@ export const sendTestNotification = async () => {
 // Initialize all notifications (call this on app start after permission granted)
 export const initializeNotifications = async () => {
   try {
-    const hasPermission = await requestNotificationPermissions();
-    if (!hasPermission) return;
-
-    // Check if notifications are enabled in user preferences
+    const preferenceSet = await AsyncStorage.getItem(NOTIFICATION_PREF_SET_KEY);
     const notifPush = await AsyncStorage.getItem('notif_push');
-    if (notifPush === 'false') return;
 
-    // Schedule daily reminder (default 6 PM)
-    const savedTime = await AsyncStorage.getItem('dailyReminderTime');
-    if (savedTime) {
-      const { hour, minute } = JSON.parse(savedTime);
-      await scheduleDailyReminder(hour, minute);
-    } else {
-      await scheduleDailyReminder(18, 0);
+    if (preferenceSet !== 'true' && notifPush === null) {
+      const hasPermission = await requestNotificationPermissions();
+      if (!hasPermission) {
+        await AsyncStorage.setItem('notif_push', 'false');
+        await AsyncStorage.setItem(NOTIFICATION_PREF_SET_KEY, 'true');
+        await cancelAllReminders();
+        return;
+      }
+
+      await setDefaultNotificationPreferences();
+      await registerPushToken();
+    } else if (notifPush !== 'true') {
+      await cancelAllReminders();
+      return;
+    }
+
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) {
+      await AsyncStorage.setItem('notif_push', 'false');
+      await AsyncStorage.setItem(NOTIFICATION_PREF_SET_KEY, 'true');
+      await cancelAllReminders();
+      return;
+    }
+
+    const notifPractice = await AsyncStorage.getItem('notif_practice');
+
+    // Schedule daily reminder only if practice reminders are enabled.
+    if (notifPractice === 'true') {
+      const savedTime = await AsyncStorage.getItem('dailyReminderTime');
+      if (savedTime) {
+        const { hour, minute } = JSON.parse(savedTime);
+        await scheduleDailyReminder(hour, minute);
+      } else {
+        await scheduleDailyReminder(18, 0);
+      }
     }
 
     // Schedule weekly summary

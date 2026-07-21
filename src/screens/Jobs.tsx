@@ -22,7 +22,11 @@ import { searchJobs, Job } from "../services/jobService";
 import { JOB_ROLES } from "../constants/jobRoles";
 import { keyboardAwareScrollProps, keyboardAvoidingBehavior, keyboardVerticalOffset } from "../utils/keyboard";
 
-const BASE_CATEGORIES = ['All Jobs', 'Saved Jobs'];
+const BASE_CATEGORIES = ['All Jobs'];
+const SAVED_JOB_DETAILS_KEY = 'saved_job_details_v1';
+const APPLIED_JOB_DETAILS_KEY = 'applied_job_details_v1';
+
+type JobMap = Record<string, Job>;
 
 const Jobs: React.FC = () => {
   const { colors, theme } = useTheme();
@@ -32,6 +36,9 @@ const Jobs: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownSearch, setDropdownSearch] = useState('');
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
+  const [savedJobDetails, setSavedJobDetails] = useState<JobMap>({});
+  const [appliedJobs, setAppliedJobs] = useState<string[]>([]);
+  const [appliedJobDetails, setAppliedJobDetails] = useState<JobMap>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -39,8 +46,8 @@ const Jobs: React.FC = () => {
   const [apiError, setApiError] = useState(false);
   const [apiErrorMessage, setApiErrorMessage] = useState('');
   const [remoteFilter, setRemoteFilter] = useState<string>('All');
-  const [locationFilter, setLocationFilter] = useState<string>('');
-  const didRunLocationSearch = useRef(false);
+  const [jobTitleSearch, setJobTitleSearch] = useState<string>('');
+  const didRunTitleSearch = useRef(false);
 
   // Load saved jobs on mount. Job fetching is handled by the filter effect below.
   useEffect(() => {
@@ -49,26 +56,26 @@ const Jobs: React.FC = () => {
 
   // Fetch new jobs when category or remote filter changes
   useEffect(() => {
-    if (selectedCategory !== 'Saved Jobs') {
+    if (selectedCategory !== 'Saved Jobs' && selectedCategory !== 'Applied Jobs') {
       fetchJobs();
     }
   }, [selectedCategory, remoteFilter]);
 
-  // Debounce location filter to avoid too many API calls
+  // Debounce free job title/location search
   useEffect(() => {
-    if (selectedCategory === 'Saved Jobs') return;
+    if (selectedCategory === 'Saved Jobs' || selectedCategory === 'Applied Jobs') return;
 
-    if (!didRunLocationSearch.current) {
-      didRunLocationSearch.current = true;
+    if (!didRunTitleSearch.current) {
+      didRunTitleSearch.current = true;
       return;
     }
-    
+
     const timeoutId = setTimeout(() => {
       fetchJobs();
-    }, 500); // Wait 500ms after user stops typing
-    
+    }, 500);
+
     return () => clearTimeout(timeoutId);
-  }, [locationFilter]);
+  }, [jobTitleSearch]);
 
   const fetchJobs = async () => {
     try {
@@ -80,7 +87,8 @@ const Jobs: React.FC = () => {
         1,
         20,
         remoteFilter,
-        locationFilter
+        '',
+        jobTitleSearch
       );
       setJobs(fetchedJobs);
       setTotalResults(total);
@@ -97,16 +105,42 @@ const Jobs: React.FC = () => {
   const loadSavedJobs = async () => {
     try {
       const userId = await AsyncStorage.getItem("userId");
+      const localSavedDetails = await AsyncStorage.getItem(SAVED_JOB_DETAILS_KEY);
+      const localAppliedDetails = await AsyncStorage.getItem(APPLIED_JOB_DETAILS_KEY);
+      const parsedSavedDetails = localSavedDetails ? JSON.parse(localSavedDetails) : {};
+      const parsedAppliedDetails = localAppliedDetails ? JSON.parse(localAppliedDetails) : {};
+
+      setSavedJobDetails(parsedSavedDetails);
+      setAppliedJobDetails(parsedAppliedDetails);
+
       if (!userId) return;
 
       const { data, error } = await supabase
         .from('user_progress')
-        .select('saved_jobs')
+        .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
-      if (data && data.saved_jobs) {
+      if (error) {
+        console.error('Error loading saved/applied jobs:', error);
+        return;
+      }
+
+      if (data?.saved_jobs) {
         setSavedJobs(data.saved_jobs);
+      }
+      if (data?.applied_jobs) {
+        setAppliedJobs(data.applied_jobs);
+      }
+      if (data?.saved_job_details) {
+        const nextSavedDetails = { ...parsedSavedDetails, ...data.saved_job_details };
+        setSavedJobDetails(nextSavedDetails);
+        await AsyncStorage.setItem(SAVED_JOB_DETAILS_KEY, JSON.stringify(nextSavedDetails));
+      }
+      if (data?.applied_job_details) {
+        const nextAppliedDetails = { ...parsedAppliedDetails, ...data.applied_job_details };
+        setAppliedJobDetails(nextAppliedDetails);
+        await AsyncStorage.setItem(APPLIED_JOB_DETAILS_KEY, JSON.stringify(nextAppliedDetails));
       }
     } catch (error) {
       console.error('Error loading saved jobs:', error);
@@ -122,8 +156,10 @@ const Jobs: React.FC = () => {
   // Filter jobs based on category and remote type
   let filteredJobs =
     selectedCategory === 'Saved Jobs'
-      ? jobs.filter((j) => savedJobs.includes(j.id))
-      : jobs;
+      ? Object.values(savedJobDetails).filter((j) => savedJobs.includes(j.id))
+      : selectedCategory === 'Applied Jobs'
+      ? Object.values(appliedJobDetails).filter((j) => appliedJobs.includes(j.id))
+      : jobs.filter((j) => !appliedJobs.includes(j.id));
 
   // Apply remote filter for additional client-side filtering
   if (remoteFilter !== 'All') {
@@ -134,31 +170,105 @@ const Jobs: React.FC = () => {
     Linking.openURL(job.url);
   };
 
-  const toggleSaveJob = async (jobId: string) => {
+  const persistJobState = async (
+    nextSavedJobs: string[],
+    nextSavedDetails: JobMap,
+    nextAppliedJobs: string[],
+    nextAppliedDetails: JobMap,
+  ) => {
     try {
       const userId = await AsyncStorage.getItem("userId");
-      if (!userId) return;
+      await AsyncStorage.setItem(SAVED_JOB_DETAILS_KEY, JSON.stringify(nextSavedDetails));
+      await AsyncStorage.setItem(APPLIED_JOB_DETAILS_KEY, JSON.stringify(nextAppliedDetails));
+      if (!userId) return true;
 
-      const newSavedJobs = savedJobs.includes(jobId)
-        ? savedJobs.filter((id) => id !== jobId)
-        : [...savedJobs, jobId];
-
-      // Update state immediately for UI feedback
-      setSavedJobs(newSavedJobs);
-
-      // Save to Supabase
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('user_progress')
-        .update({ saved_jobs: newSavedJobs })
-        .eq('user_id', userId);
+        .update({
+          saved_jobs: nextSavedJobs,
+          saved_job_details: nextSavedDetails,
+          applied_jobs: nextAppliedJobs,
+          applied_job_details: nextAppliedDetails,
+        })
+        .eq('user_id', userId)
+        .select('user_id');
 
       if (error) {
-        console.error('Error saving job:', error);
-        // Revert state if save failed
-        setSavedJobs(savedJobs);
+        console.error('Error saving job state to Supabase:', error);
+        return false;
       }
+
+      if (!data || data.length === 0) {
+        const { error: insertError } = await supabase
+          .from('user_progress')
+          .insert({
+            user_id: userId,
+            saved_jobs: nextSavedJobs,
+            saved_job_details: nextSavedDetails,
+            applied_jobs: nextAppliedJobs,
+            applied_job_details: nextAppliedDetails,
+          });
+
+        if (insertError) {
+          console.error('Error creating job state row:', insertError);
+          return false;
+        }
+      }
+
+      return true;
     } catch (error) {
-      console.error('Error toggling saved job:', error);
+      console.error('Error persisting job state:', error);
+      return false;
+    }
+  };
+
+  const toggleSaveJob = async (job: Job) => {
+    const wasSaved = savedJobs.includes(job.id);
+    const nextSavedJobs = wasSaved
+      ? savedJobs.filter((id) => id !== job.id)
+      : [...savedJobs, job.id];
+    const nextSavedDetails = { ...savedJobDetails };
+
+    if (wasSaved) {
+      delete nextSavedDetails[job.id];
+    } else {
+      nextSavedDetails[job.id] = job;
+    }
+
+    const previousSavedJobs = savedJobs;
+    const previousSavedDetails = savedJobDetails;
+    setSavedJobs(nextSavedJobs);
+    setSavedJobDetails(nextSavedDetails);
+
+    const saved = await persistJobState(nextSavedJobs, nextSavedDetails, appliedJobs, appliedJobDetails);
+    if (!saved) {
+      setSavedJobs(previousSavedJobs);
+      setSavedJobDetails(previousSavedDetails);
+    }
+  };
+
+  const markAppliedJob = async (job: Job) => {
+    const wasApplied = appliedJobs.includes(job.id);
+    const nextAppliedJobs = wasApplied
+      ? appliedJobs.filter((id) => id !== job.id)
+      : [...appliedJobs, job.id];
+    const nextAppliedDetails = { ...appliedJobDetails };
+
+    if (wasApplied) {
+      delete nextAppliedDetails[job.id];
+    } else {
+      nextAppliedDetails[job.id] = job;
+    }
+
+    const previousAppliedJobs = appliedJobs;
+    const previousAppliedDetails = appliedJobDetails;
+    setAppliedJobs(nextAppliedJobs);
+    setAppliedJobDetails(nextAppliedDetails);
+
+    const saved = await persistJobState(savedJobs, savedJobDetails, nextAppliedJobs, nextAppliedDetails);
+    if (!saved) {
+      setAppliedJobs(previousAppliedJobs);
+      setAppliedJobDetails(previousAppliedDetails);
     }
   };
 
@@ -184,6 +294,8 @@ const Jobs: React.FC = () => {
             {apiError && '⚠️ API error - '}
             {selectedCategory === 'Saved Jobs' 
               ? `${filteredJobs.length} saved ${filteredJobs.length === 1 ? 'job' : 'jobs'}`
+              : selectedCategory === 'Applied Jobs'
+              ? `${filteredJobs.length} applied ${filteredJobs.length === 1 ? 'job' : 'jobs'}`
               : `${totalResults || filteredJobs.length} ${totalResults === 1 ? 'job' : 'jobs'} available`
             }
           </Text>
@@ -257,28 +369,30 @@ const Jobs: React.FC = () => {
         )}
       </View>
 
-      {/* Location Search - Prominent Position */}
-      <View style={styles.locationSearchContainer}>
-        <Ionicons 
-          name="location-outline" 
-          size={20} 
-          color={locationFilter ? colors.primaryBlue : (isDark ? '#888' : colors.textMuted)} 
-        />
-        <TextInput
-          style={styles.locationSearchInput}
-          placeholder="Search by city (e.g., London, Manchester)"
-          placeholderTextColor={isDark ? '#666' : colors.textMuted}
-          value={locationFilter}
-          onChangeText={setLocationFilter}
-        />
-        {locationFilter ? (
-          <TouchableOpacity onPress={() => setLocationFilter('')} accessibilityLabel="Clear location filter" accessibilityRole="button">
-            <Ionicons name="close-circle" size={20} color={colors.primaryBlue} />
-          </TouchableOpacity>
-        ) : (
-          <Ionicons name="search" size={18} color={isDark ? '#666' : colors.textMuted} />
-        )}
-      </View>
+      {/* Job Title or Location Search */}
+      {selectedCategory !== 'Saved Jobs' && selectedCategory !== 'Applied Jobs' && (
+        <View style={styles.titleSearchContainer}>
+          <Ionicons
+            name="search-outline"
+            size={20}
+            color={jobTitleSearch ? colors.primaryBlue : (isDark ? '#888' : colors.textMuted)}
+          />
+          <TextInput
+            style={styles.titleSearchInput}
+            placeholder="Search job title or city"
+            placeholderTextColor={isDark ? '#666' : colors.textMuted}
+            value={jobTitleSearch}
+            onChangeText={setJobTitleSearch}
+            returnKeyType="search"
+            onSubmitEditing={fetchJobs}
+          />
+          {jobTitleSearch ? (
+            <TouchableOpacity onPress={() => setJobTitleSearch('')} accessibilityLabel="Clear job title search" accessibilityRole="button">
+              <Ionicons name="close-circle" size={20} color={colors.primaryBlue} />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      )}
 
       {/* Remote Type Filter Buttons */}
       <View style={styles.filtersContainer}>
@@ -288,19 +402,29 @@ const Jobs: React.FC = () => {
           contentContainerStyle={styles.filtersScroll}
           {...keyboardAwareScrollProps}
         >
-          {['All', 'Remote', 'Hybrid', 'On-site'].map((type) => (
+          {['All', 'Remote', 'Hybrid', 'On-site', 'Saved Jobs', 'Applied Jobs'].map((type) => (
             <TouchableOpacity
               key={type}
               style={[
                 styles.filterChip,
-                remoteFilter === type && styles.filterChipActive,
+                (remoteFilter === type || selectedCategory === type) && styles.filterChipActive,
               ]}
-              onPress={() => setRemoteFilter(type)}
+              onPress={() => {
+                if (type === 'Saved Jobs' || type === 'Applied Jobs') {
+                  setSelectedCategory(type);
+                  setDropdownOpen(false);
+                } else {
+                  if (selectedCategory === 'Saved Jobs' || selectedCategory === 'Applied Jobs') {
+                    setSelectedCategory('All Jobs');
+                  }
+                  setRemoteFilter(type);
+                }
+              }}
             >
               <Text
                 style={[
                   styles.filterChipText,
-                  remoteFilter === type && styles.filterChipTextActive,
+                  (remoteFilter === type || selectedCategory === type) && styles.filterChipTextActive,
                 ]}
               >
                 {type}
@@ -321,7 +445,7 @@ const Jobs: React.FC = () => {
           <View style={styles.emptyIllustration}>
             <View style={styles.emptyCircle}>
               <Ionicons
-                name={selectedCategory === 'Saved Jobs' ? 'bookmark-outline' : 'briefcase-outline'}
+                name={selectedCategory === 'Saved Jobs' ? 'bookmark-outline' : selectedCategory === 'Applied Jobs' ? 'checkmark-done-outline' : 'briefcase-outline'}
                 size={52}
                 color={colors.primaryBlue}
               />
@@ -334,6 +458,8 @@ const Jobs: React.FC = () => {
               ? 'Jobs are unavailable'
               : selectedCategory === 'Saved Jobs' 
               ? 'No saved jobs yet'
+              : selectedCategory === 'Applied Jobs'
+              ? 'No applied jobs yet'
               : remoteFilter !== 'All'
                 ? `No ${remoteFilter.toLowerCase()} jobs found`
                 : 'No jobs found'
@@ -344,6 +470,8 @@ const Jobs: React.FC = () => {
               ? apiErrorMessage || 'Adzuna could not return jobs right now. Please try again shortly.'
               : selectedCategory === 'Saved Jobs'
               ? 'Tap the bookmark icon on any job to save it here'
+              : selectedCategory === 'Applied Jobs'
+              ? 'Mark jobs as applied to keep track of applications here'
               : remoteFilter !== 'All'
                 ? `Try selecting a different work type or category`
                 : 'Try adjusting your filters or search criteria'
@@ -380,8 +508,9 @@ const Jobs: React.FC = () => {
           }
           renderItem={({ item }) => {
             const isSaved = savedJobs.includes(item.id);
+            const isApplied = appliedJobs.includes(item.id);
             return (
-              <View style={styles.jobCard}>
+              <View style={[styles.jobCard, isApplied && styles.jobCardApplied]}>
                 {/* Header with source badge and save button */}
                 <View style={styles.jobCardHeader}>
                   <View style={[
@@ -396,7 +525,7 @@ const Jobs: React.FC = () => {
                     </Text>
                   </View>
                   <TouchableOpacity
-                    onPress={() => toggleSaveJob(item.id)}
+                    onPress={() => toggleSaveJob(item)}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     accessibilityLabel={isSaved ? 'Remove saved job' : 'Save job'}
                     accessibilityRole="button"
@@ -411,6 +540,12 @@ const Jobs: React.FC = () => {
 
                 {/* Job Title */}
                 <Text style={styles.jobTitle}>{item.title}</Text>
+                {isApplied && (
+                  <View style={styles.appliedBadge}>
+                    <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                    <Text style={styles.appliedBadgeText}>Applied</Text>
+                  </View>
+                )}
 
                 {/* Company · Location + Remote badge */}
                 <View style={styles.jobMetaRow}>
@@ -436,14 +571,30 @@ const Jobs: React.FC = () => {
                 <Text style={styles.jobSalary}>{item.salary}</Text>
 
                 {/* Apply Button */}
-                <TouchableOpacity
-                  style={styles.applyButton}
-                  onPress={() => openJob(item)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.applyButtonText}>View and apply</Text>
-                  <Ionicons name="arrow-forward" size={16} color="#fff" />
-                </TouchableOpacity>
+                <View style={styles.jobActionsRow}>
+                  <TouchableOpacity
+                    style={[styles.appliedButton, isApplied && styles.appliedButtonActive]}
+                    onPress={() => markAppliedJob(item)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name={isApplied ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                      size={16}
+                      color={isApplied ? '#10B981' : colors.primaryBlue}
+                    />
+                    <Text style={[styles.appliedButtonText, isApplied && styles.appliedButtonTextActive]}>
+                      {isApplied ? 'Applied' : "I've Applied"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.applyButton}
+                    onPress={() => openJob(item)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.applyButtonText}>View and apply</Text>
+                    <Ionicons name="arrow-forward" size={16} color="#fff" />
+                  </TouchableOpacity>
+                </View>
               </View>
             );
           }}
@@ -557,7 +708,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
   },
 
   /* Filters */
-  locationSearchContainer: {
+  titleSearchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
@@ -570,7 +721,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     borderColor: colors.border,
     gap: 10,
   },
-  locationSearchInput: {
+  titleSearchInput: {
     ...typography.bodyMedium,
     color: isDark ? '#fff' : colors.textDark,
     flex: 1,
@@ -607,11 +758,6 @@ const makeStyles = (colors: any, isDark: boolean) =>
     color: '#FFFFFF',
     fontWeight: '600',
   },
-  locationFilterActive: {
-    color: colors.primaryBlue,
-    fontWeight: '600',
-  },
-
   /* Job List */
   jobList: {
     paddingHorizontal: 20,
@@ -629,6 +775,9 @@ const makeStyles = (colors: any, isDark: boolean) =>
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
+  },
+  jobCardApplied: {
+    opacity: 0.86,
   },
   jobCardHeader: {
     flexDirection: 'row',
@@ -650,6 +799,22 @@ const makeStyles = (colors: any, isDark: boolean) =>
     fontWeight: '700',
     color: isDark ? '#fff' : colors.textDark,
     marginBottom: 6,
+  },
+  appliedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: isDark ? '#10B98120' : '#ECFDF5',
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  appliedBadgeText: {
+    ...typography.caption,
+    color: '#10B981',
+    fontWeight: '700',
   },
   jobCompany: {
     ...typography.bodySmall,
@@ -690,6 +855,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
     marginBottom: 12,
   },
   applyButton: {
+    flex: 1,
     backgroundColor: colors.primaryBlue,
     borderRadius: 10,
     paddingVertical: 12,
@@ -702,6 +868,35 @@ const makeStyles = (colors: any, isDark: boolean) =>
     ...typography.bodyMedium,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  jobActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+  },
+  appliedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.primaryBlue,
+    backgroundColor: isDark ? '#111827' : '#FFFFFF',
+  },
+  appliedButtonActive: {
+    borderColor: '#10B981',
+    backgroundColor: isDark ? '#10B98118' : '#ECFDF5',
+  },
+  appliedButtonText: {
+    ...typography.bodySmall,
+    color: colors.primaryBlue,
+    fontWeight: '700',
+  },
+  appliedButtonTextActive: {
+    color: '#10B981',
   },
   loadingContainer: {
     flex: 1,

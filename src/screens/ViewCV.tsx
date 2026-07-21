@@ -440,15 +440,31 @@ const ViewCV: React.FC = () => {
         .map((block) => `<p>${escapeHtml(block.trim()).replace(/\n/g, "<br />")}</p>`)
         .join("\n");
 
+      const safeDate = new Date().toISOString().slice(0, 10);
       const htmlDoc = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Improved CV</title>
   <style>
-    body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.45; color: #111827; }
-    h1 { font-size: 18pt; margin-bottom: 18px; }
-    p { margin: 0 0 10px; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      line-height: 1.45;
+      color: #111827;
+      background: #ffffff;
+      max-width: 820px;
+    }
+    h1 { font-size: 18pt; margin: 0 0 18px; }
+    p { margin: 0 0 10px; white-space: normal; }
+    @media (max-width: 600px) {
+      body { padding: 18px; font-size: 12pt; }
+      h1 { font-size: 20pt; }
+    }
   </style>
 </head>
 <body>
@@ -457,7 +473,7 @@ const ViewCV: React.FC = () => {
 </body>
 </html>`;
 
-      const fileUri = `${FileSystem.cacheDirectory}my-interview-improved-cv.doc`;
+      const fileUri = `${FileSystem.cacheDirectory}my-interview-improved-cv-${safeDate}.html`;
       await FileSystem.writeAsStringAsync(fileUri, htmlDoc, {
         encoding: FileSystem.EncodingType.UTF8,
       });
@@ -465,9 +481,9 @@ const ViewCV: React.FC = () => {
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
         await Sharing.shareAsync(fileUri, {
-          mimeType: "application/msword",
+          mimeType: "text/html",
           dialogTitle: "Save your improved CV",
-          UTI: "com.microsoft.word.doc",
+          UTI: "public.html",
         });
       } else {
         Alert.alert("CV Ready", `Your improved CV was saved here:\n${fileUri}`);
@@ -685,7 +701,7 @@ const ViewCV: React.FC = () => {
                   >
                     <Ionicons name="download" size={20} color="#fff" />
                     <Text style={styles.downloadButtonText}>
-                      Download Word CV
+                      Download CV
                     </Text>
                   </TouchableOpacity>
                   <View style={styles.improvedCVContainer}>

@@ -495,16 +495,26 @@ export type QuestionAnswerFeedback = {
 export const getQuestionAnswerFeedback = async (
   question: string,
   answer: string,
-  jobRole?: string
+  jobRole?: string,
+  questionCategory?: string,
+  answerFramework?: {
+    label: string;
+    guidance: string[];
+  }
 ): Promise<QuestionAnswerFeedback | null> => {
   try {
     const roleLine = jobRole ? `Target role: ${jobRole}` : 'Target role: Not specified';
-    const prompt = `You are a strict interview coach. Evaluate the user's answer to the interview question.
+    const frameworkLine = answerFramework
+      ? `${answerFramework.label}: ${answerFramework.guidance.join(' | ')}`
+      : 'Use the most appropriate interview answer structure for this question.';
+    const prompt = `You are Aya, a supportive UK interview coach. Review the user's draft answer to this specific interview question.
 
 ${roleLine}
+Question category/type: ${questionCategory || 'Not specified'}
+Recommended answer framework: ${frameworkLine}
 
 Question: ${question}
-Answer: ${answer}
+User draft answer: ${answer}
 
 Return ONLY valid JSON with this exact structure:
 {
@@ -515,19 +525,27 @@ Return ONLY valid JSON with this exact structure:
 }
 
 Rules:
-- Be concise and practical
-- Score harshly for vague or short answers
-- Make the betterAnswer 3-5 sentences, STAR-style if applicable
+- Judge whether the draft actually answers the specific question, not a generic interview question.
+- Do not force STAR unless the recommended framework says STAR is appropriate.
+- For introductory questions such as "Tell me about yourself", assess professional introduction, relevant background, strengths, role fit, clarity and concision.
+- For motivation questions, assess company interest, role interest, relevant skills/experience and career fit.
+- For technical or role-specific questions, assess clarity, knowledge, examples and practical experience.
+- Use UK English.
+- Sound human, supportive and practical. Avoid robotic phrases like "Your response demonstrates" or "The candidate has effectively".
+- Prefer wording like "You’ve got a strong start here..." or "I’d make the result clearer..."
+- Keep strengths and improvements concise enough to read.
+- The betterAnswer should improve the user's own answer without removing their personality or inventing facts.
+- Make the betterAnswer 3-5 sentences, STAR-style only if applicable.
 `;
 
     const completion = await groq.chat.completions.create({
       messages: [
-        { role: 'system', content: 'You are a strict interview coach. Return JSON only.' },
+        { role: 'system', content: 'You are Aya, a helpful UK interview coach. Return JSON only.' },
         { role: 'user', content: prompt },
       ],
       model: 'llama-3.3-70b-versatile',
-      temperature: 0.4,
-      max_tokens: 350,
+      temperature: 0.55,
+      max_tokens: 520,
       response_format: { type: 'json_object' },
     });
 
@@ -1331,6 +1349,22 @@ IMPORTANT INSTRUCTIONS:
 - Keep factual information (names, dates, employers, education, qualifications, certifications) from the original when readable
 - Do NOT invent new employers, dates, qualifications, certifications, metrics, or achievements
 - If impact numbers are missing, write strong but truthful bullets without fake numbers
+- If a section has no real information in the source CV, do NOT write filler, apologies, assumptions, or generic positive claims for that section
+- For missing sections, write exactly "(No information given)" on the next line, then add one short practical line telling the user what to add there
+- Missing-section examples:
+  Education and Qualifications
+  (No information given)
+  Add your school, college, university, course names, dates, grades or relevant qualifications here.
+
+  Certifications / Training
+  (No information given)
+  Add any safeguarding, first aid, DBS, childcare, teaching, food hygiene, online courses or professional training here.
+
+  Achievements
+  (No information given)
+  Add awards, praise from employers, extra responsibilities, measurable results, promotions, positive feedback or examples of impact here.
+- Never write phrases like "Unfortunately, the provided information does not include...", "No specific certifications are mentioned...", "I am committed to ongoing learning..." or "While specific achievements are not detailed..."
+- Only include a normal written section when the original CV actually gives usable information for that section
 - If a line is unreadable or obviously corrupted, omit it rather than copying broken text
 - Make the CV sound confident, warm, capable and employable without sounding robotic
 - Use polished bullet points that "plump up" the user's real experience and skills while staying truthful
@@ -1348,7 +1382,7 @@ Return ONLY the finished CV text. Do not include commentary, apologies, prompt t
       messages: [
         {
           role: 'system',
-          content: 'You are Aya, an expert UK CV writer. Transform messy extracted CV text into a polished, truthful, professional CV. Use UK English. Output only the finished CV text.',
+          content: 'You are Aya, an expert UK CV writer. Transform messy extracted CV text into a polished, truthful, professional CV. Use UK English. Output only the finished CV text. Never invent missing education, certifications, achievements, dates, employers or qualifications. If a CV section has no source information, write "(No information given)" plus a short instruction telling the user what to add.',
         },
         {
           role: 'user',

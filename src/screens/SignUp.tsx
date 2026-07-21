@@ -8,10 +8,10 @@ import {
     Text,
     TouchableOpacity,
     View,
-    Modal,
     Keyboard,
     TouchableWithoutFeedback,
     ScrollView,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import PrimaryButton from '../components/PrimaryButton';
@@ -35,11 +35,6 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Popup Modal
-  const [warningVisible, setWarningVisible] = useState(false);
-  const [warningText, setWarningText] = useState("");
-  const [isSuccessMessage, setIsSuccessMessage] = useState(false);
-
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(18)).current;
 
@@ -59,15 +54,16 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
   }, [fadeAnim, translateY]);
 
   const showWarning = (msg: string) => {
-    setWarningText(msg);
-    setWarningVisible(true);
-    setIsSuccessMessage(false);
+    Alert.alert('Warning', msg);
   };
 
   const showSuccess = (msg: string) => {
-    setWarningText(msg);
-    setWarningVisible(true);
-    setIsSuccessMessage(true);
+    Alert.alert('Success', msg, [
+      {
+        text: 'OK',
+        onPress: () => navigation.replace('SignIn'),
+      },
+    ]);
   };
 
   // CREATE AUTH USER, THEN RETURN TO SIGN IN
@@ -252,36 +248,6 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         </Animated.View>
         </TouchableWithoutFeedback>
       </ScrollView>
-
-      {/* ⚠️ WARNING/SUCCESS POPUP MODAL */}
-      <Modal transparent visible={warningVisible} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={[
-              styles.modalWarning, 
-              isSuccessMessage && styles.modalSuccess
-            ]}>
-              {isSuccessMessage ? '✅ Success' : '⚠️ Warning'}
-            </Text>
-            <Text style={styles.modalText}>{warningText}</Text>
-
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => {
-                setWarningVisible(false);
-                // Return to sign in after successful signup
-                if (isSuccessMessage) {
-                  setTimeout(() => {
-                    navigation.replace("SignIn");
-                  }, 300);
-                }
-              }}
-            >
-              <Text style={styles.modalButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -360,48 +326,6 @@ const makeStyles = (colors: any, isDark: boolean) =>
   backText: {
     ...typography.label,
     color: colors.primaryBlue,
-  },
-
-  /* MODAL STYLES */
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  modalBox: {
-    width: "80%",
-    backgroundColor: isDark ? "#1c1c1c" : "#fff",
-    borderRadius: 18,
-    padding: 20,
-    alignItems: "center",
-  },
-  modalWarning: {
-    ...typography.headingSmall,
-    fontWeight: "800",
-    marginBottom: 10,
-    color: "#D9534F",
-  },
-  modalSuccess: {
-    color: "#10B981",
-  },
-  modalText: {
-    ...typography.bodyMedium,
-    textAlign: "center",
-    marginBottom: 20,
-    color: isDark ? "#e5e5e5" : "#333",
-    lineHeight: 24,
-  },
-  modalButton: {
-    backgroundColor: colors.primaryBlue,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-  },
-  modalButtonText: {
-    ...typography.bodyMedium,
-    color: "white",
-    fontWeight: "700",
   },
 });
 

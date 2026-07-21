@@ -8,10 +8,10 @@ import {
     Text,
     TouchableOpacity,
     View,
-    Modal,
     TouchableWithoutFeedback,
     Keyboard,
     ScrollView,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -36,11 +36,6 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  // Error Modal State
-  const [errorVisible, setErrorVisible] = useState(false);
-  const [errorTitle, setErrorTitle] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [showResend, setShowResend] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -66,10 +61,16 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
   }, [fadeAnim, translateY]);
 
   const showError = (title: string, message: string, allowResend: boolean = false) => {
-    setErrorTitle(title);
-    setErrorMessage(message);
-    setErrorVisible(true);
-    setShowResend(allowResend);
+    if (allowResend) {
+      Alert.alert(title, message, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Resend email', onPress: handleResendConfirmation },
+        { text: 'OK' },
+      ]);
+      return;
+    }
+
+    Alert.alert(title, message);
   };
 
   const handleResendConfirmation = async () => {
@@ -90,12 +91,12 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
       });
 
       if (error) {
-        setErrorMessage('Could not resend confirmation email. Please try again.');
+        Alert.alert('Could Not Resend', 'Could not resend confirmation email. Please try again.');
         console.error('Resend confirmation error:', error);
         return;
       }
 
-      setErrorMessage('Confirmation email sent. Please check your inbox.');
+      Alert.alert('Email Sent', 'Confirmation email sent. Please check your inbox.');
       
       // Start 30-second cooldown
       setResendCooldown(30);
@@ -354,42 +355,6 @@ const SignIn: React.FC<Props> = ({ navigation }) => {
         </Animated.View>
         </TouchableWithoutFeedback>
       </ScrollView>
-
-      {/* Error Modal - Same style as SignUp */}
-      <Modal transparent visible={errorVisible} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalWarning}>⚠️ {errorTitle}</Text>
-            <Text style={styles.modalText}>{errorMessage}</Text>
-
-            {showResend && (
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalSecondaryButton]}
-                onPress={handleResendConfirmation}
-                disabled={resendLoading || resendCooldown > 0}
-              >
-                <Text style={styles.modalSecondaryButtonText}>
-                  {resendLoading
-                    ? 'Sending...'
-                    : resendCooldown > 0
-                    ? `Resend email (${resendCooldown}s)`
-                    : 'Resend email'}
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => {
-                setErrorVisible(false);
-                setShowResend(false);
-              }}
-            >
-              <Text style={styles.modalButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -477,56 +442,6 @@ const makeStyles = (colors: any, isDark: boolean) =>
     fontWeight: '600',
   },
 
-  /* Modal Styles - Same as SignUp */
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  modalBox: {
-    width: "80%",
-    backgroundColor: isDark ? "#1c1c1c" : "#fff",
-    borderRadius: 18,
-    padding: 20,
-    alignItems: "center",
-  },
-  modalWarning: {
-    ...typography.headingSmall,
-    fontWeight: "800",
-    marginBottom: 10,
-    color: "#D9534F",
-  },
-  modalText: {
-    ...typography.bodyMedium,
-    textAlign: "center",
-    marginBottom: 20,
-    color: isDark ? "#e5e5e5" : "#333",
-  },
-  modalButton: {
-    backgroundColor: colors.primaryBlue,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-    minWidth: 160,
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    ...typography.bodyMedium,
-    color: "white",
-    fontWeight: "700",
-  },
-  modalSecondaryButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.primaryBlue,
-    marginBottom: 10,
-  },
-  modalSecondaryButtonText: {
-    ...typography.bodyMedium,
-    color: colors.primaryBlue,
-    fontWeight: '700',
-  },
 });
 
 export default SignIn;

@@ -18,9 +18,9 @@ import {
   requestNotificationPermissions, 
   scheduleDailyReminder, 
   cancelAllReminders,
-  sendTestNotification,
   registerPushToken,
   unregisterPushToken,
+  NOTIFICATION_PREF_SET_KEY,
 } from "../services/notificationService";
 
 const Notifications: React.FC = () => {
@@ -47,7 +47,8 @@ const Notifications: React.FC = () => {
       const savedHour = await AsyncStorage.getItem("reminderHour");
       const savedMinute = await AsyncStorage.getItem("reminderMinute");
 
-      if (push === "true") setPushEnabled(true);
+      const pushIsEnabled = push === "true";
+      if (pushIsEnabled) setPushEnabled(true);
       if (email === "true") setEmailEnabled(true);
       if (practice === "true") setPracticeReminders(true);
       if (feedback === "true") setFeedbackAlerts(true);
@@ -56,9 +57,10 @@ const Notifications: React.FC = () => {
         setReminderTime({ hour: parseInt(savedHour), minute: parseInt(savedMinute) });
       }
 
-      // Request permissions on load
-      const granted = await requestNotificationPermissions();
-      setPermissionsGranted(granted);
+      if (pushIsEnabled) {
+        const granted = await requestNotificationPermissions();
+        setPermissionsGranted(granted);
+      }
     };
     loadPreferences();
   }, []);
@@ -98,13 +100,24 @@ const Notifications: React.FC = () => {
     
     // Register / unregister remote push token + cancel all local notifications
     if (key === "notif_push") {
+      await AsyncStorage.setItem(NOTIFICATION_PREF_SET_KEY, "true");
+
       if (value) {
+        const granted = await requestNotificationPermissions();
+        if (!granted) {
+          setter(false);
+          await AsyncStorage.setItem(key, "false");
+          await cancelAllReminders();
+          return;
+        }
+        setPermissionsGranted(true);
         await registerPushToken();
         // Re-schedule local reminders if practice toggle is on
-        if (practiceReminders && permissionsGranted) {
+        if (practiceReminders) {
           await scheduleDailyReminder(reminderTime.hour, reminderTime.minute);
         }
       } else {
+        setPermissionsGranted(false);
         await unregisterPushToken();
         await cancelAllReminders(); // cancel ALL local scheduled notifications
       }
@@ -112,7 +125,7 @@ const Notifications: React.FC = () => {
 
     // Handle practice reminders scheduling
     if (key === "notif_practice") {
-      if (value && permissionsGranted) {
+      if (value && pushEnabled && permissionsGranted) {
         await scheduleDailyReminder(reminderTime.hour, reminderTime.minute);
       } else {
         await cancelAllReminders();
@@ -126,7 +139,7 @@ const Notifications: React.FC = () => {
     await AsyncStorage.setItem("reminderMinute", minute.toString());
     
     // Reschedule if reminders are enabled
-    if (practiceReminders && permissionsGranted) {
+    if (practiceReminders && pushEnabled && permissionsGranted) {
       await scheduleDailyReminder(hour, minute);
     }
   };

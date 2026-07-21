@@ -35,6 +35,96 @@ type Question = {
   isPremium?: boolean;
 };
 
+type AnswerFramework = {
+  id: 'star' | 'intro' | 'motivation' | 'strength' | 'technical' | 'scenario' | 'direct';
+  label: string;
+  summary: string;
+  guidance: string[];
+  placeholder: string;
+};
+
+const FRAMEWORKS: Record<AnswerFramework['id'], AnswerFramework> = {
+  star: {
+    id: 'star',
+    label: 'STAR method',
+    summary: 'Best for competency questions asking about a real past example.',
+    guidance: ['Situation: set the scene briefly', 'Task: explain what needed to happen', 'Action: focus on what you personally did', 'Result: show the outcome or learning'],
+    placeholder: 'Situation: What was happening?\nTask: What needed to be done?\nAction: What did you personally do?\nResult: What changed or what did you learn?',
+  },
+  intro: {
+    id: 'intro',
+    label: 'Professional introduction',
+    summary: 'Use this to introduce who you are and why you fit the role.',
+    guidance: ['Who you are professionally', 'Relevant background or experience', 'Key strengths', 'Why this role or company interests you'],
+    placeholder: 'I’m a...\nMy background includes...\nMy key strengths are...\nI’m interested in this role because...',
+  },
+  motivation: {
+    id: 'motivation',
+    label: 'Motivation structure',
+    summary: 'Show genuine interest in the company, role and career fit.',
+    guidance: ['Interest in the company', 'Interest in the position', 'Relevant experience or skills', 'How it fits your career goals'],
+    placeholder: 'I’m interested in this company because...\nThe role appeals to me because...\nMy experience in...\nThis fits my career goals because...',
+  },
+  strength: {
+    id: 'strength',
+    label: 'Strength/reflection structure',
+    summary: 'Be honest, specific and show self-awareness.',
+    guidance: ['Name the strength or weakness clearly', 'Give brief evidence or context', 'Explain the impact or lesson', 'Connect it back to the role'],
+    placeholder: 'One strength/area I’m developing is...\nFor example...\nThe impact/lesson was...\nThis matters for the role because...',
+  },
+  technical: {
+    id: 'technical',
+    label: 'Clear technical answer',
+    summary: 'Answer directly, then support it with experience or an example.',
+    guidance: ['Give the direct answer first', 'Explain your knowledge or process', 'Add a relevant example if possible', 'Mention trade-offs, tools or outcomes'],
+    placeholder: 'My direct answer is...\nI approach this by...\nA relevant example is...\nThe key trade-off/outcome was...',
+  },
+  scenario: {
+    id: 'scenario',
+    label: 'Structured scenario answer',
+    summary: 'Explain what you would do step by step and why.',
+    guidance: ['Clarify the situation', 'Explain your first action', 'Show how you would communicate or escalate', 'End with the intended outcome'],
+    placeholder: 'First, I would...\nThen I would...\nI would communicate/escalate by...\nThe outcome I’d aim for is...',
+  },
+  direct: {
+    id: 'direct',
+    label: 'Direct answer',
+    summary: 'Keep it clear, relevant and connected to the role.',
+    guidance: ['Answer the question directly', 'Add relevant evidence', 'Keep it concise', 'Connect it back to the role'],
+    placeholder: 'My answer is...\nA relevant example/detail is...\nThis matters for the role because...',
+  },
+};
+
+const getAnswerFramework = (question: Question): AnswerFramework => {
+  const text = question.text.toLowerCase();
+
+  if (/tell me about yourself|introduce yourself|walk me through your cv|walk me through your resume/.test(text)) {
+    return FRAMEWORKS.intro;
+  }
+
+  if (/why do you want|why are you interested|why this company|why.*role|what motivates you/.test(text)) {
+    return FRAMEWORKS.motivation;
+  }
+
+  if (/strength|weakness|unique|passionate|greatest accomplishment|why should we hire/.test(text) || question.category === 'Strengths') {
+    return FRAMEWORKS.strength;
+  }
+
+  if (question.category === 'Technical') {
+    return FRAMEWORKS.technical;
+  }
+
+  if (/what would you do|how would you|approach learning|handle/.test(text) || question.category === 'Situational') {
+    return FRAMEWORKS.scenario;
+  }
+
+  if (/tell me about a time|describe a time|give an example|when you|had to/.test(text) || question.category === 'Behavioral') {
+    return FRAMEWORKS.star;
+  }
+
+  return FRAMEWORKS.direct;
+};
+
 const PRACTICE_QUESTIONS: Question[] = [
   // Behavioral
   { id: '1', category: 'Behavioral', text: 'Tell me about yourself.' },
@@ -107,6 +197,62 @@ const PRACTICE_QUESTIONS: Question[] = [
   { id: 'rs-20', category: 'Role-Specific', text: 'How do you collaborate with sales and product teams to ensure aligned messaging and targets?', isPremium: true },
 ];
 
+const getRoleSpecificQuestions = (role?: string): Question[] => {
+  const targetRole = role?.trim() || 'your target role';
+  const safeRoleId = targetRole.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'target-role';
+
+  return [
+    {
+      id: `role-${safeRoleId}-1`,
+      category: 'Role-Specific',
+      text: `What interests you most about working as a ${targetRole}?`,
+      isPremium: true,
+    },
+    {
+      id: `role-${safeRoleId}-2`,
+      category: 'Role-Specific',
+      text: `Talk me through the experience, strengths or personal qualities that would help you succeed as a ${targetRole}.`,
+      isPremium: true,
+    },
+    {
+      id: `role-${safeRoleId}-3`,
+      category: 'Role-Specific',
+      text: `Tell me about a time you handled a difficult situation that is relevant to a ${targetRole} role.`,
+      isPremium: true,
+    },
+    {
+      id: `role-${safeRoleId}-4`,
+      category: 'Role-Specific',
+      text: `How would you prioritise your workload during a busy shift or demanding day as a ${targetRole}?`,
+      isPremium: true,
+    },
+    {
+      id: `role-${safeRoleId}-5`,
+      category: 'Role-Specific',
+      text: `What standards, checks or good practices matter most in a ${targetRole} role?`,
+      isPremium: true,
+    },
+    {
+      id: `role-${safeRoleId}-6`,
+      category: 'Role-Specific',
+      text: `How would you communicate with colleagues, customers, clients, patients or service users in a ${targetRole} role?`,
+      isPremium: true,
+    },
+    {
+      id: `role-${safeRoleId}-7`,
+      category: 'Role-Specific',
+      text: `What tools, systems, processes or role-specific knowledge would you expect to use as a ${targetRole}?`,
+      isPremium: true,
+    },
+    {
+      id: `role-${safeRoleId}-8`,
+      category: 'Role-Specific',
+      text: `If you were offered a ${targetRole} role, what would you focus on in your first 30 days?`,
+      isPremium: true,
+    },
+  ];
+};
+
 const AI_FREE_LIMIT = 2;
 const AI_USAGE_KEY = 'question_bank_ai_usage_v1';
 
@@ -131,6 +277,7 @@ export default function QuestionBank({ navigation }: any) {
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
   const [jobRole, setJobRole] = useState<string>('');
   const [aiFeedback, setAiFeedback] = useState<QuestionAnswerFeedback | null>(null);
+  const [feedbackAnswerSnapshot, setFeedbackAnswerSnapshot] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiUsageCount, setAiUsageCount] = useState(0);
   const [showPaywall, setShowPaywall] = useState(false);
@@ -389,7 +536,10 @@ export default function QuestionBank({ navigation }: any) {
     );
   };
 
-  const allQuestions = [...PRACTICE_QUESTIONS, ...customQuestions];
+  const roleSpecificQuestions = getRoleSpecificQuestions(jobRole);
+  const standardQuestions = PRACTICE_QUESTIONS.filter((q) => q.category !== 'Role-Specific');
+  const allQuestions = [...standardQuestions, ...roleSpecificQuestions, ...customQuestions];
+  const selectedFramework = selectedQuestion ? getAnswerFramework(selectedQuestion) : null;
   
   let filteredQuestions = selectedCategory === 'All' 
     ? allQuestions
@@ -457,14 +607,7 @@ export default function QuestionBank({ navigation }: any) {
     }
 
     if (!isPremiumTier(subscriptionTier) && aiUsageCount >= AI_FREE_LIMIT) {
-      Alert.alert(
-        'AI Feedback Limit Reached',
-        'You have used your 2 free AI feedback requests for today. Upgrade for unlimited feedback.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => setShowPaywall(true) },
-        ]
-      );
+      setShowPaywall(true);
       return;
     }
 
@@ -473,7 +616,9 @@ export default function QuestionBank({ navigation }: any) {
       const feedback = await getQuestionAnswerFeedback(
         selectedQuestion.text,
         answer.trim(),
-        jobRole || undefined
+        jobRole || undefined,
+        selectedQuestion.category,
+        getAnswerFramework(selectedQuestion)
       );
 
       if (!feedback) {
@@ -482,6 +627,7 @@ export default function QuestionBank({ navigation }: any) {
       }
 
       setAiFeedback(feedback);
+      setFeedbackAnswerSnapshot(answer.trim());
 
       if (!isPremiumTier(subscriptionTier)) {
         await incrementAiUsage();
@@ -507,8 +653,7 @@ export default function QuestionBank({ navigation }: any) {
       behavior={keyboardAvoidingBehavior}
       keyboardVerticalOffset={keyboardVerticalOffset}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={styles.root}>
+      <View style={styles.root}>
           <ScrollView 
             contentContainerStyle={styles.content}
             {...keyboardAwareScrollProps}
@@ -673,6 +818,7 @@ export default function QuestionBank({ navigation }: any) {
                               setSelectedQuestion(question);
                               setAnswer('');
                               setAiFeedback(null);
+                              setFeedbackAnswerSnapshot('');
                               setPreviousAnswers([]);
                               loadPreviousAnswers(question.id);
                             }}
@@ -721,6 +867,8 @@ export default function QuestionBank({ navigation }: any) {
                   onPress={() => {
                     setSelectedQuestion(null);
                     setAnswer('');
+                    setAiFeedback(null);
+                    setFeedbackAnswerSnapshot('');
                   }}
                 >
                   <Ionicons name="arrow-back" size={20} color={colors.primaryBlue} />
@@ -731,6 +879,16 @@ export default function QuestionBank({ navigation }: any) {
                   <Text style={styles.categoryBadge}>{selectedQuestion.category}</Text>
                   <Text style={styles.selectedQuestionText}>{selectedQuestion.text}</Text>
                 </View>
+
+                {selectedFramework && (
+                  <View style={styles.frameworkCard}>
+                    <Text style={styles.frameworkTitle}>{selectedFramework.label}</Text>
+                    <Text style={styles.frameworkSummary}>{selectedFramework.summary}</Text>
+                    {selectedFramework.guidance.map((item) => (
+                      <Text key={item} style={styles.frameworkItem}>• {item}</Text>
+                    ))}
+                  </View>
+                )}
 
                 {/* Display Previous Answers */}
                 {previousAnswers.length > 0 && (
@@ -753,27 +911,22 @@ export default function QuestionBank({ navigation }: any) {
                   </View>
                 )}
 
-                <Text style={styles.answerLabel}>Your Answer (STAR Method)</Text>
+                <Text style={styles.answerLabel}>
+                  Your Draft Answer{selectedFramework ? ` (${selectedFramework.label})` : ''}
+                </Text>
                 <TextInput
                   style={styles.answerInput}
-                  placeholder="Situation: Describe the context...
-Task: What needed to be done?
-Action: What did you do?
-Result: What was the outcome?"
+                  placeholder={selectedFramework?.placeholder || 'Draft your answer here...'}
                   placeholderTextColor={isDark ? '#666' : '#999'}
                   value={answer}
                   onChangeText={(text) => {
                     setAnswer(text);
-                    setAiFeedback(null);
                   }}
                   multiline
                   numberOfLines={12}
+                  scrollEnabled={false}
                   textAlignVertical="top"
                 />
-
-                <TouchableOpacity style={styles.saveButton} onPress={saveAnswer}>
-                  <Text style={styles.saveButtonText}>💾 Save Answer</Text>
-                </TouchableOpacity>
 
                 <View style={styles.aiSection}>
                   {!isPremiumTier(subscriptionTier) && (
@@ -812,9 +965,25 @@ Result: What was the outcome?"
 
                       <Text style={styles.aiSectionLabel}>Better Answer</Text>
                       <Text style={styles.aiFeedbackText}>{aiFeedback.betterAnswer}</Text>
+
+                      {feedbackAnswerSnapshot && feedbackAnswerSnapshot !== answer.trim() && (
+                        <Text style={styles.feedbackNote}>
+                          You’ve edited your draft since this feedback. Save the version you’re happy with, or get fresh feedback.
+                        </Text>
+                      )}
                     </View>
                   )}
                 </View>
+
+                <TouchableOpacity
+                  style={[styles.saveButton, !answer.trim() && styles.saveButtonDisabled]}
+                  onPress={saveAnswer}
+                  disabled={!answer.trim()}
+                >
+                  <Text style={styles.saveButtonText}>
+                    {aiFeedback ? '💾 Save Final Answer' : '💾 Save Answer'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
           </ScrollView>
@@ -891,7 +1060,6 @@ Result: What was the outcome?"
             </TouchableWithoutFeedback>
           </Modal>
         </View>
-      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 }
@@ -1148,6 +1316,30 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: isDark ? '#fff' : colors.textDark,
       fontWeight: '600',
     },
+    frameworkCard: {
+      backgroundColor: isDark ? '#162033' : '#EFF6FF',
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.primaryBlue + '35',
+      gap: 4,
+    },
+    frameworkTitle: {
+      ...typography.bodyMedium,
+      color: colors.primaryBlue,
+      fontWeight: '800',
+    },
+    frameworkSummary: {
+      ...typography.bodySmall,
+      color: isDark ? '#d1d5db' : colors.textDark,
+      lineHeight: 19,
+      marginBottom: 4,
+    },
+    frameworkItem: {
+      ...typography.bodySmall,
+      color: isDark ? '#b5b5b5' : colors.textMuted,
+      lineHeight: 19,
+    },
     answerLabel: {
       ...typography.bodyMedium,
       color: isDark ? '#fff' : colors.textDark,
@@ -1199,6 +1391,9 @@ const makeStyles = (colors: any, isDark: boolean) =>
       borderRadius: 12,
       paddingVertical: 14,
       alignItems: 'center',
+    },
+    saveButtonDisabled: {
+      opacity: 0.45,
     },
     saveButtonText: {
       ...typography.bodyMedium,
@@ -1267,6 +1462,15 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodySmall,
       color: isDark ? '#fff' : colors.textDark,
       lineHeight: 18,
+    },
+    feedbackNote: {
+      ...typography.caption,
+      color: isDark ? '#fbbf24' : '#92400E',
+      backgroundColor: isDark ? '#33220f' : '#FFFBEB',
+      borderRadius: 8,
+      padding: 10,
+      lineHeight: 18,
+      marginTop: 6,
     },
     modalOverlay: {
       flex: 1,

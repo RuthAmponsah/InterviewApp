@@ -119,7 +119,7 @@ const SectorPacks: React.FC<Props> = ({ navigation }) => {
     setLoading(null);
     
     if (result.success) {
-      setPurchasedPacks([...purchasedPacks, pack.id]);
+      await loadPurchasedPacks();
       Alert.alert(
         '🎉 Pack Unlocked!',
         `You've purchased the ${pack.title}.\n\nNew questions are now available in your interview practice!`

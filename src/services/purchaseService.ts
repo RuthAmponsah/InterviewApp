@@ -270,6 +270,15 @@ const waitForServerPackUnlock = async (
   delayMs = 2000,
 ): Promise<boolean> => {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const syncedPacks = await syncSectorPacksFromServer();
+      if (syncedPacks.includes(packId)) {
+        return true;
+      }
+    } catch (syncError) {
+      console.error('Sector pack sync retry failed:', syncError);
+    }
+
     const purchasedPacks = await getPurchasedPacks();
     if (purchasedPacks.includes(packId)) {
       return true;

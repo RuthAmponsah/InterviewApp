@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Interview | AI Interview Coach</title>
+  <meta name="description" content="My Interview is an AI-powered interview coach for mock interviews, feedback, CV improvement, job search, question practice and progress tracking." />
+  <style>
+    :root {
+      --navy: #1C3A6B;
+      --navy-dark: #0E1A2F;
+      --ink: #111827;
+      --muted: #687386;
+      --line: #E5EAF2;
+      --soft: #F3F6FA;
+      --white: #FFFFFF;
+      --green: #12A474;
+      --amber: #F59E0B;
+      --shadow: 0 18px 48px rgba(28, 58, 107, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--white);
+      color: var(--ink);
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      overflow: hidden;
+    }
+
+    .nav {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 22px 22px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--navy);
+      font-weight: 900;
+      letter-spacing: 0.28em;
+      font-size: 13px;
+    }
+
+    .brand img {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      box-shadow: 0 10px 24px rgba(28, 58, 107, 0.16);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-links a:hover {
+      color: var(--navy);
+    }
+
+    .hero {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 72px 22px 88px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: 56px;
+      align-items: center;
+      position: relative;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      right: -120px;
+      top: 40px;
+      width: 520px;
+      height: 520px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(28, 58, 107, 0.12), rgba(28, 58, 107, 0) 65%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--navy);
+      background: var(--soft);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    h1 {
+      font-size: clamp(42px, 6vw, 76px);
+      line-height: 0.98;
+      letter-spacing: 0;
+      color: var(--ink);
+      margin-bottom: 22px;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: clamp(18px, 2.1vw, 22px);
+      max-width: 650px;
+      margin-bottom: 28px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 52px;
+      padding: 0 22px;
+      border-radius: 14px;
+      font-weight: 850;
+      border: 1px solid transparent;
+    }
+
+    .button.primary {
+      background: var(--navy);
+      color: var(--white);
+      box-shadow: 0 14px 30px rgba(28, 58, 107, 0.22);
+    }
+
+    .button.secondary {
+      border-color: var(--line);
+      color: var(--navy);
+      background: var(--white);
+    }
+
+    .quick-points {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .quick-points span {
+      padding: 8px 10px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+    }
+
+    .phone {
+      position: relative;
+      z-index: 1;
+      width: min(360px, 100%);
+      margin: 0 auto;
+      border: 12px solid #0C1220;
+      border-radius: 42px;
+      background: #F3F4F6;
+      box-shadow: var(--shadow);
+      padding: 24px 18px;
+      min-height: 620px;
+    }
+
+    .phone-top {
+      display: flex;
+      justify-content: space-between;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 26px;
+    }
+
+    .app-mark {
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.32em;
+      margin-bottom: 28px;
+    }
+
+    .app-title {
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .app-subtitle {
+      color: var(--muted);
+      font-size: 16px;
+      margin-bottom: 22px;
+    }
+
+    .start-card {
+      background: linear-gradient(140deg, var(--navy), #10254A);
+      color: var(--white);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 18px;
+    }
+
+    .start-card small {
+      display: block;
+      letter-spacing: 0.28em;
+      color: rgba(255,255,255,0.62);
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .start-card strong {
+      display: block;
+      font-size: 27px;
+      line-height: 1.05;
+      margin-bottom: 6px;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .mini-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 18px;
+      min-height: 118px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .mini-card b {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .mini-card span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .section {
+      padding: 76px 22px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section.soft {
+      background: var(--soft);
+    }
+
+    .inner {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .section h2 {
+      font-size: clamp(30px, 4vw, 46px);
+      line-height: 1.05;
+      margin-bottom: 14px;
+      color: var(--ink);
+    }
+
+    .section-intro {
+      color: var(--muted);
+      font-size: 18px;
+      max-width: 760px;
+      margin-bottom: 34px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+    }
+
+    .feature-card .icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: #EAF1FA;
+      color: var(--navy);
+      font-size: 22px;
+      margin-bottom: 14px;
+    }
+
+    .feature-card h3 {
+      font-size: 19px;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .plan {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 24px;
+    }
+
+    .plan.premium {
+      border-color: var(--navy);
+      box-shadow: var(--shadow);
+    }
+
+    .plan h3 {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .price {
+      color: var(--navy);
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 16px;
+    }
+
+    .plan ul {
+      list-style: none;
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+    }
+
+    .plan li::before {
+      content: "✓";
+      color: var(--green);
+      font-weight: 900;
+      margin-right: 8px;
+    }
+
+    .footer {
+      background: var(--navy-dark);
+      color: rgba(255,255,255,0.76);
+      padding: 38px 22px;
+    }
+
+    .footer .inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .footer strong {
+      color: var(--white);
+      letter-spacing: 0.2em;
+      font-size: 13px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    @media (max-width: 860px) {
+      .hero {
+        grid-template-columns: 1fr;
+        padding-top: 52px;
+        gap: 38px;
+      }
+
+      .feature-grid,
+      .plans {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        align-items: flex-start;
+      }
+
+      .nav-links {
+        gap: 12px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .brand span {
+        display: none;
+      }
+
+      .hero,
+      .section {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+
+      .phone {
+        min-height: 560px;
+        border-radius: 34px;
+      }
+
+      .actions {
+        display: grid;
+      }
+
+      .button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="/InterviewApp/">
+        <img src="assets/icon.png" alt="My Interview logo" />
+        <span>MY INTERVIEW</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#premium">Premium</a>
+        <a href="/InterviewApp/support">Support</a>
+      </div>
+    </nav>
+
+    <main>
+      <section class="hero">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> AI interview practice for real job seekers</div>
+          <h1>Practise, improve and walk into interviews prepared.</h1>
+          <p class="lead">My Interview helps you rehearse text or voice mock interviews with Aya, get useful AI feedback, improve your CV, search live jobs and build confidence one practice session at a time.</p>
+          <div class="actions">
+            <a class="button primary" href="/InterviewApp/support">Get support</a>
+            <a class="button secondary" href="#features">Explore features</a>
+          </div>
+          <div class="quick-points" aria-label="Key app features">
+            <span>iPhone and iPad</span>
+            <span>UK English feedback</span>
+            <span>CV analysis</span>
+            <span>Live job search</span>
+          </div>
+        </div>
+
+        <div class="phone" aria-label="App preview">
+          <div class="phone-top"><span>09:42</span><span>5G 100%</span></div>
+          <div class="app-mark">MY INTERVIEW</div>
+          <div class="app-title">Good morning</div>
+          <div class="app-subtitle">Ready for your next interview?</div>
+          <div class="start-card">
+            <small>PRACTICE SESSION</small>
+            <strong>Start AI interview</strong>
+            <span>Tailored to your role</span>
+          </div>
+          <div class="mini-grid">
+            <div class="mini-card">
+              <b>Question bank</b>
+              <span>250+ questions plus custom practice.</span>
+            </div>
+            <div class="mini-card">
+              <b>Your streak</b>
+              <span>Build a steady practice habit.</span>
+            </div>
+            <div class="mini-card">
+              <b>CV tools</b>
+              <span>Upload, paste, analyse and improve.</span>
+            </div>
+            <div class="mini-card">
+              <b>Jobs</b>
+              <span>Search, save and track applications.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section soft" id="features">
+        <div class="inner">
+          <h2>Everything in one calm practice space.</h2>
+          <p class="section-intro">My Interview is built for practical preparation: realistic interviews, useful feedback, better answers, stronger CVs and job-search momentum.</p>
+          <div class="feature-grid">
+            <article class="feature-card">
+              <div class="icon">🎙</div>
+              <h3>Text and voice interviews</h3>
+              <p>Practise mock interviews by typing or speaking. Aya can respond during the session and give detailed feedback afterwards.</p>
+            </article>
+            <article class="feature-card">
+              <div class="icon">✦</div>
+              <h3>Personalised feedback</h3>
+              <p>Get clear coaching on what worked, what could be stronger and how to improve without losing your own voice.</p>
+            </article>
+            <article class="feature-card">
+              <div class="icon">?</div>
+              <h3>Question Bank</h3>
+              <p>Practise 250+ common, situational, behavioural, strengths, technical and role-specific questions.</p>
+            </article>
+            <article class="feature-card">
+              <div class="icon">▣</div>
+              <h3>CV improvement</h3>
+              <p>Upload or paste your CV, get AI suggestions and generate a stronger draft for your target role.</p>
+            </article>
+            <article class="feature-card">
+              <div class="icon">⌕</div>
+              <h3>Job search</h3>
+              <p>Search live vacancies by job title and location, save favourites and mark jobs you have applied for.</p>
+            </article>
+            <article class="feature-card">
+              <div class="icon">↗</div>
+              <h3>Progress tracking</h3>
+              <p>Review feedback history, keep a practice streak and use reminders to stay consistent.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="premium">
+        <div class="inner">
+          <h2>Start free. Upgrade when you want more practice.</h2>
+          <p class="section-intro">The free tier gives you enough to try the core experience. Premium unlocks deeper practice and unlimited AI support.</p>
+          <div class="plans">
+            <article class="plan">
+              <h3>Free</h3>
+              <div class="price">£0</div>
+              <ul>
+                <li>2 AI interview sessions per month</li>
+                <li>32 free question bank questions</li>
+                <li>2 free AI question-answer reviews</li>
+                <li>Job search and reminders</li>
+              </ul>
+            </article>
+            <article class="plan premium">
+              <h3>Premium</h3>
+              <div class="price">Monthly or annual</div>
+              <ul>
+                <li>Unlimited interview sessions</li>
+                <li>Full question bank access</li>
+                <li>Unlimited AI analysis in Question Bank</li>
+                <li>Interview transcripts and advanced practice tools</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="inner">
+        <strong>MY INTERVIEW</strong>
+        <div class="footer-links">
+          <a href="/InterviewApp/support">Support</a>
+          <a href="/InterviewApp/privacy">Privacy</a>
+          <a href="/InterviewApp/terms">Terms</a>
+          <a href="mailto:info@interviewappcom.com">info@interviewappcom.com</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

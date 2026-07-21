@@ -1,44 +1,24 @@
 # My Interview
 
-**Master Your Interviews. Land Your Dream Job.**
+**AI interview practice for real job seekers.**
 
-Stop worrying. Start acing them.
+My Interview helps you practise text and voice mock interviews with Aya, get useful AI feedback, improve your CV, search live jobs and build confidence one practice session at a time.
 
-My Interview is your AI-powered interview coach. Get realistic practice questions, instant AI feedback, and the confidence you need.
+## What the app includes
 
----
+- Text and voice mock interviews
+- Live conversational feedback and detailed post-interview feedback
+- 250+ Question Bank prompts, including behavioural, situational, strengths, technical and role-specific questions
+- Custom question practice saved to your account
+- CV upload, paste, analysis and improved CV drafts
+- Job search with saved jobs and applied-job tracking
+- Progress history, streaks, tips and reminders
+- Optional Premium subscription and sector packs
 
-## 🎯 Why My Interview?
+## Free and Premium
 
-✅ **AI crafts your questions** tailored to your industry  
-✅ **Voice practice** with instant feedback  
-✅ **Watch your progress** with detailed analytics  
-✅ **Multiple question types** from tech to behavioral  
-✅ **Your privacy matters** — we never store voice recordings  
+**Free includes:** limited AI interviews, 32 free Question Bank prompts, 2 free AI answer reviews, job search, tips, reminders and progress tracking.
 
----
-
-## 💬 What Users Say
-
-> "After a few practice sessions, I felt so much more prepared for my real interview." — Sarah, Marketing Manager
-
-> "The AI feedback is surprisingly good. It caught things I didn't even notice." — James, Software Engineer
-
-> "Finally, I can practice without the anxiety of a real interview." — Emma, Recent Graduate
-
----
-
-## 💰 Free to Start
-
-**Free:** 2 interviews/month  
-**Premium:** Unlimited + voice practice
-
----
-
-**[Download on the App Store](https://apps.apple.com/app/id...)**
-
----
+**Premium includes:** unlimited interviews, interview transcripts, full role-specific Question Bank access and unlimited AI answer analysis.
 
 [Support](/InterviewApp/support) • [Privacy](/InterviewApp/privacy) • [Terms](/InterviewApp/terms) • info@interviewappcom.com
-
-

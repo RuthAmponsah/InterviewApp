@@ -13,7 +13,7 @@ My Interview is designed for users aged 16 and over who are seeking employment a
 
 ### Information You Provide Directly
 
-- **Account Information**: Email address, password (encrypted), full name
+- **Account Information**: Email address, full name and authentication information. Passwords are handled by Supabase Auth and are never stored by us in plain text.
 - **Profile Information**: Job preferences, target sectors, career goals
 - **CV/Resume**: Document uploads for AI analysis (stored securely)
 - **Interview Practice Data**: Questions attempted, responses, practice history
@@ -85,9 +85,9 @@ We process your personal data under the following legal bases:
 
 ### Security Measures
 
-- ✅ AES-256 encryption for data at rest
-- ✅ TLS 1.3 encryption for data in transit
-- ✅ Bcrypt password hashing (never stored in plaintext)
+- ✅ Database provider security controls for data stored at rest
+- ✅ Encrypted HTTPS/TLS connections for data in transit
+- ✅ Secure password hashing through Supabase Auth (passwords are never stored in plaintext)
 - ✅ Row-Level Security (RLS) policies ensuring users only access their own data
 - ✅ Regular security audits and updates
 - ✅ Multi-factor authentication support (planned for v1.1)

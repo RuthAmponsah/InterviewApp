@@ -197,7 +197,7 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
 
             {/* Plans */}
             <View style={styles.plansContainer}>
-              {/* Annual Plan */}
+              {/* Monthly Plan */}
               <TouchableOpacity
                 style={[
                   styles.planCard,
@@ -206,6 +206,29 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setSelectedPlan('annual');
+                }}
+              >
+                <View style={styles.planRow}>
+                  <View>
+                    <Text style={styles.planName}>Monthly</Text>
+                  </View>
+                  <View style={styles.planPriceContainer}>
+                    <Text style={styles.planPrice}>{annualPrice}</Text>
+                    <Text style={styles.planPeriod}>per month</Text>
+                  </View>
+                </View>
+                <Text style={styles.planDetail}>Billed monthly • Cancel anytime</Text>
+              </TouchableOpacity>
+
+              {/* Annual Plan */}
+              <TouchableOpacity
+                style={[
+                  styles.planCard,
+                  selectedPlan === 'monthly' && styles.planCardSelected,
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSelectedPlan('monthly');
                 }}
               >
                 <View style={styles.bestValueBadge}>
@@ -217,34 +240,11 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
                     <Text style={styles.planSavings}>Save 37%</Text>
                   </View>
                   <View style={styles.planPriceContainer}>
-                    <Text style={styles.planPrice}>{annualPrice}</Text>
+                    <Text style={styles.planPrice}>{monthlyPrice}</Text>
                     <Text style={styles.planPeriod}>per year</Text>
                   </View>
                 </View>
                 <Text style={styles.planDetail}>£5.00/month • Billed annually</Text>
-              </TouchableOpacity>
-
-              {/* Monthly Plan */}
-              <TouchableOpacity
-                style={[
-                  styles.planCard,
-                  selectedPlan === 'monthly' && styles.planCardSelected,
-                ]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedPlan('monthly');
-                }}
-              >
-                <View style={styles.planRow}>
-                  <View>
-                    <Text style={styles.planName}>Monthly</Text>
-                  </View>
-                  <View style={styles.planPriceContainer}>
-                    <Text style={styles.planPrice}>{monthlyPrice}</Text>
-                    <Text style={styles.planPeriod}>per month</Text>
-                  </View>
-                </View>
-                <Text style={styles.planDetail}>Billed monthly • Cancel anytime</Text>
               </TouchableOpacity>
             </View>
 
@@ -258,7 +258,7 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.subscribeButtonText}>
-                  Start {selectedPlan === 'annual' ? 'Annual' : 'Monthly'} Plan - {selectedPrice}
+                  Start {selectedPlan === 'annual' ? 'Monthly' : 'Annual'} Plan - {selectedPrice}
                 </Text>
               )}
             </TouchableOpacity>

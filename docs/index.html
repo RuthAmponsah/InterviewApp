@@ -1,387 +1,610 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MY INTERVIEW - Privacy Policy</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f5f5f5;
-        }
-        
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            background-color: white;
-            min-height: 100vh;
-        }
-        
-        header {
-            border-bottom: 3px solid #6366f1;
-            padding-bottom: 30px;
-            margin-bottom: 40px;
-        }
-        
-        h1 {
-            font-size: 2.5em;
-            color: #6366f1;
-            margin-bottom: 10px;
-        }
-        
-        .updated {
-            color: #666;
-            font-size: 0.95em;
-        }
-        
-        h2 {
-            font-size: 1.5em;
-            color: #6366f1;
-            margin-top: 35px;
-            margin-bottom: 15px;
-            border-left: 4px solid #6366f1;
-            padding-left: 15px;
-        }
-        
-        h3 {
-            font-size: 1.1em;
-            color: #444;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-        
-        p {
-            margin-bottom: 15px;
-            line-height: 1.8;
-        }
-        
-        ul, ol {
-            margin-left: 25px;
-            margin-bottom: 15px;
-        }
-        
-        li {
-            margin-bottom: 8px;
-        }
-        
-        strong {
-            color: #222;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-        
-        table td, table th {
-            padding: 12px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        
-        table th {
-            background-color: #f0f0f0;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        table tr:nth-child(even) {
-            background-color: #fafafa;
-        }
-        
-        a {
-            color: #6366f1;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        
-        a:hover {
-            color: #4f46e5;
-            text-decoration: underline;
-        }
-        
-        .highlight {
-            background-color: #f0f4ff;
-            padding: 15px;
-            border-left: 4px solid #6366f1;
-            margin: 20px 0;
-            border-radius: 4px;
-        }
-        
-        .check {
-            color: #10b981;
-            font-weight: bold;
-        }
-        
-        .cross {
-            color: #ef4444;
-            font-weight: bold;
-        }
-        
-        footer {
-            margin-top: 50px;
-            padding-top: 30px;
-            border-top: 1px solid #ddd;
-            text-align: center;
-            color: #666;
-            font-size: 0.9em;
-        }
-        
-        .nav {
-            position: fixed;
-            right: 20px;
-            top: 20px;
-            background: #6366f1;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 1.2em;
-            z-index: 100;
-        }
-        
-        .nav:hover {
-            background: #4f46e5;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-            
-            h1 {
-                font-size: 1.8em;
-            }
-            
-            h2 {
-                font-size: 1.3em;
-            }
-            
-            table {
-                font-size: 0.9em;
-            }
-            
-            table td, table th {
-                padding: 8px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Interview | AI Interview Coach</title>
+  <meta name="description" content="My Interview is an AI-powered interview coach for mock interviews, feedback, CV improvement, job search, question practice and progress tracking." />
+  <style>
+    :root {
+      --navy: #1C3A6B;
+      --navy-dark: #0E1A2F;
+      --ink: #111827;
+      --muted: #687386;
+      --line: #E5EAF2;
+      --soft: #F3F6FA;
+      --white: #FFFFFF;
+      --green: #12A474;
+      --amber: #F59E0B;
+      --shadow: 0 18px 48px rgba(28, 58, 107, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--white);
+      color: var(--ink);
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      overflow: hidden;
+    }
+
+    .nav {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 22px 22px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--navy);
+      font-weight: 900;
+      letter-spacing: 0.28em;
+      font-size: 13px;
+    }
+
+    .brand img {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      box-shadow: 0 10px 24px rgba(28, 58, 107, 0.16);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-links a:hover {
+      color: var(--navy);
+    }
+
+    .hero {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 72px 22px 88px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: 56px;
+      align-items: center;
+      position: relative;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      right: -120px;
+      top: 40px;
+      width: 520px;
+      height: 520px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(28, 58, 107, 0.12), rgba(28, 58, 107, 0) 65%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--navy);
+      background: var(--soft);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    h1 {
+      font-size: clamp(42px, 6vw, 76px);
+      line-height: 0.98;
+      letter-spacing: 0;
+      color: var(--ink);
+      margin-bottom: 22px;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: clamp(18px, 2.1vw, 22px);
+      max-width: 650px;
+      margin-bottom: 28px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 52px;
+      padding: 0 22px;
+      border-radius: 14px;
+      font-weight: 850;
+      border: 1px solid transparent;
+    }
+
+    .button.primary {
+      background: var(--navy);
+      color: var(--white);
+      box-shadow: 0 14px 30px rgba(28, 58, 107, 0.22);
+    }
+
+    .button.secondary {
+      border-color: var(--line);
+      color: var(--navy);
+      background: var(--white);
+    }
+
+    .quick-points {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .quick-points span {
+      padding: 8px 10px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+    }
+
+    .phone {
+      position: relative;
+      z-index: 1;
+      width: min(360px, 100%);
+      margin: 0 auto;
+      border: 12px solid #0C1220;
+      border-radius: 42px;
+      background: #F3F4F6;
+      box-shadow: var(--shadow);
+      padding: 24px 18px;
+      min-height: 620px;
+    }
+
+    .phone-top {
+      display: flex;
+      justify-content: space-between;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 26px;
+    }
+
+    .app-mark {
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.32em;
+      margin-bottom: 28px;
+    }
+
+    .app-title {
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .app-subtitle {
+      color: var(--muted);
+      font-size: 16px;
+      margin-bottom: 22px;
+    }
+
+    .start-card {
+      background: linear-gradient(140deg, var(--navy), #10254A);
+      color: var(--white);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 18px;
+    }
+
+    .start-card small {
+      display: block;
+      letter-spacing: 0.28em;
+      color: rgba(255,255,255,0.62);
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .start-card strong {
+      display: block;
+      font-size: 27px;
+      line-height: 1.05;
+      margin-bottom: 6px;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .mini-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 18px;
+      min-height: 118px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .mini-card b {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .mini-card span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .section {
+      padding: 76px 22px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section.soft {
+      background: var(--soft);
+    }
+
+    .inner {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .section h2 {
+      font-size: clamp(30px, 4vw, 46px);
+      line-height: 1.05;
+      margin-bottom: 14px;
+      color: var(--ink);
+    }
+
+    .section-intro {
+      color: var(--muted);
+      font-size: 18px;
+      max-width: 760px;
+      margin-bottom: 34px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+    }
+
+    .feature-card .icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: #EAF1FA;
+      color: var(--navy);
+      font-size: 22px;
+      margin-bottom: 14px;
+    }
+
+    .feature-card h3 {
+      font-size: 19px;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .plan {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 24px;
+    }
+
+    .plan.premium {
+      border-color: var(--navy);
+      box-shadow: var(--shadow);
+    }
+
+    .plan h3 {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .price {
+      color: var(--navy);
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 16px;
+    }
+
+    .plan ul {
+      list-style: none;
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+    }
+
+    .plan li::before {
+      content: "✓";
+      color: var(--green);
+      font-weight: 900;
+      margin-right: 8px;
+    }
+
+    .footer {
+      background: var(--navy-dark);
+      color: rgba(255,255,255,0.76);
+      padding: 38px 22px;
+    }
+
+    .footer .inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .footer strong {
+      color: var(--white);
+      letter-spacing: 0.2em;
+      font-size: 13px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    @media (max-width: 860px) {
+      .hero {
+        grid-template-columns: 1fr;
+        padding-top: 52px;
+        gap: 38px;
+      }
+
+      .feature-grid,
+      .plans {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        align-items: flex-start;
+      }
+
+      .nav-links {
+        gap: 12px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .brand span {
+        display: none;
+      }
+
+      .hero,
+      .section {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+
+      .phone {
+        min-height: 560px;
+        border-radius: 34px;
+      }
+
+      .actions {
+        display: grid;
+      }
+
+      .button {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>MY INTERVIEW</h1>
-            <p style="font-size: 1.2em; color: #666; margin-top: 5px;">Privacy Policy</p>
-            <p class="updated"><strong>Last Updated:</strong> December 28, 2025 | <strong>Effective Date:</strong> December 27, 2025</p>
-        </header>
+  <div class="page">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="/InterviewApp/">
+        <img src="assets/icon.png" alt="My Interview logo" />
+        <span>MY INTERVIEW</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#premium">Premium</a>
+        <a href="/InterviewApp/support">Support</a>
+      </div>
+    </nav>
 
-        <h2>Introduction</h2>
-        <p>Welcome to MY INTERVIEW ("we," "our," or "us"). We are committed to protecting your privacy and personal data. This Privacy Policy explains how we collect, use, store, and protect your information when you use our mobile application.</p>
-        <p>MY INTERVIEW is designed for users aged 16 and over who are seeking employment and want to practice interview skills.</p>
-
-        <h2>Information We Collect</h2>
-        
-        <h3>Information You Provide Directly</h3>
-        <ul>
-            <li><strong>Account Information:</strong> Email address, password (encrypted), full name</li>
-            <li><strong>Profile Information:</strong> Job preferences, target sectors, career goals</li>
-            <li><strong>CV/Resume:</strong> Document uploads for AI analysis (stored securely)</li>
-            <li><strong>Interview Practice Data:</strong> Questions attempted, responses, practice history</li>
-            <li><strong>Feedback Submissions:</strong> Your comments and suggestions about the app</li>
-            <li><strong>Success Stories:</strong> User-submitted success stories (optional, may be published with consent)</li>
-        </ul>
-
-        <h3>Information Collected Automatically</h3>
-        <ul>
-            <li><strong>Usage Data:</strong> App interactions, features used, session duration</li>
-            <li><strong>Device Information:</strong> Device type, OS version, app version</li>
-            <li><strong>Performance Data:</strong> Crash reports, error logs (anonymized)</li>
-            <li><strong>Network Information:</strong> Connection type for service optimization</li>
-        </ul>
-
-        <h3>Voice Interview Data</h3>
-        <p>When you use the <strong>Voice Interview</strong> feature (optional, Premium only):</p>
-        <ul>
-            <li><strong>Microphone Access:</strong> We request microphone permission only when you choose to use voice interviews</li>
-            <li><strong>Audio Recording:</strong> Voice recordings are created temporarily on your device during practice sessions</li>
-            <li><strong>Transcription:</strong> Audio is sent to our AI provider (Groq) for speech-to-text conversion</li>
-            <li><strong>Local Storage:</strong> Audio files are stored locally on your device for up to 30 minutes to allow for transcription retry if needed</li>
-            <li><strong>Automatic Deletion:</strong> Audio files are automatically deleted after 30 minutes or when you close the app</li>
-            <li><strong>No Server Storage:</strong> Audio recordings are <strong>never stored on our servers</strong> - they are only temporarily processed for transcription</li>
-        </ul>
-
-        <h3>Information We Do NOT Collect</h3>
-        <ul>
-            <li><span class="cross">❌ Location data</span></li>
-            <li><span class="cross">❌ Camera access</span></li>
-            <li><span class="cross">❌ Permanent audio/voice storage (temporary only)</span></li>
-            <li><span class="cross">❌ Contacts or address book</span></li>
-            <li><span class="cross">❌ Calendar or photos (except explicit CV uploads)</span></li>
-            <li><span class="cross">❌ Biometric data</span></li>
-        </ul>
-
-        <h2>How We Use Your Information</h2>
-        
-        <h3>Primary Purposes</h3>
-        <ol>
-            <li>Provide Core Services: Deliver AI-powered interview practice and feedback</li>
-            <li>Personalization: Customize interview questions based on your job preferences</li>
-            <li>Account Management: Authentication, subscription management, profile updates</li>
-            <li>AI Analysis: Analyze CV content to provide improvement suggestions</li>
-            <li>Progress Tracking: Store interview history and performance metrics</li>
-            <li>Job Matching: Search and display relevant job opportunities via Adzuna API</li>
-        </ol>
-
-        <h2>Legal Basis for Processing (UK GDPR)</h2>
-        <p>We process your personal data under the following legal bases:</p>
-        <ol>
-            <li><strong>Contract Performance</strong> (Art. 6(1)(b)): To provide the services you've signed up for</li>
-            <li><strong>Legitimate Interests</strong> (Art. 6(1)(f)): To improve our services and ensure security</li>
-            <li><strong>Consent</strong> (Art. 6(1)(a)): For optional features like success story publication</li>
-            <li><strong>Legal Obligation</strong> (Art. 6(1)(c)): To comply with applicable laws</li>
-        </ol>
-
-        <h2>Data Storage and Security</h2>
-        
-        <h3>Storage Location</h3>
-        <ul>
-            <li><strong>Database:</strong> Supabase (PostgreSQL) hosted in EU/UK data centers</li>
-            <li><strong>AI Processing:</strong> Groq AI (data processed, not stored long-term)</li>
-            <li><strong>Job Data:</strong> Adzuna API (cached temporarily, 24-hour retention)</li>
-            <li><strong>Subscription Data:</strong> RevenueCat (PCI-DSS compliant)</li>
-        </ul>
-
-        <h3>Security Measures</h3>
-        <ul>
-            <li><span class="check">✅ AES-256 encryption for data at rest</span></li>
-            <li><span class="check">✅ TLS 1.3 encryption for data in transit</span></li>
-            <li><span class="check">✅ Bcrypt password hashing (never stored in plaintext)</span></li>
-            <li><span class="check">✅ Row-Level Security (RLS) policies ensuring users only access their own data</span></li>
-            <li><span class="check">✅ Regular security audits and updates</span></li>
-            <li><span class="check">✅ Multi-factor authentication support (planned for v1.1)</span></li>
-        </ul>
-
-        <h2>Third-Party Services</h2>
-        <p>We share data with trusted third-party services:</p>
-        <table>
-            <tr>
-                <th>Service</th>
-                <th>Purpose</th>
-                <th>Data Shared</th>
-                <th>Privacy Policy</th>
-            </tr>
-            <tr>
-                <td><strong>Supabase</strong></td>
-                <td>Database & authentication</td>
-                <td>Account data, profile, interview history</td>
-                <td><a href="https://supabase.com/privacy" target="_blank">Link</a></td>
-            </tr>
-            <tr>
-                <td><strong>Groq AI</strong></td>
-                <td>AI interview feedback & voice transcription</td>
-                <td>Interview responses, audio (temporary processing only)</td>
-                <td><a href="https://groq.com/privacy-policy/" target="_blank">Link</a></td>
-            </tr>
-            <tr>
-                <td><strong>RevenueCat</strong></td>
-                <td>Subscription management</td>
-                <td>Email, subscription status, device ID</td>
-                <td><a href="https://www.revenuecat.com/privacy" target="_blank">Link</a></td>
-            </tr>
-            <tr>
-                <td><strong>Adzuna</strong></td>
-                <td>Job search</td>
-                <td>Location preferences (no personal data)</td>
-                <td><a href="https://www.adzuna.co.uk/privacy.html" target="_blank">Link</a></td>
-            </tr>
-        </table>
-        
-        <div class="highlight">
-            <strong>Important:</strong> We do NOT sell your personal data to third parties. Ever.
+    <main>
+      <section class="hero">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> AI interview practice for real job seekers</div>
+          <h1>Practise, improve and walk into interviews prepared.</h1>
+          <p class="lead">My Interview helps you rehearse text or voice mock interviews with Aya, get useful AI feedback, improve your CV, search live jobs and build confidence one practice session at a time.</p>
+          <div class="actions">
+            <a class="button primary" href="/InterviewApp/support">Get support</a>
+            <a class="button secondary" href="#features">Explore features</a>
+          </div>
+          <div class="quick-points" aria-label="Key app features">
+            <span>iPhone and iPad</span>
+            <span>UK English feedback</span>
+            <span>CV analysis</span>
+            <span>Live job search</span>
+          </div>
         </div>
 
-        <h2>Your Data Rights (UK GDPR)</h2>
-        <p>You have the following rights:</p>
-        
-        <h3>Right to Access (Art. 15)</h3>
-        <p>Request a copy of all personal data we hold about you.</p>
-        
-        <h3>Right to Rectification (Art. 16)</h3>
-        <p>Correct inaccurate or incomplete data via app settings or by contacting us.</p>
-        
-        <h3>Right to Erasure ("Right to be Forgotten") (Art. 17)</h3>
-        <p>Request deletion of your account and all associated data via app settings.</p>
-        
-        <h3>Right to Data Portability (Art. 20)</h3>
-        <p>Download your data in machine-readable format (CSV/JSON) via app.</p>
-        
-        <h3>Right to Lodge a Complaint</h3>
-        <p>Contact the UK Information Commissioner's Office (ICO):</p>
-        <ul>
-            <li>Website: <a href="https://ico.org.uk/make-a-complaint/" target="_blank">ico.org.uk</a></li>
-            <li>Phone: 0303 123 1113</li>
-        </ul>
+        <div class="phone" aria-label="App preview">
+          <div class="phone-top"><span>09:42</span><span>5G 100%</span></div>
+          <div class="app-mark">MY INTERVIEW</div>
+          <div class="app-title">Good morning</div>
+          <div class="app-subtitle">Ready for your next interview?</div>
+          <div class="start-card">
+            <small>PRACTICE SESSION</small>
+            <strong>Start AI interview</strong>
+            <span>Tailored to your role</span>
+          </div>
+          <div class="mini-grid">
+            <div class="mini-card">
+              <b>Question bank</b>
+              <span>250+ questions plus custom practice.</span>
+            </div>
+            <div class="mini-card">
+              <b>Your streak</b>
+              <span>Build a steady practice habit.</span>
+            </div>
+            <div class="mini-card">
+              <b>CV tools</b>
+              <span>Upload, paste, analyse and improve.</span>
+            </div>
+            <div class="mini-card">
+              <b>Jobs</b>
+              <span>Search, save and track applications.</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        <h2>Data Retention</h2>
-        <ul>
-            <li><strong>Active Accounts:</strong> Data retained while account is active</li>
-            <li><strong>Inactive Accounts:</strong> Data deleted after 24 months of inactivity (with 30-day warning)</li>
-            <li><strong>Deleted Accounts:</strong> Data permanently deleted within 30 days of deletion request</li>
-            <li><strong>Backups:</strong> Deleted from backups within 90 days</li>
-            <li><strong>Legal Holds:</strong> Data retained longer only when legally required</li>
-        </ul>
+      <section class="section soft" id="features">
+        <div class="inner">
+          <h2>Everything in one calm practice space.</h2>
+          <p class="section-intro">My Interview is built for practical preparation: realistic interviews, useful feedback, better answers, stronger CVs and job-search momentum.</p>
+          <div class="feature-grid">
+            <article class="feature-card">
+              <div class="icon">🎙</div>
+              <h3>Text and voice interviews</h3>
+              <p>Practise mock interviews by typing or speaking. Aya can respond during the session and give detailed feedback afterwards.</p>
+            </article>
+            <article class="feature-card">
+              <div class="icon">✦</div>
+              <h3>Personalised feedback</h3>
+              <p>Get clear coaching on what worked, what could be stronger and how to improve without losing your own voice.</p>
+            </article>
+            <article class="feature-card">
+              <div class="icon">?</div>
+              <h3>Question Bank</h3>
+              <p>Practise 250+ common, situational, behavioural, strengths, technical and role-specific questions.</p>
+            </article>
+            <article class="feature-card">
+              <div class="icon">▣</div>
+              <h3>CV improvement</h3>
+              <p>Upload or paste your CV, get AI suggestions and generate a stronger draft for your target role.</p>
+            </article>
+            <article class="feature-card">
+              <div class="icon">⌕</div>
+              <h3>Job search</h3>
+              <p>Search live vacancies by job title and location, save favourites and mark jobs you have applied for.</p>
+            </article>
+            <article class="feature-card">
+              <div class="icon">↗</div>
+              <h3>Progress tracking</h3>
+              <p>Review feedback history, keep a practice streak and use reminders to stay consistent.</p>
+            </article>
+          </div>
+        </div>
+      </section>
 
-        <h2>Children's Privacy</h2>
-        <p>MY INTERVIEW is intended for users aged <strong>16 and over</strong>. We do not knowingly collect data from children under 16.</p>
-        <p>If we discover we've collected data from a child under 16, we will delete it immediately. Parents/guardians can contact us at <a href="mailto:privacy@myinterviewapp.com">privacy@myinterviewapp.com</a>.</p>
+      <section class="section" id="premium">
+        <div class="inner">
+          <h2>Start free. Upgrade when you want more practice.</h2>
+          <p class="section-intro">The free tier gives you enough to try the core experience. Premium unlocks deeper practice and unlimited AI support.</p>
+          <div class="plans">
+            <article class="plan">
+              <h3>Free</h3>
+              <div class="price">£0</div>
+              <ul>
+                <li>2 AI interview sessions per month</li>
+                <li>32 free question bank questions</li>
+                <li>2 free AI question-answer reviews</li>
+                <li>Job search and reminders</li>
+              </ul>
+            </article>
+            <article class="plan premium">
+              <h3>Premium</h3>
+              <div class="price">Monthly or annual</div>
+              <ul>
+                <li>Unlimited interview sessions</li>
+                <li>Full question bank access</li>
+                <li>Unlimited AI analysis in Question Bank</li>
+                <li>Interview transcripts and advanced practice tools</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
 
-        <h2>Contact Information</h2>
-        
-        <h3>Data Controller</h3>
-        <ul>
-            <li>Email: <a href="mailto:privacy@myinterviewapp.com">privacy@myinterviewapp.com</a></li>
-            <li>Support: <a href="mailto:support@myinterviewapp.com">support@myinterviewapp.com</a></li>
-        </ul>
-
-        <h3>Response Times</h3>
-        <ul>
-            <li><strong>General Inquiries:</strong> 2-3 business days</li>
-            <li><strong>Data Rights Requests:</strong> Within 30 days (UK GDPR requirement)</li>
-            <li><strong>Urgent Security Issues:</strong> Within 24 hours</li>
-        </ul>
-
-        <h2>Legal Framework</h2>
-        <p>This Privacy Policy is governed by:</p>
-        <ul>
-            <li>UK General Data Protection Regulation (UK GDPR)</li>
-            <li>Data Protection Act 2018</li>
-            <li>Privacy and Electronic Communications Regulations (PECR) 2003</li>
-            <li>Computer Misuse Act 1990</li>
-        </ul>
-
-        <h2>Changes to This Privacy Policy</h2>
-        <p>We may update this Privacy Policy to reflect new features, law changes, or user feedback. We will notify you via email (30 days before changes) or in-app notification.</p>
-
-        <footer>
-            <p>&copy; 2025 MY INTERVIEW. All rights reserved.</p>
-            <p>Questions? Contact us at <a href="mailto:privacy@myinterviewapp.com">privacy@myinterviewapp.com</a></p>
-        </footer>
-    </div>
+    <footer class="footer">
+      <div class="inner">
+        <strong>MY INTERVIEW</strong>
+        <div class="footer-links">
+          <a href="/InterviewApp/support">Support</a>
+          <a href="/InterviewApp/privacy">Privacy</a>
+          <a href="/InterviewApp/terms">Terms</a>
+          <a href="mailto:info@interviewappcom.com">info@interviewappcom.com</a>
+        </div>
+      </div>
+    </footer>
+  </div>
 </body>
 </html>

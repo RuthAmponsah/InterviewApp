@@ -55,6 +55,7 @@ export type RootStackParamList = {
   ForgotPassword: undefined;
   ResetPassword: undefined;
   ResetPasswordViaEmail: {
+    code?: string;
     token?: string;
     email?: string;
     accessToken?: string;
@@ -226,13 +227,19 @@ const RootNavigator = () => {
 
     for (const fragment of fragments) {
       for (const pair of fragment.split('&')) {
-        const [rawKey, rawValue] = pair.split('=');
+        const separatorIndex = pair.indexOf('=');
+        if (separatorIndex === -1) continue;
+
+        const rawKey = pair.slice(0, separatorIndex);
+        const rawValue = pair.slice(separatorIndex + 1);
         if (!rawKey || !rawValue) continue;
+
         parsedParams[decodeURIComponent(rawKey)] = decodeURIComponent(rawValue);
       }
     }
 
     return {
+      code: parsedParams.code,
       token: parsedParams.token,
       email: parsedParams.email,
       accessToken: parsedParams.access_token,
@@ -249,6 +256,18 @@ const RootNavigator = () => {
         setTimeout(() => resolve(fallback), timeoutMs);
       }),
     ]);
+  };
+
+  const handleResetPasswordUrl = (url: string | null) => {
+    if (!url) return false;
+
+    const params = parseResetPasswordLink(url);
+    if (!params) return false;
+
+    resetLinkHandledRef.current = true;
+    setResetPasswordParams(params);
+    setInitialRoute('ResetPasswordViaEmail');
+    return true;
   };
 
   const syncUserContextFromSession = async (session: any) => {
@@ -310,25 +329,21 @@ const RootNavigator = () => {
   };
 
   useEffect(() => {
-    // Handle deep links for password reset
-    const handleDeepLink = (url: string | null) => {
-      if (!url) return;
-      const params = parseResetPasswordLink(url);
-      if (params) {
-        resetLinkHandledRef.current = true;
-        setResetPasswordParams(params);
-        setInitialRoute('ResetPasswordViaEmail');
-      }
-    };
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      handleResetPasswordUrl(url);
+    });
 
-    Linking.getInitialURL().then(handleDeepLink);
-    const sub = Linking.addEventListener('url', ({ url }) => handleDeepLink(url));
     return () => sub.remove();
   }, []);
 
   useEffect(() => {
     const determineInitialRoute = async () => {
       try {
+        const initialUrl = await Linking.getInitialURL();
+        if (handleResetPasswordUrl(initialUrl)) {
+          return;
+        }
+
         const sessionResult = await Promise.race([
           supabase.auth.getSession(),
           new Promise<null>((resolve) => {

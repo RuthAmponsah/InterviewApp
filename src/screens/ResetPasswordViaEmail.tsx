@@ -45,13 +45,21 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
 
   const validateToken = async () => {
     try {
-      if (!resetParams?.token && !resetParams?.accessToken && !resetParams?.tokenHash) {
+      if (!resetParams?.code && !resetParams?.token && !resetParams?.accessToken && !resetParams?.tokenHash) {
         Alert.alert('Error', 'Invalid reset link. Please request a new password reset.');
         setValidatingToken(false);
         return;
       }
 
-      if (resetParams.accessToken && resetParams.refreshToken) {
+      if (resetParams.code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(resetParams.code);
+
+        if (error) {
+          Alert.alert('Error', error.message || 'Invalid or expired reset link.');
+          setValidatingToken(false);
+          return;
+        }
+      } else if (resetParams.accessToken && resetParams.refreshToken) {
         const { error } = await supabase.auth.setSession({
           access_token: resetParams.accessToken,
           refresh_token: resetParams.refreshToken,

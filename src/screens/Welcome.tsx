@@ -4,6 +4,8 @@ import {
   Text,
   StyleSheet,
   Animated,
+  AccessibilityInfo,
+  Easing,
   ScrollView,
   TouchableOpacity,
   useWindowDimensions,
@@ -18,6 +20,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "../theme/ThemeContext";
 import { supabase } from "../config/supabase";
 import { JOB_ROLES } from "../constants/jobRoles";
+import AyaPresenceIndicator from "../components/AyaPresenceIndicator";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Welcome">;
 
@@ -34,8 +37,18 @@ export default function Welcome() {
   const [job, setJob] = useState("");
   const [isFocus, setIsFocus] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   const page2Anim = useRef(new Animated.Value(0)).current;
+  const logoAnim = useRef(new Animated.Value(0)).current;
+  const helloWordAnims = useRef(["Hello", "there…"].map(() => new Animated.Value(0))).current;
+  const ayaLineAnim = useRef(new Animated.Value(0)).current;
+  const meetLineAnim = useRef(new Animated.Value(0)).current;
+  const nameEmphasisAnim = useRef(new Animated.Value(0)).current;
+  const welcomeLineAnim = useRef(new Animated.Value(0)).current;
+  const mockLineAnim = useRef(new Animated.Value(0)).current;
+  const questionAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
 
   // ---------------------------------------------------
   // LOAD USER NAME + GENDER
@@ -48,6 +61,121 @@ export default function Welcome() {
     };
     loadData();
   }, []);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const subscription = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReduceMotion
+    );
+
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!dataLoaded) return;
+
+    const revealValues = [
+      logoAnim,
+      ...helloWordAnims,
+      ayaLineAnim,
+      meetLineAnim,
+      nameEmphasisAnim,
+      welcomeLineAnim,
+      mockLineAnim,
+      questionAnim,
+      glowAnim,
+    ];
+
+    if (reduceMotion) {
+      revealValues.forEach((value) => value.setValue(1));
+      return;
+    }
+
+    revealValues.forEach((value) => value.setValue(0));
+
+    Animated.sequence([
+      Animated.timing(logoAnim, {
+        toValue: 1,
+        duration: 420,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.stagger(
+        130,
+        helloWordAnims.map((anim) =>
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 430,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          })
+        )
+      ),
+      Animated.delay(180),
+      Animated.parallel([
+        Animated.timing(ayaLineAnim, {
+          toValue: 1,
+          duration: 430,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.stagger(170, [
+        Animated.timing(meetLineAnim, {
+          toValue: 1,
+          duration: 450,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(nameEmphasisAnim, {
+          toValue: 1,
+          duration: 650,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ]),
+      Animated.delay(130),
+      Animated.stagger(175, [
+        Animated.timing(welcomeLineAnim, {
+          toValue: 1,
+          duration: 420,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(mockLineAnim, {
+          toValue: 1,
+          duration: 420,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.spring(questionAnim, {
+        toValue: 1,
+        speed: 10,
+        bounciness: 2,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [
+    ayaLineAnim,
+    dataLoaded,
+    glowAnim,
+    helloWordAnims,
+    logoAnim,
+    meetLineAnim,
+    mockLineAnim,
+    nameEmphasisAnim,
+    questionAnim,
+    reduceMotion,
+    welcomeLineAnim,
+  ]);
 
   // ---------------------------------------------------
   // PAGE 1 SPEECH → WAIT 1.5 SECONDS → SCROLL → READ PAGE 2 QUESTION
@@ -137,6 +265,23 @@ export default function Welcome() {
     navigation.navigate("MainTabs");
   };
 
+  const animatedUpStyle = (anim: Animated.Value, distance = 7) => ({
+    opacity: anim,
+    transform: [
+      {
+        translateY: anim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [distance, 0],
+        }),
+      },
+    ],
+  });
+
+  const nameEmphasisColor = nameEmphasisAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.primaryBlue, isDark ? "#fff" : "#0D0D0D"],
+  });
+
   return (
     <ScrollView
       ref={scrollRef}
@@ -150,24 +295,92 @@ export default function Welcome() {
          PAGE 1
       --------------------------------------------------- */}
       <View style={[styles.page, { width }]}>
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.ambientGlow,
+            {
+              opacity: glowAnim.interpolate({
+                inputRange: [0, 0.45, 1],
+                outputRange: [0, 0.2, 0.06],
+              }),
+              transform: [
+                {
+                  scale: glowAnim.interpolate({
+                    inputRange: [0, 0.6, 1],
+                    outputRange: [0.74, 1.08, 1],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
         <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
           <Text style={styles.skipText}>Skip →</Text>
         </TouchableOpacity>
 
-        <Text style={styles.logoText}>MY INTERVIEW</Text>
+        <Animated.Text style={[styles.logoText, animatedUpStyle(logoAnim, 8)]}>
+          MY INTERVIEW
+        </Animated.Text>
 
-        <Text style={styles.heading}>Hello there…</Text>
+        <View style={styles.helloRow}>
+          {["Hello", "there…"].map((word, index) => (
+            <Animated.Text
+              key={word}
+              style={[
+                styles.heading,
+                styles.helloWord,
+                animatedUpStyle(helloWordAnims[index], 7),
+              ]}
+            >
+              {word}
+              {index === 0 ? " " : ""}
+            </Animated.Text>
+          ))}
+        </View>
 
-        <Text style={styles.paragraph}>
-          My name is Aya.
-          {"\n"}Nice to meet you {name || "friend"}.
-        </Text>
+        <View style={styles.ayaIntroBlock}>
+          <Animated.View style={[styles.ayaNameRow, animatedUpStyle(ayaLineAnim, 7)]}>
+            <Text style={[styles.paragraph, styles.paragraphLine]}>My name is Aya.</Text>
+            <AyaPresenceIndicator size={18} reduceMotion={reduceMotion} />
+          </Animated.View>
+          <Animated.Text style={[styles.paragraph, styles.paragraphLine, animatedUpStyle(meetLineAnim, 7)]}>
+            Nice to meet you{" "}
+            <Animated.Text style={{ color: nameEmphasisColor, fontWeight: "500" }}>
+              {name || "friend"}
+            </Animated.Text>
+            .
+          </Animated.Text>
+        </View>
 
-        <Text style={styles.paragraph}>
-          Welcome to your{"\n"}mock interview experience.
-        </Text>
+        <View style={styles.welcomeBlock}>
+          <Animated.Text style={[styles.paragraph, styles.paragraphLine, animatedUpStyle(welcomeLineAnim, 7)]}>
+            Welcome to your
+          </Animated.Text>
+          <Animated.Text style={[styles.paragraph, styles.paragraphLine, animatedUpStyle(mockLineAnim, 7)]}>
+            mock interview experience.
+          </Animated.Text>
+        </View>
 
-        <Text style={styles.heading}>Shall we get started?</Text>
+        <Animated.Text
+          style={[
+            styles.heading,
+            styles.questionHeading,
+            {
+              opacity: questionAnim,
+              transform: [
+                {
+                  scale: questionAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.96, 1],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          Shall we get started?
+        </Animated.Text>
       </View>
 
       {/* ---------------------------------------------------
@@ -262,6 +475,17 @@ const makeStyles = (colors: any, isDark: boolean) =>
     page: {
       paddingTop: 90,
       paddingHorizontal: 28,
+      overflow: "hidden",
+    },
+
+    ambientGlow: {
+      position: "absolute",
+      top: 150,
+      alignSelf: "center",
+      width: 300,
+      height: 300,
+      borderRadius: 150,
+      backgroundColor: colors.primaryBlue,
     },
 
     logoText: {
@@ -280,6 +504,17 @@ const makeStyles = (colors: any, isDark: boolean) =>
       letterSpacing: 0.3,
     },
 
+    helloRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      minHeight: 62,
+      marginBottom: 4,
+    },
+
+    helloWord: {
+      marginBottom: 0,
+    },
+
     paragraph: {
       fontSize: 20,
       fontWeight: "400",
@@ -287,6 +522,31 @@ const makeStyles = (colors: any, isDark: boolean) =>
       marginBottom: 24,
       color: isDark ? "#e5e5e5" : "#444",
       letterSpacing: 0.2,
+    },
+
+    paragraphLine: {
+      marginBottom: 0,
+    },
+
+    ayaIntroBlock: {
+      marginBottom: 24,
+      minHeight: 68,
+    },
+
+    ayaNameRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 0,
+    },
+
+    welcomeBlock: {
+      marginBottom: 24,
+      minHeight: 68,
+    },
+
+    questionHeading: {
+      transformOrigin: "left center",
     },
 
     paragraphSmall: {

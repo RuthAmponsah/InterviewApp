@@ -159,7 +159,7 @@ export default function MyProfile() {
           .single();
 
         // Check custom questions count
-        const customQuestionsStr = await AsyncStorage.getItem('customQuestions');
+        const customQuestionsStr = await AsyncStorage.getItem('custom_questions');
         const customQuestions = customQuestionsStr ? JSON.parse(customQuestionsStr) : [];
         const hasCustomQuestions = customQuestions.length >= 20;
 

@@ -94,6 +94,7 @@ const Home: React.FC = () => {
   const [showJobRolePrompt, setShowJobRolePrompt] = useState(false);
   const [syncedSessions, setSyncedSessions] = useState(0);
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
+  const [subscriptionLoaded, setSubscriptionLoaded] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   
   // Animation values
@@ -280,12 +281,17 @@ const Home: React.FC = () => {
     const loadSubscriptionTier = async () => {
       try {
         const userId = await AsyncStorage.getItem('userId');
-        if (!userId) return;
+        if (!userId) {
+          setSubscriptionLoaded(true);
+          return;
+        }
 
         const status = await checkSubscriptionStatus();
         setSubscriptionTier(status.tier);
       } catch (error) {
         console.error('Error loading subscription tier:', error);
+      } finally {
+        setSubscriptionLoaded(true);
       }
     };
 
@@ -297,12 +303,17 @@ const Home: React.FC = () => {
       maybeShowPaywallPrompt();
     });
     return unsubscribe;
-  }, [navigation, subscriptionTier]);
+  }, [navigation, subscriptionLoaded, subscriptionTier]);
 
   const maybeShowPaywallPrompt = async () => {
+    if (!subscriptionLoaded) return;
     if (isPremiumTier(subscriptionTier)) return;
 
     try {
+      const latestStatus = await checkSubscriptionStatus();
+      setSubscriptionTier(latestStatus.tier);
+      if (latestStatus.isActive || isPremiumTier(latestStatus.tier)) return;
+
       const today = new Date().toISOString().slice(0, 10);
       const lastShown = await AsyncStorage.getItem(PAYWALL_PROMPT_KEY);
       if (lastShown === today) return;

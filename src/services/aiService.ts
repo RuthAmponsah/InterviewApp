@@ -658,7 +658,7 @@ export const speakText = async (text: string): Promise<boolean> => {
           { shouldPlay: true }
         );
         currentSound = sound;
-        await sound.setRateAsync(1.01, true, Audio.PitchCorrectionQuality.High);
+        await sound.setRateAsync(1.03, true, Audio.PitchCorrectionQuality.High);
 
         // Wait for playback to complete
         await new Promise<void>((resolve) => {

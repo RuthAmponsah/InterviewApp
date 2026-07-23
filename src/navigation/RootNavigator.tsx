@@ -333,7 +333,20 @@ const RootNavigator = () => {
       handleResetPasswordUrl(url);
     });
 
-    return () => sub.remove();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        resetLinkHandledRef.current = true;
+        setResetPasswordParams({ type: 'recovery', code: '__active_recovery_session__' });
+        setInitialRoute('ResetPasswordViaEmail');
+      }
+    });
+
+    return () => {
+      sub.remove();
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {

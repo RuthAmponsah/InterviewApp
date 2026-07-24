@@ -20,6 +20,6 @@ My Interview helps you practise text and voice mock interviews with Aya, get use
 
 **Free includes:** limited AI interviews, 32 free Question Bank prompts, 2 free AI answer reviews, CV upload/paste with AI improvement suggestions, job search, tips, reminders and progress tracking.
 
-**Premium includes:** unlimited interviews, interview transcripts, full role-specific Question Bank access and unlimited AI answer analysis.
+**Premium includes:** unlimited interviews, interview transcripts, full 250+ role-specific Question Bank access and unlimited AI answer analysis.
 
 [Download now](https://apps.apple.com/gb/app/my-interview/id6757133654) • [Support](/InterviewApp/support) • [Privacy](/InterviewApp/privacy) • [Terms](/InterviewApp/terms) • info@interviewappcom.com

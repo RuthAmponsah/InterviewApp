@@ -1,7 +1,7 @@
 # Privacy Policy for My Interview
 
-**Last Updated:** December 28, 2025  
-**Effective Date:** December 27, 2025
+**Last Updated:** 24 July 2026
+**Effective Date:** 27 December 2025
 
 ## Introduction
 

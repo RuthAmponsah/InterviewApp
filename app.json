@@ -17,6 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.myinterview.app",
+      "buildNumber": "41",
       "infoPlist": {
         "CFBundleDisplayName": "My Interview",
         "CFBundleName": "My Interview",

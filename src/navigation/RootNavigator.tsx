@@ -21,6 +21,7 @@ import Jobs from "../screens/Jobs";
 import Settings from "../screens/Settings";
 import MyProfile from "../screens/MyProfile";
 import EditProfile from "../screens/EditProfile";
+import InterviewLevel from "../screens/InterviewLevel";
 import InterviewType from "../screens/InterviewType";
 import InterviewChat from "../screens/InterviewChat";
 import Feedback from "../screens/Feedback";
@@ -65,8 +66,9 @@ export type RootStackParamList = {
   } | undefined;
   Welcome: undefined;
   MainTabs: undefined;
-  InterviewType: undefined;
-  InterviewChat: { mode: "text" | "voice" };
+  InterviewLevel: undefined;
+  InterviewType: { level: InterviewLevelMode };
+  InterviewChat: { mode: "text" | "voice"; level: InterviewLevelMode };
   Feedback: { duration?: number; messageCount?: number; interviewId?: string; hasNoResponses?: boolean } | undefined;
   MyProfile: undefined;
   EditProfile: undefined;
@@ -93,6 +95,14 @@ export type RootStackParamList = {
   ViewCV: undefined;
   CreateCV: undefined;
 };
+
+export type InterviewLevelMode =
+  | "guided"
+  | "standard"
+  | "realistic"
+  | "challenge"
+  | "quick"
+  | "technical";
 
 // -----------------------------
 // TABS
@@ -502,6 +512,7 @@ const RootNavigator = () => {
       <Stack.Screen name="MainTabs" component={MainTabs} />
 
       {/* Interview */}
+      <Stack.Screen name="InterviewLevel" component={InterviewLevel} />
       <Stack.Screen name="InterviewType" component={InterviewType} />
       <Stack.Screen name="InterviewChat" component={InterviewChat} />
       <Stack.Screen name="Feedback" component={Feedback} />

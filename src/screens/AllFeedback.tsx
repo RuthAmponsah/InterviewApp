@@ -300,7 +300,7 @@ const AllFeedback: React.FC = () => {
             <TouchableOpacity
               style={styles.startButton}
               activeOpacity={0.8}
-              onPress={() => navigation.navigate('InterviewType')}
+              onPress={() => navigation.navigate('InterviewLevel')}
             >
               <Text style={styles.startButtonText}>Start Interview Now</Text>
             </TouchableOpacity>

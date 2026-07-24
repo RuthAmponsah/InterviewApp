@@ -30,7 +30,8 @@ export default function Welcome() {
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
   const styles = makeStyles(colors, isDark);
-  const hasSpokenRef = useRef(false);
+  const hasStartedIntroRef = useRef(false);
+  const introSkippedRef = useRef(false);
   const { width } = useWindowDimensions();
 
   const [name, setName] = useState("");
@@ -72,9 +73,7 @@ export default function Welcome() {
     return () => subscription.remove();
   }, []);
 
-  useEffect(() => {
-    if (!dataLoaded) return;
-
+  const resetIntroValues = () => {
     const revealValues = [
       logoAnim,
       ...helloWordAnims,
@@ -87,82 +86,209 @@ export default function Welcome() {
       glowAnim,
     ];
 
-    if (reduceMotion) {
-      revealValues.forEach((value) => value.setValue(1));
-      return;
-    }
-
     revealValues.forEach((value) => value.setValue(0));
+  };
 
-    Animated.sequence([
-      Animated.timing(logoAnim, {
-        toValue: 1,
-        duration: 420,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.stagger(
-        130,
-        helloWordAnims.map((anim) =>
-          Animated.timing(anim, {
+  const playIntroAnimation = () =>
+    new Promise<void>((resolve) => {
+      resetIntroValues();
+
+      if (reduceMotion) {
+        glowAnim.setValue(0);
+        Animated.sequence([
+          Animated.timing(logoAnim, {
             toValue: 1,
-            duration: 430,
+            duration: 180,
             easing: Easing.out(Easing.cubic),
             useNativeDriver: true,
-          })
-        )
-      ),
-      Animated.delay(180),
-      Animated.parallel([
-        Animated.timing(ayaLineAnim, {
+          }),
+          Animated.stagger(
+            100,
+            helloWordAnims.map((anim) =>
+              Animated.timing(anim, {
+                toValue: 1,
+                duration: 180,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+              })
+            )
+          ),
+          Animated.delay(120),
+          Animated.timing(ayaLineAnim, {
+            toValue: 1,
+            duration: 180,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.stagger(120, [
+            Animated.timing(meetLineAnim, {
+              toValue: 1,
+              duration: 180,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+            Animated.timing(nameEmphasisAnim, {
+              toValue: 1,
+              duration: 180,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: false,
+            }),
+          ]),
+          Animated.stagger(120, [
+            Animated.timing(welcomeLineAnim, {
+              toValue: 1,
+              duration: 180,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+            Animated.timing(mockLineAnim, {
+              toValue: 1,
+              duration: 180,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.timing(questionAnim, {
+            toValue: 1,
+            duration: 220,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]).start(() => resolve());
+        return;
+      }
+
+      Animated.sequence([
+        Animated.timing(logoAnim, {
           toValue: 1,
-          duration: 430,
+          duration: 360,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        Animated.timing(glowAnim, {
+        Animated.stagger(
+          120,
+          helloWordAnims.map((anim) =>
+            Animated.timing(anim, {
+              toValue: 1,
+              duration: 360,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            })
+          )
+        ),
+        Animated.delay(120),
+        Animated.parallel([
+          Animated.timing(ayaLineAnim, {
+            toValue: 1,
+            duration: 380,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 1500,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.delay(160),
+        Animated.stagger(150, [
+          Animated.timing(meetLineAnim, {
+            toValue: 1,
+            duration: 380,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(nameEmphasisAnim, {
+            toValue: 1,
+            duration: 520,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: false,
+          }),
+        ]),
+        Animated.delay(260),
+        Animated.stagger(180, [
+          Animated.timing(welcomeLineAnim, {
+            toValue: 1,
+            duration: 420,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(mockLineAnim, {
+            toValue: 1,
+            duration: 420,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.delay(420),
+        Animated.spring(questionAnim, {
           toValue: 1,
-          duration: 1500,
-          easing: Easing.out(Easing.cubic),
+          speed: 10,
+          bounciness: 2,
           useNativeDriver: true,
         }),
-      ]),
-      Animated.stagger(170, [
-        Animated.timing(meetLineAnim, {
-          toValue: 1,
-          duration: 450,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(nameEmphasisAnim, {
-          toValue: 1,
-          duration: 650,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }),
-      ]),
-      Animated.delay(130),
-      Animated.stagger(175, [
-        Animated.timing(welcomeLineAnim, {
-          toValue: 1,
-          duration: 420,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(mockLineAnim, {
-          toValue: 1,
-          duration: 420,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.spring(questionAnim, {
-        toValue: 1,
-        speed: 10,
-        bounciness: 2,
-        useNativeDriver: true,
-      }),
-    ]).start();
+      ]).start(() => resolve());
+    });
+
+  const goToJobRolePage = () => {
+    scrollRef.current?.scrollTo({ x: width, animated: true });
+
+    Animated.timing(page2Anim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+
+    setTimeout(() => {
+      speakText("What job role are you applying for?");
+    }, 400);
+  };
+
+  // ---------------------------------------------------
+  // PAGE 1 SPEECH + ANIMATION → WAIT FOR BOTH → SCROLL
+  // ---------------------------------------------------
+  useEffect(() => {
+    if (hasStartedIntroRef.current || !dataLoaded) return;
+    hasStartedIntroRef.current = true;
+    introSkippedRef.current = false;
+    resetIntroValues();
+
+    const displayName = name || "friend";
+    const introText = `Hello there. My name is Aya. Nice to meet you ${displayName}. Welcome to your very own mock interview experience. Shall we get started?`;
+
+    let introAnimationStarted = false;
+    let resolveIntroAnimation: () => void = () => {};
+    const introAnimationFinished = new Promise<void>((resolve) => {
+      resolveIntroAnimation = resolve;
+    });
+
+    const startIntroAnimation = () => {
+      if (introAnimationStarted) return;
+      introAnimationStarted = true;
+      playIntroAnimation().then(resolveIntroAnimation);
+    };
+
+    const runIntro = async () => {
+      await stopSpeaking();
+      const voicePromise = speakText(introText, {
+        onPlaybackStart: startIntroAnimation,
+      });
+
+      await voicePromise;
+      startIntroAnimation();
+      await introAnimationFinished;
+
+      if (!introSkippedRef.current) {
+        goToJobRolePage();
+      }
+    };
+
+    runIntro();
+
+    return () => {
+      resolveIntroAnimation();
+    };
   }, [
     ayaLineAnim,
     dataLoaded,
@@ -175,42 +301,9 @@ export default function Welcome() {
     questionAnim,
     reduceMotion,
     welcomeLineAnim,
+    name,
+    width,
   ]);
-
-  // ---------------------------------------------------
-  // PAGE 1 SPEECH → WAIT 1.5 SECONDS → SCROLL → READ PAGE 2 QUESTION
-  // Wait for name to load before speaking
-  // ---------------------------------------------------
-  useEffect(() => {
-    if (hasSpokenRef.current || !dataLoaded) return;
-    hasSpokenRef.current = true;
-
-    const displayName = name || "friend";
-    const introText = `Hello there. My name is Aya. Nice to meet you ${displayName}. Welcome to your very own mock interview experience. Shall we get started?`;
-
-    const speakIntro = async () => {
-      await stopSpeaking();
-      await speakText(introText);
-
-      // Scroll shortly after the intro finishes
-      setTimeout(() => {
-        scrollRef.current?.scrollTo({ x: width, animated: true });
-
-        Animated.timing(page2Anim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }).start();
-
-        // Speak as soon as the page finishes switching
-        setTimeout(() => {
-          speakText("What job role are you applying for?");
-        }, 400);
-      }, 200);
-    };
-    
-    speakIntro();
-  }, [dataLoaded, name, width]);
 
   // ---------------------------------------------------
   // SPEAK ONLY WHEN JOB IS SELECTED
@@ -233,13 +326,9 @@ export default function Welcome() {
   // CONTINUE BUTTON → SAVE JOB + NAVIGATE
   // ---------------------------------------------------
   const handleSkip = () => {
+    introSkippedRef.current = true;
     stopSpeaking();
-    scrollRef.current?.scrollTo({ x: width, animated: true });
-    Animated.timing(page2Anim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
+    goToJobRolePage();
   };
 
   const handleContinue = async () => {
@@ -271,7 +360,7 @@ export default function Welcome() {
       {
         translateY: anim.interpolate({
           inputRange: [0, 1],
-          outputRange: [distance, 0],
+          outputRange: [reduceMotion ? 0 : distance, 0],
         }),
       },
     ],
@@ -298,17 +387,23 @@ export default function Welcome() {
         <Animated.View
           pointerEvents="none"
           style={[
-            styles.ambientGlow,
+            styles.ambientWash,
             {
               opacity: glowAnim.interpolate({
                 inputRange: [0, 0.45, 1],
-                outputRange: [0, 0.2, 0.06],
+                outputRange: [0, 0.18, 0.04],
               }),
               transform: [
                 {
-                  scale: glowAnim.interpolate({
+                  scaleX: glowAnim.interpolate({
                     inputRange: [0, 0.6, 1],
-                    outputRange: [0.74, 1.08, 1],
+                    outputRange: [0.82, 1.08, 1],
+                  }),
+                },
+                {
+                  translateY: glowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [8, 0],
                   }),
                 },
               ],
@@ -372,7 +467,7 @@ export default function Welcome() {
                 {
                   scale: questionAnim.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [0.96, 1],
+                    outputRange: [reduceMotion ? 1 : 0.96, 1],
                   }),
                 },
               ],
@@ -478,14 +573,18 @@ const makeStyles = (colors: any, isDark: boolean) =>
       overflow: "hidden",
     },
 
-    ambientGlow: {
+    ambientWash: {
       position: "absolute",
-      top: 150,
+      top: 190,
       alignSelf: "center",
-      width: 300,
-      height: 300,
-      borderRadius: 150,
-      backgroundColor: colors.primaryBlue,
+      width: "86%",
+      height: 150,
+      borderRadius: 28,
+      backgroundColor: isDark ? "#1C3A6B" : "#EAF2FF",
+      shadowColor: colors.primaryBlue,
+      shadowOpacity: 0.14,
+      shadowRadius: 32,
+      shadowOffset: { width: 0, height: 16 },
     },
 
     logoText: {

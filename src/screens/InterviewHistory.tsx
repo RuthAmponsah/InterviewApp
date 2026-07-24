@@ -345,7 +345,7 @@ export default function InterviewHistory({ navigation }: any) {
               style={styles.startButton}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                navigation.navigate('InterviewType');
+                navigation.navigate('InterviewLevel');
               }}
             >
               <Text style={styles.startButtonText}>Start Interview</Text>

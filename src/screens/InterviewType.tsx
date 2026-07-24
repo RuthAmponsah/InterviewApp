@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PrimaryButton from '../components/PrimaryButton';
 import PaywallModal from '../components/PaywallModal';
-import { RootStackParamList } from '../navigation/RootNavigator';
+import { RootStackParamList, InterviewLevelMode } from '../navigation/RootNavigator';
 import ScreenHeader from "../components/ScreenHeader";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
@@ -15,10 +15,39 @@ import { checkSubscriptionStatus as getSubscriptionStatus, syncSubscriptionStatu
 
 type Props = NativeStackScreenProps<RootStackParamList, 'InterviewType'>;
 
-const InterviewType: React.FC<Props> = ({ navigation }) => {
+const LEVEL_COPY: Record<InterviewLevelMode, { title: string; description: string }> = {
+  guided: {
+    title: 'Guided Practice',
+    description: 'Aya will give clearer prompts and gentler follow-ups.',
+  },
+  standard: {
+    title: 'Standard Mock Interview',
+    description: 'A balanced realistic interview with common and role-specific questions.',
+  },
+  realistic: {
+    title: 'Realistic Interview',
+    description: 'A natural interview pace with concise follow-ups.',
+  },
+  challenge: {
+    title: 'Challenge Mode',
+    description: 'Sharper follow-ups for practising under pressure.',
+  },
+  quick: {
+    title: 'Quick Practice',
+    description: 'A short one or two-question session for quick confidence.',
+  },
+  technical: {
+    title: 'Technical Interview',
+    description: 'Role-focused questions around practical knowledge and experience.',
+  },
+};
+
+const InterviewType: React.FC<Props> = ({ route, navigation }) => {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const styles = makeStyles(colors, isDark);
+  const level = route.params.level;
+  const levelCopy = LEVEL_COPY[level];
   
   const [checklist, setChecklist] = useState({
     quietSpace: false,
@@ -93,7 +122,7 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
   const goToChat = async (mode: 'text' | 'voice') => {
     const canProceed = await checkInterviewLimit();
     if (canProceed) {
-      navigation.navigate('InterviewChat', { mode });
+      navigation.navigate('InterviewChat', { mode, level });
     }
   };
 
@@ -129,9 +158,12 @@ const InterviewType: React.FC<Props> = ({ navigation }) => {
 
       <View style={styles.card}>
         <Text style={styles.heading}>Choose your interview style</Text>
+        <View style={styles.levelPill}>
+          <Ionicons name="sparkles-outline" size={14} color={colors.primaryBlue} />
+          <Text style={styles.levelPillText}>{levelCopy.title}</Text>
+        </View>
         <Text style={styles.helper}>
-          You can switch between vocal and text-based practice whenever you
-          like.
+          {levelCopy.description} Choose whether you want to speak or type your answers.
         </Text>
 
         <PrimaryButton 
@@ -193,6 +225,22 @@ const makeStyles = (colors: any, isDark: boolean) =>
       ...typography.bodySmall,
       color: isDark ? '#b5b5b5' : colors.textMuted,
       marginBottom: 16,
+    },
+    levelPill: {
+      alignSelf: 'flex-start',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: isDark ? '#162033' : '#EFF6FF',
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      marginBottom: 10,
+    },
+    levelPillText: {
+      ...typography.caption,
+      color: colors.primaryBlue,
+      fontWeight: '700',
     },
     tip: {
       ...typography.caption,

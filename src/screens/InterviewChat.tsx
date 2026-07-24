@@ -13,7 +13,7 @@ import {
     Alert,
     ActivityIndicator,
 } from 'react-native';
-import { RootStackParamList } from '../navigation/RootNavigator';
+import { RootStackParamList, InterviewLevelMode } from '../navigation/RootNavigator';
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/colors";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -39,7 +39,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const styles = makeStyles(colors, isDark);
-  const { mode } = route.params;
+  const { mode, level } = route.params;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -53,6 +53,26 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [jobRole, setJobRole] = useState('');
+
+  const buildGreeting = (role: string | null, userName: string | null, selectedLevel: InterviewLevelMode) => {
+    const hello = `Hello${userName ? ' ' + userName : ''}! I'm Aya, your interview coach.`;
+    const roleLine = role ? ` I see you're preparing for a ${role} role.` : '';
+    const supportLine = ' You can ask me anything as we go.';
+
+    if (selectedLevel === 'quick') {
+      return `${hello}${roleLine}${supportLine} Let's do a quick practice question. What would you like the interviewer to remember about you?`;
+    }
+
+    if (selectedLevel === 'technical') {
+      return `${hello}${roleLine}${supportLine} Talk me through your relevant experience for this kind of work.`;
+    }
+
+    const broadRoleLine = role
+      ? ' If your role is broad, like Teaching, tell me the focus, like Maths, English or Primary.'
+      : '';
+
+    return `${hello}${roleLine}${supportLine}${broadRoleLine} Tell me about yourself${role ? " and why you're interested in this role" : ''}.`;
+  };
 
   React.useEffect(() => {
     messagesRef.current = messages;
@@ -170,10 +190,10 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
 
       if (storedRole) {
         setJobRole(storedRole);
-        greetingText = `Hello${userName ? ' ' + userName : ''}! I'm Aya, your interview coach. I see you're preparing for a ${storedRole} position. Let's practice together! Feel free to ask me anything during the interview too. If your role is broad (for example, Teaching), you can specify the focus (for example, Maths, English, or Primary). Tell me about yourself and why you're interested in this role.`;
+        greetingText = buildGreeting(storedRole, userName, level);
       } else {
         // Fallback if no role is set
-        greetingText = "Hello! I'm Aya, your interview coach. Let's practice together. Feel free to ask me anything during the interview too, and if your role is broad you can specify the focus. Tell me about yourself.";
+        greetingText = buildGreeting(null, userName, level);
       }
 
       const greeting: Message = {
@@ -184,7 +204,7 @@ const InterviewChat: React.FC<Props> = ({ route, navigation }) => {
       setMessages([greeting]);
       messagesRef.current = [greeting];
 
-      interviewInitRef.current = initializeInterviewChat(effectiveRole, userName || undefined).catch((error) => {
+      interviewInitRef.current = initializeInterviewChat(effectiveRole, userName || undefined, level).catch((error) => {
         console.error('Error initialising interview chat:', error);
       });
 

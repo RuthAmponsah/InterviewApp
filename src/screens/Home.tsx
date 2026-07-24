@@ -428,7 +428,7 @@ const Home: React.FC = () => {
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             playPopSound();
-            navigation.navigate('InterviewType');
+            navigation.navigate('InterviewLevel');
           }}
         >
           <LinearGradient

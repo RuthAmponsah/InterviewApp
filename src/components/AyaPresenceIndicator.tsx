@@ -14,25 +14,25 @@ export default function AyaPresenceIndicator({
   reduceMotion = false,
 }: AyaPresenceIndicatorProps) {
   const { colors } = useTheme();
-  const breath = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!active || reduceMotion) {
-      breath.setValue(0.35);
+      pulse.setValue(0.35);
       return;
     }
 
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(breath, {
+        Animated.timing(pulse, {
           toValue: 1,
-          duration: 1700,
+          duration: 900,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
-        Animated.timing(breath, {
+        Animated.timing(pulse, {
           toValue: 0,
-          duration: 1700,
+          duration: 900,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
@@ -41,54 +41,49 @@ export default function AyaPresenceIndicator({
 
     loop.start();
     return () => loop.stop();
-  }, [active, breath, reduceMotion]);
+  }, [active, pulse, reduceMotion]);
 
-  const outerScale = breath.interpolate({
+  const barLift = pulse.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.88, 1.16],
+    outputRange: [0, -3],
   });
-  const innerScale = breath.interpolate({
+  const middleLift = pulse.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 0.78],
+    outputRange: [-1, -5],
   });
-  const outerOpacity = breath.interpolate({
+  const barOpacity = pulse.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.16, 0.28],
+    outputRange: [0.42, 0.88],
   });
 
   return (
     <View
       style={[
         styles.root,
-        { width: size, height: size, borderRadius: size / 2 },
+        { width: size + 2, height: size },
       ]}
       pointerEvents="none"
     >
-      <Animated.View
-        style={[
-          styles.outer,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor: colors.primaryBlue,
-            opacity: outerOpacity,
-            transform: [{ scale: outerScale }],
-          },
-        ]}
-      />
-      <Animated.View
-        style={[
-          styles.inner,
-          {
-            width: size * 0.52,
-            height: size * 0.52,
-            borderRadius: (size * 0.52) / 2,
-            backgroundColor: colors.primaryBlue,
-            transform: [{ scale: innerScale }],
-          },
-        ]}
-      />
+      {[0.42, 0.7, 0.52].map((heightScale, index) => (
+        <Animated.View
+          key={heightScale}
+          style={[
+            styles.bar,
+            {
+              width: Math.max(2, size * 0.14),
+              height: size * heightScale,
+              borderRadius: size,
+              backgroundColor: colors.primaryBlue,
+              opacity: barOpacity,
+              transform: [
+                {
+                  translateY: index === 1 ? middleLift : barLift,
+                },
+              ],
+            },
+          ]}
+        />
+      ))}
     </View>
   );
 }
@@ -96,15 +91,10 @@ export default function AyaPresenceIndicator({
 const styles = StyleSheet.create({
   root: {
     alignItems: "center",
-    justifyContent: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
-  outer: {
-    position: "absolute",
-  },
-  inner: {
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 7,
-    shadowOffset: { width: 0, height: 3 },
+  bar: {
+    alignSelf: "center",
   },
 });

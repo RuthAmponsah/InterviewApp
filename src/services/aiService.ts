@@ -2,6 +2,7 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
+import type { InterviewLevelMode } from '../navigation/RootNavigator';
 
 console.log('✅ AI services will use Supabase Edge Function secrets.');
 
@@ -158,6 +159,18 @@ const COMMON_QUESTIONS = {
     "Describe a time you went above and beyond for a customer or project.",
     "Tell me about a conflict you resolved at work.",
     "Give an example of when you had to learn something new quickly.",
+    "Tell me about a time you had to persuade someone to see things differently.",
+    "Describe a time you received difficult feedback. What did you do with it?",
+    "Give me an example of when you had to take initiative without being asked.",
+    "Tell me about a time you improved a process or way of working.",
+    "Describe a time you had to stay calm under pressure.",
+    "Give me an example of when you worked as part of a successful team.",
+    "Tell me about a time you had to manage competing priorities.",
+    "Describe a time you helped someone else succeed.",
+    "Tell me about a time you disagreed with a decision. How did you handle it?",
+    "Give me an example of when you delivered excellent service.",
+    "Tell me about a time you had to make a decision with limited information.",
+    "Describe a time you had to build trust with someone quickly.",
   ],
   general: [
     "What are your greatest strengths?",
@@ -170,6 +183,16 @@ const COMMON_QUESTIONS = {
     "How do you prioritise your tasks?",
     "What are you most proud of in your career?",
     "What do you know about our company?",
+    "Why do you want this role?",
+    "What makes you a good fit for this position?",
+    "What kind of manager helps you do your best work?",
+    "How do you like to receive feedback?",
+    "What skills are you currently trying to improve?",
+    "How would your colleagues describe you?",
+    "What would you like to achieve in your first 90 days?",
+    "Why should we hire you?",
+    "What does success look like to you in this role?",
+    "What attracted you to this company or sector?",
   ],
   closing: [
     "Do you have any questions for me?",
@@ -184,12 +207,54 @@ const ROLE_SPECIFIC_SCENARIOS: Record<string, string[]> = {
     'Describe your approach to designing scalable system architecture for a feature that needs to handle millions of requests.',
     'How would you handle a situation where a teammate\'s code quality is poor and impacting the team\'s velocity?',
     'Tell me about a time you had to optimise code or database queries. What was the challenge and how did you solve it?',
+    'How would you explain a technical trade-off to a non-technical stakeholder?',
+    'Walk me through how you test a feature before it reaches production.',
+    'Describe how you would approach refactoring a messy part of a codebase.',
+    'How do you decide whether to build a quick fix or a more robust long-term solution?',
+    'Tell me about a time you worked with product or design to shape a technical solution.',
+    'How would you investigate a performance issue that only happens for some users?',
+  ],
+  'DevOps Engineer': [
+    'A deployment fails shortly before release. Walk me through how you would investigate and respond.',
+    'How would you improve a CI/CD pipeline that is slow and unreliable?',
+    'Tell me about how you would monitor a production system and spot issues early.',
+    'How would you handle an incident where users are affected but the root cause is unclear?',
+    'Describe how you would balance release speed with system stability.',
+    'How would you explain infrastructure risk to a non-technical stakeholder?',
+    'Walk me through how you would approach automating a repeated operational task.',
+    'How do you make sure environments are secure, consistent and recoverable?',
+  ],
+  'Machine Learning Engineer': [
+    'Walk me through how you would take a machine learning model from experiment to production.',
+    'How would you evaluate whether a model is performing well enough for real users?',
+    'Tell me about how you would handle poor-quality or biased training data.',
+    'How would you explain a model decision or limitation to a non-technical stakeholder?',
+    'Describe how you would monitor model performance after deployment.',
+    'How would you decide whether a machine learning solution is actually needed?',
+    'What would you do if a model performed well in testing but poorly in production?',
+    'How would you balance accuracy, speed, cost and explainability?',
+  ],
+  'Quality Assurance Engineer': [
+    'A release is approaching and you find a serious defect. How would you handle it?',
+    'Walk me through how you would create a test plan for a new feature.',
+    'How would you decide what should be automated versus tested manually?',
+    'Tell me about a time you found a bug that others had missed.',
+    'How would you communicate a difficult defect to developers or product managers?',
+    'Describe how you would test an edge case that is hard to reproduce.',
+    'How do you balance thorough testing with tight delivery timelines?',
+    'What would you do if requirements were unclear but testing needed to begin?',
   ],
   'Data Analyst': [
     'Imagine you discover an unexpected spike in user behaviour in your analytics. How would you investigate the root cause?',
     'Walk me through how you would approach a project to improve customer retention using data analysis.',
     'Describe a time you had to present complex data findings to non-technical stakeholders. How did you simplify it?',
     'How would you validate the accuracy of a large dataset before using it for critical business decisions?',
+    'How would you handle missing or inconsistent data in a report?',
+    'Walk me through how you would define the right metrics for a new business dashboard.',
+    'Tell me about a time your analysis changed someone\'s decision.',
+    'How would you explain correlation versus causation to a stakeholder?',
+    'Describe your process for turning a vague business question into an analysis plan.',
+    'How do you make sure your visualisations are clear and not misleading?',
   ],
   'Cyber Security': [
     'You detect unusual network activity that could indicate a security breach. What steps would you take immediately?',
@@ -203,11 +268,27 @@ const ROLE_SPECIFIC_SCENARIOS: Record<string, string[]> = {
     'Tell me about a time you solved a complex technical problem that no one else could figure out.',
     'Describe how you would document a recurring issue and create a knowledge base solution for users.',
   ],
+  'Security': [
+    'You notice suspicious behaviour on site. How would you respond while keeping people safe?',
+    'How would you handle a member of the public who becomes aggressive?',
+    'Tell me about how you would follow procedures during an emergency.',
+    'How would you balance being approachable with maintaining authority?',
+    'Describe how you would complete an accurate incident report.',
+    'What would you do if someone refused to follow site rules?',
+    'How would you manage access control during a busy period?',
+    'How would you stay alert and professional during a long shift?',
+  ],
   'Project Manager': [
     'A project is way behind schedule due to unexpected technical issues. How would you get it back on track?',
     'Walk me through how you would manage competing priorities from multiple stakeholders.',
     'Tell me about a project failure. What did you learn and how would you prevent it?',
     'Describe how you would handle scope creep from a demanding client without derailing the timeline.',
+    'How would you handle a key stakeholder who keeps changing their mind?',
+    'Tell me about how you would manage risks on a high-pressure project.',
+    'How do you keep a team motivated when a project becomes difficult?',
+    'Walk me through how you would run a project kick-off meeting.',
+    'How would you communicate a delay to senior leadership?',
+    'Describe how you would prioritise tasks when everything feels urgent.',
   ],
   'Sales': [
     'A prospect says "Your product is too expensive compared to competitors." How do you respond?',
@@ -220,12 +301,24 @@ const ROLE_SPECIFIC_SCENARIOS: Record<string, string[]> = {
     'Tell me about a time you went above and beyond to retain a customer.',
     'Walk me through how you would respond to a negative online review.',
     'Describe a situation where you had to deny a customer request. How did you handle it professionally?',
+    'How would you calm a customer who feels they have been ignored?',
+    'Tell me about a time you turned a poor customer experience around.',
+    'How do you balance empathy with following company policy?',
+    'Describe how you would handle a queue of customers while one person needs extra help.',
+    'How would you explain a complicated policy in simple language?',
+    'Tell me about a time you had to deal with repeated complaints about the same issue.',
   ],
   'Marketing': [
     'You\'re launching a new campaign with a limited budget. Walk me through your strategy.',
     'Tell me about a marketing campaign you\'re proud of. What were the results?',
     'How would you measure the success of a marketing initiative? What metrics matter most?',
     'Describe how you\'d use social media data to optimise a targeted advertising campaign.',
+    'How would you adapt campaign messaging for a different audience?',
+    'Tell me about a time a campaign did not perform as expected. What did you change?',
+    'How would you prioritise channels if your budget was reduced?',
+    'Walk me through how you would create content for a new product launch.',
+    'How do you balance creativity with commercial goals?',
+    'Describe how you would use customer insight to improve a campaign.',
   ],
   'Product Manager': [
     'You\'re prioritising features for the next product release. How would you make that decision?',
@@ -233,121 +326,561 @@ const ROLE_SPECIFIC_SCENARIOS: Record<string, string[]> = {
     'Tell me about a product decision you made that didn\'t perform as expected. How did you respond?',
     'How would you work with engineering and design teams when they disagree on a feature implementation?',
   ],
+  'Business Analyst': [
+    'A stakeholder gives you a vague request for a new process or system. How would you turn that into clear requirements?',
+    'Walk me through how you would map a broken business process and identify improvements.',
+    'Tell me about a time you had to balance user needs with business constraints.',
+    'How would you handle conflicting requirements from two senior stakeholders?',
+    'Describe how you would test whether a process change actually improved performance.',
+    'How would you explain a technical requirement to a non-technical team?',
+    'Tell me about a time you used data or evidence to challenge an assumption.',
+    'How would you prioritise requirements when the delivery team has limited time?',
+  ],
+  'Graduate Trainee': [
+    'Why are you interested in this graduate or trainee programme?',
+    'Tell me about a time you learned something difficult quickly.',
+    'How would you approach rotating through different teams or departments?',
+    'Describe how you would ask for feedback and use it to improve.',
+    'How would you contribute while you are still learning the role?',
+    'Tell me about a time you showed potential beyond your experience level.',
+    'How would you handle being given responsibility earlier than expected?',
+    'What would you do in your first three months to build credibility?',
+  ],
+  'Human Resources': [
+    'An employee raises a sensitive workplace concern. How would you handle it professionally?',
+    'Walk me through how you would support a manager dealing with poor performance in their team.',
+    'Tell me about how you would keep recruitment fair, consistent and inclusive.',
+    'How would you handle confidential employee information?',
+    'Describe how you would manage a difficult conversation about absence or conduct.',
+    'How would you help a new starter settle into the organisation?',
+    'Tell me about a time you had to apply a policy while still showing empathy.',
+    'How would you improve the candidate experience during recruitment?',
+  ],
   'Healthcare': [
     'A patient comes in with unclear symptoms. Walk me through your diagnostic approach.',
     'Tell me about a time you had to deliver difficult news to a patient. How did you handle it?',
     'Describe how you would handle a high-stress emergency situation.',
     'How do you stay current with medical best practices and changes in healthcare?',
+    'How would you handle a patient who refuses recommended care?',
+    'Tell me about a time you had to communicate with a worried family member.',
+    'How do you balance compassion with maintaining professional boundaries?',
+    'Describe how you would prioritise care when several patients need support.',
+    'How would you respond if you noticed a colleague making a potential safety mistake?',
+    'Tell me about how you maintain accurate records under pressure.',
   ],
   'Teaching': [
     'You have a disruptive student in class. How would you handle this situation?',
     'Walk me through how you would design a lesson plan to engage students with different learning styles.',
     'Tell me about a time a student struggled to understand a concept. How did you help them?',
     'How do you measure student success and adjust your teaching methods accordingly?',
+    'How would you build positive relationships with a new class?',
+    'Tell me about how you would support a pupil with low confidence.',
+    'How do you adapt your teaching when a lesson is not landing?',
+    'Describe how you would communicate progress or concerns to parents or carers.',
+    'How would you promote inclusion in your classroom?',
+    'Tell me about a time you used feedback to improve your teaching practice.',
   ],
   'Finance': [
     'You\'re analysing a company\'s financial statements and notice concerning trends. What\'s your approach?',
     'Walk me through how you would build a financial forecast for a new business initiative.',
     'Tell me about a time you caught a major financial error. How did you handle it?',
     'Describe your approach to risk assessment and mitigation in financial planning.',
+    'How would you explain a budget variance to a non-finance colleague?',
+    'Walk me through how you would check the accuracy of a financial report.',
+    'Tell me about a time you had to meet a strict month-end or reporting deadline.',
+    'How would you prioritise competing finance tasks during a busy period?',
+    'Describe how you would handle confidential financial information.',
+    'How would you investigate an unexplained reconciliation difference?',
+  ],
+  'Administrative Assistant': [
+    'You have several urgent requests from different people at once. How would you prioritise them?',
+    'Walk me through how you would organise a busy diary or meeting schedule.',
+    'Tell me about a time you spotted an error before it caused a problem.',
+    'How would you handle confidential documents or sensitive information?',
+    'Describe how you would support a team during a particularly busy period.',
+    'How would you deal with a visitor or caller who is frustrated?',
+    'Tell me about a time you improved an admin process or made something more efficient.',
+    'How do you stay organised when tasks keep changing during the day?',
+  ],
+  'Facilities': [
+    'A maintenance or facilities issue is affecting people using the building. How would you respond?',
+    'How would you prioritise several site tasks that all feel urgent?',
+    'Tell me about a time you kept standards high during a busy or repetitive shift.',
+    'How would you report a safety issue or repair need clearly?',
+    'Describe how you would work around others while causing minimal disruption.',
+    'What would you do if you noticed equipment, cleaning or site standards slipping?',
+    'How would you manage a task that required attention to detail and physical stamina?',
+    'How would you handle a request from someone frustrated about the building or environment?',
+  ],
+  'Retail': [
+    'A customer is unhappy with a purchase and wants an immediate solution. How would you handle it?',
+    'Tell me about a time you delivered excellent customer service in a busy environment.',
+    'How would you approach meeting sales targets without being pushy?',
+    'Describe how you would manage stock, displays or store standards during a busy shift.',
+    'How would you handle a customer complaint while other customers are waiting?',
+    'Tell me about a time you worked well as part of a shop floor team.',
+    'How would you respond if you noticed a colleague not following store procedures?',
+    'What would you do if the shop suddenly became very busy and short-staffed?',
+  ],
+  'Hospitality': [
+    'A guest complains that their experience has not met expectations. How would you recover the situation?',
+    'Tell me about a time you stayed calm during a very busy service.',
+    'How would you manage competing guest requests when time is limited?',
+    'Describe how you maintain high standards when the work is repetitive or physically demanding.',
+    'How would you handle a booking, order or room issue that was not your fault?',
+    'Tell me about a time you worked closely with kitchen, front-of-house or housekeeping teams.',
+    'How would you make a guest feel welcome from the first interaction?',
+    'What would you do if a guest became rude or aggressive?',
+  ],
+  'Legal': [
+    'You are given a large amount of information with a tight deadline. How would you organise your review?',
+    'Walk me through how you would check the accuracy of a legal document or case file.',
+    'Tell me about a time attention to detail helped you avoid a mistake.',
+    'How would you handle confidential client information?',
+    'Describe how you would explain a complex issue clearly to a client or colleague.',
+    'How would you manage competing deadlines from different matters?',
+    'Tell me about a time you had to research something unfamiliar quickly.',
+    'How would you respond if you noticed an inconsistency in a document before submission?',
+  ],
+  'Engineering': [
+    'You are asked to solve a technical issue with limited information. How would you approach it?',
+    'Walk me through how you would balance safety, cost and quality on a project.',
+    'Tell me about a time you identified a fault or risk before it became serious.',
+    'How would you explain a technical problem to a non-technical stakeholder?',
+    'Describe how you would manage a project where specifications changed late.',
+    'How do you check that your work meets required standards and regulations?',
+    'Tell me about a time you worked with different trades, teams or departments to solve a problem.',
+    'How would you handle pressure when a technical deadline is approaching?',
+  ],
+  'Architecture': [
+    'Walk me through how you would respond to a client brief that is ambitious but constrained by budget.',
+    'How would you balance design quality, regulations, sustainability and practicality?',
+    'Tell me about how you would communicate a design idea to a non-technical client.',
+    'How would you respond if planning, safety or building requirements changed late?',
+    'Describe how you would review drawings or specifications for accuracy.',
+    'How would you work with engineers, contractors or consultants on a complex project?',
+    'What would you do if a client wanted something that created a compliance risk?',
+    'How would you manage feedback on a design you had invested a lot of work in?',
+  ],
+  'Construction': [
+    'A site task is delayed and other trades are affected. How would you respond?',
+    'How would you keep safety at the centre of your work on a busy site?',
+    'Tell me about a time you solved a practical problem under pressure.',
+    'How would you handle unclear instructions on site?',
+    'Describe how you would coordinate with different trades or supervisors.',
+    'What would you do if you noticed a potential hazard?',
+    'How would you balance speed, quality and safety?',
+    'How would you maintain standards during physically demanding work?',
   ],
   'Operations Manager': [
     'You need to reduce operational costs by 20% without impacting quality. How would you approach this?',
     'Walk me through how you would optimise a broken process.',
     'Tell me about a time you implemented a major operational change. What were the challenges?',
     'How would you measure operational efficiency, and what metrics do you track?',
+    'How would you handle a sudden staffing issue that affects service delivery?',
+    'Tell me about how you would improve quality while keeping productivity high.',
+    'Describe how you would deal with repeated delays in a workflow.',
+    'How would you get a team to adopt a new process they are resistant to?',
+  ],
+  'Warehouse': [
+    'You notice an order-picking error that could affect a customer delivery. What would you do?',
+    'Tell me about a time you worked accurately under time pressure.',
+    'How would you keep safe while working quickly in a warehouse environment?',
+    'Describe how you would handle a busy shift with changing priorities.',
+    'How would you respond if stock levels did not match the system?',
+    'Tell me about a time you worked well as part of a warehouse or logistics team.',
+    'What would you do if you noticed unsafe behaviour on the floor?',
+    'How would you maintain quality when the workload is repetitive?',
+  ],
+  'Driving': [
+    'You are delayed on a route and customers are waiting. How would you handle the situation?',
+    'Tell me about how you keep safety at the centre of your driving work.',
+    'How would you deal with an unhappy customer during a delivery or journey?',
+    'Describe how you would plan a route with several time-sensitive stops.',
+    'What would you do if your vehicle developed a fault during a shift?',
+    'How do you stay calm and professional during traffic, delays or pressure?',
+    'Tell me about a time you followed procedures carefully to avoid a problem.',
+    'How would you handle paperwork, proof of delivery or route records accurately?',
+  ],
+  'Design': [
+    'A client or stakeholder dislikes your first design direction. How would you respond?',
+    'Walk me through how you would turn a brief into a finished design.',
+    'Tell me about a time you used feedback to improve your work.',
+    'How would you balance user needs, brand guidelines and business goals?',
+    'Describe how you would explain a design decision to a non-designer.',
+    'How do you prioritise design work when deadlines are tight?',
+    'Tell me about a project where your design improved the user experience.',
+    'How would you handle conflicting feedback from different stakeholders?',
+  ],
+  'Personal Trainer': [
+    'How would you assess a new client\'s goals, fitness level and confidence?',
+    'What would you do if a client was losing motivation?',
+    'How would you adapt a session for someone with different ability or limitations?',
+    'Tell me about how you would build trust with a nervous client.',
+    'How would you keep sessions safe while still challenging the client?',
+    'Describe how you would track progress and adjust a training plan.',
+    'How would you handle a client who wanted unrealistic results quickly?',
+    'How would you explain technique or safety in a simple, encouraging way?',
   ],
 };
 
-// Get questions that haven't been asked recently for this role
-const getQuestionsForRole = async (jobRole: string): Promise<string[]> => {
+type InterviewQuestionSet = {
+  behavioural: string[];
+  general: string[];
+  scenarios: string[];
+};
+
+const INTERVIEW_LEVEL_CONFIG: Record<InterviewLevelMode, {
+  label: string;
+  behaviouralCount: number;
+  generalCount: number;
+  scenarioCount: number;
+  opener: (jobRole: string) => string;
+  guidance: string;
+}> = {
+  guided: {
+    label: 'Guided Practice',
+    behaviouralCount: 3,
+    generalCount: 2,
+    scenarioCount: 1,
+    opener: () => COMMON_QUESTIONS.opener,
+    guidance: 'Use a supportive beginner-friendly style. Give clearer prompts, explain what you are looking for when needed, and keep follow-ups gentle.',
+  },
+  standard: {
+    label: 'Standard Mock Interview',
+    behaviouralCount: 3,
+    generalCount: 2,
+    scenarioCount: 1,
+    opener: () => COMMON_QUESTIONS.opener,
+    guidance: 'Run a balanced realistic mock interview with natural pacing and useful but concise follow-ups.',
+  },
+  realistic: {
+    label: 'Realistic Interview',
+    behaviouralCount: 3,
+    generalCount: 2,
+    scenarioCount: 1,
+    opener: () => COMMON_QUESTIONS.opener,
+    guidance: 'Run this like a real interview. Keep it warm, but expect specific answers and ask concise follow-ups when detail is missing.',
+  },
+  challenge: {
+    label: 'Challenge Mode',
+    behaviouralCount: 3,
+    generalCount: 2,
+    scenarioCount: 1,
+    opener: () => COMMON_QUESTIONS.opener,
+    guidance: 'Make this harder. Challenge vague claims, ask sharper follow-ups, and push the user to give evidence, impact and clearer structure.',
+  },
+  quick: {
+    label: 'Quick Practice',
+    behaviouralCount: 1,
+    generalCount: 0,
+    scenarioCount: 0,
+    opener: (jobRole) => `What would you like the interviewer to remember about you as a ${jobRole} candidate?`,
+    guidance: 'Keep this short and casual. Ask only the listed quick-practice questions, give brief encouragement, then wrap up.',
+  },
+  technical: {
+    label: 'Technical Interview',
+    behaviouralCount: 1,
+    generalCount: 1,
+    scenarioCount: 3,
+    opener: (jobRole) => `Talk me through your relevant experience for this kind of ${jobRole} work.`,
+    guidance: 'Focus on practical role knowledge, decision-making, trade-offs, process and evidence. Ask role-specific or technical follow-ups where appropriate.',
+  },
+};
+
+const ROLE_SCENARIO_ALIASES: Record<string, string> = {
+  'Accountant': 'Finance',
+  'Accounting': 'Finance',
+  'Accounts Assistant': 'Finance',
+  'Accounts Payable Assistant': 'Finance',
+  'Accounts Receivable Assistant': 'Finance',
+  'Assistant Accountant': 'Finance',
+  'Bookkeeper': 'Finance',
+  'Finance Assistant': 'Finance',
+  'Junior Accountant': 'Finance',
+  'Junior Finance Analyst': 'Finance',
+  'Payroll Assistant': 'Finance',
+  'Trainee Accountant': 'Finance',
+  'Software Developer': 'Software Engineer',
+  'Junior Software Developer': 'Software Engineer',
+  'Mobile Developer': 'Software Engineer',
+  'Web Developer': 'Software Engineer',
+  'Data Administrator': 'Data Analyst',
+  'Data Engineer': 'Data Analyst',
+  'Data Entry Clerk': 'Data Analyst',
+  'Data Scientist': 'Data Analyst',
+  'Junior Data Analyst': 'Data Analyst',
+  'Digital Marketing Assistant': 'Marketing',
+  'Digital Marketing Specialist': 'Marketing',
+  'Marketing Assistant': 'Marketing',
+  'Social Media Assistant': 'Marketing',
+  'Social Media Manager': 'Marketing',
+  'Customer Service Associate': 'Customer Service',
+  'Customer Service Representative': 'Customer Service',
+  'Customer Success Manager': 'Customer Service',
+  'Front Desk Agent': 'Customer Service',
+  'Guest Services Agent': 'Customer Service',
+  'Project Coordinator': 'Project Manager',
+  'Helpdesk Analyst': 'IT Support',
+  'IT Technician': 'IT Support',
+  'Security Guard': 'Security',
+  'Security Officer': 'Security',
+  'Account Manager': 'Sales',
+  'Business Development': 'Sales',
+  'Sales Assistant': 'Sales',
+  'Sales Manager': 'Sales',
+  'Administrative Assistant': 'Administrative Assistant',
+  'Administrator': 'Administrative Assistant',
+  'Office Administrator': 'Administrative Assistant',
+  'Office Manager': 'Administrative Assistant',
+  'Receptionist': 'Administrative Assistant',
+  'Dispatcher': 'Administrative Assistant',
+  'HR Assistant': 'Human Resources',
+  'Recruiter': 'Human Resources',
+  'Recruitment Consultant': 'Human Resources',
+  'Legal Assistant': 'Legal',
+  'Paralegal': 'Legal',
+  'Content Writer': 'Marketing',
+  'Graphic Designer': 'Design',
+  'Product Designer': 'Design',
+  'UX Researcher': 'Design',
+  'UX/UI Designer': 'Design',
+  'Web Designer': 'Design',
+  'Construction Laborer': 'Construction',
+  'Construction Manager': 'Construction',
+  'Electrician': 'Engineering',
+  'Mechanical Engineer': 'Engineering',
+  'Apprentice Electrician': 'Engineering',
+  'Apprentice Plumber': 'Engineering',
+  'Maintenance Technician': 'Engineering',
+  'Painter': 'Engineering',
+  'Quantity Surveyor': 'Engineering',
+  'Welder': 'Engineering',
+  'Facilities Manager': 'Operations Manager',
+  'Operations Analyst': 'Operations Manager',
+  'Supervisor': 'Operations Manager',
+  'Team Leader': 'Operations Manager',
+  'Assistant Manager': 'Operations Manager',
+  'Shift Supervisor': 'Operations Manager',
+  'Property Manager': 'Operations Manager',
+  'Supply Chain': 'Operations Manager',
+  'Warehouse Associate': 'Warehouse',
+  'Warehouse Manager': 'Warehouse',
+  'Warehouse Operative': 'Warehouse',
+  'Warehouse Supervisor': 'Warehouse',
+  'Order Picker': 'Warehouse',
+  'Picker Packer': 'Warehouse',
+  'Material Handler': 'Warehouse',
+  'Loader': 'Warehouse',
+  'Delivery Driver': 'Driving',
+  'Van Driver': 'Driving',
+  'Bus Driver': 'Driving',
+  'HGV Driver': 'Driving',
+  'Retail Assistant': 'Retail',
+  'Retail Associate': 'Retail',
+  'Retail Manager': 'Retail',
+  'Retail Supervisor': 'Retail',
+  'Cashier': 'Retail',
+  'Store Associate': 'Retail',
+  'Store Manager': 'Retail',
+  'Hospitality Manager': 'Hospitality',
+  'Hotel Manager': 'Hospitality',
+  'Food and Beverage Manager': 'Hospitality',
+  'Front of House Manager': 'Hospitality',
+  'Catering Manager': 'Hospitality',
+  'Chef': 'Hospitality',
+  'Assistant Chef': 'Hospitality',
+  'Commis Chef': 'Hospitality',
+  'Cook': 'Hospitality',
+  'Kitchen Assistant': 'Hospitality',
+  'Line Cook': 'Hospitality',
+  'Barista': 'Hospitality',
+  'Bartender': 'Hospitality',
+  'Server': 'Hospitality',
+  'Waiter': 'Hospitality',
+  'Waitress': 'Hospitality',
+  'Housekeeper': 'Hospitality',
+  'Room Attendant': 'Hospitality',
+  'Cleaner': 'Facilities',
+  'Domestic Assistant': 'Facilities',
+  'Doorman': 'Hospitality',
+  'Dishwasher': 'Hospitality',
+  'Event Coordinator': 'Hospitality',
+  'Event Planner': 'Hospitality',
+  'Groundskeeper': 'Facilities',
+  'Janitor': 'Facilities',
+  'Maitre D': 'Hospitality',
+  'Care Assistant': 'Healthcare',
+  'Dental Nurse': 'Healthcare',
+  'Healthcare Assistant': 'Healthcare',
+  'Home Health Aide': 'Healthcare',
+  'Mental Health Counselor': 'Healthcare',
+  'Nanny': 'Teaching',
+  'Nursing': 'Healthcare',
+  'Occupational Therapist': 'Healthcare',
+  'Paramedic': 'Healthcare',
+  'Pharmacy Assistant': 'Healthcare',
+  'Pharmacy Technician': 'Healthcare',
+  'Physical Therapist': 'Healthcare',
+  'Physical Therapy Assistant': 'Healthcare',
+  'Registered Nurse': 'Healthcare',
+  'School Counselor': 'Healthcare',
+  'School Nurse': 'Healthcare',
+  'Social Worker': 'Healthcare',
+  'Speech Therapist': 'Healthcare',
+  'Therapist': 'Healthcare',
+  'Childcare Assistant': 'Teaching',
+  'Childcare Worker': 'Teaching',
+  'Classroom Assistant': 'Teaching',
+  'Early Years Teacher': 'Teaching',
+  'Education Assistant': 'Teaching',
+  'Instructional Assistant': 'Teaching',
+  'Nursery Assistant': 'Teaching',
+  'Preschool Teacher': 'Teaching',
+  'Substitute Teacher': 'Teaching',
+  'Teacher Assistant': 'Teaching',
+  'Teaching Assistant': 'Teaching',
+  'Trainee Teacher': 'Teaching',
+  'Tutor': 'Teaching',
+};
+
+const getScenarioRoleKey = (jobRole: string) =>
+  ROLE_SPECIFIC_SCENARIOS[jobRole] ? jobRole : ROLE_SCENARIO_ALIASES[jobRole] || jobRole;
+
+const getQuestionRotationKey = (jobRole: string, category: string) =>
+  `askedQuestions_${jobRole.replace(/[^a-z0-9]+/gi, '_')}_${category}`;
+
+const getRotatingQuestions = async (
+  jobRole: string,
+  category: string,
+  pool: string[],
+  count: number
+) => {
+  if (pool.length === 0 || count <= 0) return [];
+
+  const key = getQuestionRotationKey(jobRole, category);
+  const askedStr = await AsyncStorage.getItem(key);
+  const askedQuestions: string[] = askedStr ? JSON.parse(askedStr) : [];
+  let availableQuestions = pool.filter((question) => !askedQuestions.includes(question));
+
+  if (availableQuestions.length < count) {
+    const recentlyAsked = askedQuestions.slice(-Math.min(count, pool.length - 1));
+    availableQuestions = pool.filter((question) => !recentlyAsked.includes(question));
+  }
+
+  const selectedQuestions = availableQuestions.slice(0, count);
+  const updatedAskedQuestions = [
+    ...askedQuestions.filter((question) => pool.includes(question)),
+    ...selectedQuestions,
+  ].slice(-pool.length);
+
+  await AsyncStorage.setItem(key, JSON.stringify(updatedAskedQuestions));
+
+  return selectedQuestions;
+};
+
+// Get rotating questions for this role. The opener is handled separately by
+// the selected interview level so standard interviews can stay consistent.
+const getQuestionsForRole = async (jobRole: string, level: InterviewLevelMode): Promise<InterviewQuestionSet> => {
   try {
-    const key = `askedQuestions_${jobRole.replace(/\s+/g, '_')}`;
-    const askedStr = await AsyncStorage.getItem(key);
-    const askedQuestions: string[] = askedStr ? JSON.parse(askedStr) : [];
-    
-    // Get all available questions
-    const allBehavioral = [...COMMON_QUESTIONS.behavioral];
-    const allGeneral = [...COMMON_QUESTIONS.general];
-    
-    // Filter out recently asked questions
-    const availableBehavioral = allBehavioral.filter(q => !askedQuestions.includes(q));
-    const availableGeneral = allGeneral.filter(q => !askedQuestions.includes(q));
-    
-    // If we've used most questions, reset the pool
-    if (availableBehavioral.length < 3) {
-      await AsyncStorage.removeItem(key);
-      return [...allBehavioral.slice(0, 4), ...allGeneral.slice(0, 3)];
-    }
-    
-    // Pick 4 behavioural and 3 general questions
-    const selectedBehavioral = availableBehavioral.slice(0, 4);
-    const selectedGeneral = availableGeneral.slice(0, 3);
-    
-    // Save these as asked
-    const newAsked = [...askedQuestions, ...selectedBehavioral, ...selectedGeneral];
-    await AsyncStorage.setItem(key, JSON.stringify(newAsked));
-    
-    return [...selectedBehavioral, ...selectedGeneral];
+    const scenarioRoleKey = getScenarioRoleKey(jobRole);
+    const roleScenarios = ROLE_SPECIFIC_SCENARIOS[scenarioRoleKey] || [];
+    const config = INTERVIEW_LEVEL_CONFIG[level];
+    const scenarioCount = Math.min(config.scenarioCount, roleScenarios.length);
+    const behaviouralCount = scenarioCount > 0 ? config.behaviouralCount : config.behaviouralCount + config.scenarioCount;
+
+    const [behavioural, general, scenarios] = await Promise.all([
+      getRotatingQuestions(jobRole, 'behavioural', COMMON_QUESTIONS.behavioral, behaviouralCount),
+      getRotatingQuestions(jobRole, 'general', COMMON_QUESTIONS.general, config.generalCount),
+      getRotatingQuestions(jobRole, 'scenario', roleScenarios, scenarioCount),
+    ]);
+
+    return { behavioural, general, scenarios };
   } catch (e) {
     console.log('Error getting questions:', e);
-    return [...COMMON_QUESTIONS.behavioral.slice(0, 4), ...COMMON_QUESTIONS.general.slice(0, 3)];
+    return {
+      behavioural: COMMON_QUESTIONS.behavioral.slice(0, 4),
+      general: COMMON_QUESTIONS.general.slice(0, 2),
+      scenarios: [],
+    };
   }
 };
 
 // Keep conversation history for context
 let conversationHistory: ChatMessage[] = [];
 
-export const initializeInterviewChat = async (jobRole: string, userName?: string) => {
+export const initializeInterviewChat = async (
+  jobRole: string,
+  userName?: string,
+  level: InterviewLevelMode = 'standard'
+) => {
   // Role-specific guidance
   const roleGuidance: { [key: string]: string } = {
     'Software Engineer': 'Focus on coding skills, algorithms, system design, debugging, and problem-solving approaches.',
+    'DevOps Engineer': 'Focus on deployments, CI/CD, monitoring, incident response, cloud infrastructure, automation, reliability, and security.',
+    'Machine Learning Engineer': 'Focus on model development, data quality, evaluation, deployment, monitoring, explainability, and production trade-offs.',
+    'Quality Assurance Engineer': 'Focus on test planning, defect investigation, automation, manual testing, quality standards, edge cases, and release risk.',
     'Data Analyst': 'Focus on SQL, data visualization, statistical analysis, Excel/Python, and business insights.',
     'Cyber Security': 'Focus on security protocols, threat analysis, risk management, compliance, and incident response.',
     'IT Support': 'Focus on troubleshooting, customer service, technical knowledge, and problem resolution.',
+    'Security': 'Focus on public safety, access control, incident reporting, professionalism, de-escalation, procedures, and alertness.',
     'Project Manager': 'Focus on leadership, planning, stakeholder management, risk mitigation, and delivery.',
     'Sales': 'Focus on persuasion, customer relationships, targets, negotiation, and closing techniques.',
     'Customer Service': 'Focus on communication, empathy, problem-solving, patience, and customer satisfaction.',
     'Marketing': 'Focus on campaigns, analytics, creativity, brand strategy, and digital marketing.',
     'Accounting': 'Focus on financial reporting, compliance, attention to detail, and accounting software.',
     'Finance': 'Focus on analysis, forecasting, budgeting, risk assessment, and financial modelling.',
+    'Graduate Trainee': 'Focus on learning agility, potential, adaptability, communication, curiosity, feedback, and early career professionalism.',
     'Human Resources': 'Focus on recruitment, employee relations, policies, conflict resolution, and HR systems.',
     'Healthcare': 'Focus on patient care, medical knowledge, empathy, teamwork, and clinical skills.',
     'Nursing': 'Focus on patient assessment, medication administration, care planning, and communication.',
     'Teaching': 'Focus on lesson planning, classroom management, student engagement, and assessment.',
     'Engineering': 'Focus on technical design, problem-solving, project execution, and safety compliance.',
+    'Architecture': 'Focus on design briefs, regulations, technical drawings, client communication, sustainability, and collaboration.',
+    'Construction': 'Focus on site safety, practical problem-solving, teamwork, quality, reliability, and working under pressure.',
     'Business Analyst': 'Focus on requirements gathering, process improvement, stakeholder communication, and data analysis.',
     'Product Manager': 'Focus on product strategy, user research, roadmapping, cross-functional leadership, and metrics.',
     'UX/UI Designer': 'Focus on user research, wireframing, prototyping, usability, and design tools.',
     'Graphic Designer': 'Focus on creativity, design software, brand consistency, and visual communication.',
     'Operations Manager': 'Focus on efficiency, process optimisation, team management, and performance metrics.',
+    'Facilities': 'Focus on site standards, safety, maintenance, cleanliness, prioritisation, practical problem-solving, and reliability.',
+    'Retail': 'Focus on customer service, sales, stock standards, teamwork, targets, complaint handling, and store procedures.',
+    'Hospitality': 'Focus on guest experience, service standards, teamwork, pressure, professionalism, and attention to detail.',
+    'Warehouse': 'Focus on accuracy, safety, stock handling, speed, teamwork, procedures, and quality control.',
+    'Driving': 'Focus on safety, route planning, customer service, punctuality, vehicle checks, and accurate records.',
+    'Design': 'Focus on creative process, user needs, feedback, stakeholder communication, brand consistency, and deadlines.',
+    'Personal Trainer': 'Focus on client goals, motivation, safety, adapting sessions, communication, progress tracking, and trust.',
     'Supply Chain': 'Focus on logistics, inventory management, supplier relationships, and cost optimisation.',
     'Legal': 'Focus on legal research, contracts, compliance, analytical skills, and attention to detail.',
-    'Architecture': 'Focus on design principles, technical drawings, building codes, and client communication.',
     'Consulting': 'Focus on problem-solving, client management, analytical thinking, and communication.',
   };
 
-  const specificGuidance = roleGuidance[jobRole] || 'Focus on relevant skills, experience, and problem-solving ability.';
+  const guidanceRoleKey = roleGuidance[jobRole] ? jobRole : ROLE_SCENARIO_ALIASES[jobRole] || jobRole;
+  const specificGuidance = roleGuidance[guidanceRoleKey] || 'Focus on relevant skills, experience, and problem-solving ability.';
+  const levelConfig = INTERVIEW_LEVEL_CONFIG[level] || INTERVIEW_LEVEL_CONFIG.standard;
+  const openerQuestion = levelConfig.opener(jobRole);
 
-  // Get fresh questions for this interview
-  const questionsForInterview = await getQuestionsForRole(jobRole);
-  
-  // Get role-specific scenarios if available
-  const roleScenarios = ROLE_SPECIFIC_SCENARIOS[jobRole] || [];
-  
-  // Combine generic questions with role-specific scenarios (2-3 scenarios per interview)
+  // Get fresh rotating questions for this interview. The opener stays fixed.
+  const questionsForInterview = await getQuestionsForRole(jobRole, level);
+
   const allQuestionsForInterview = [
-    ...questionsForInterview,
-    ...roleScenarios.slice(0, 3) // Add up to 3 role-specific scenarios
+    ...questionsForInterview.behavioural,
+    ...questionsForInterview.general,
+    ...questionsForInterview.scenarios,
   ];
-  
+
+  const closingQuestionNumber = allQuestionsForInterview.length + 2;
   const questionList = allQuestionsForInterview.map((q, i) => `${i + 2}. ${q}`).join('\n');
 
   // Reset conversation history
   conversationHistory = [
     {
       role: 'system',
-      content: `You are Aya, an empathetic and professional interview coach. You're helping ${userName || 'the user'} prepare for a ${jobRole} position. 
+      content: `You are Aya, an empathetic and professional interview coach. You're helping ${userName || 'the user'} prepare for a ${jobRole} position.
+
+INTERVIEW MODE:
+- Mode: ${levelConfig.label}
+- ${levelConfig.guidance}
 
 Your responsibilities:
 - Ask interview questions from the list below (adapt wording naturally but cover these topics)
@@ -358,15 +891,15 @@ Your responsibilities:
 - Use UK English spelling and phrasing throughout.
 
 QUESTIONS TO ASK (in this order):
-1. ${COMMON_QUESTIONS.opener}
+1. ${openerQuestion}
 ${questionList}
-8. ${COMMON_QUESTIONS.closing[0]}
+${closingQuestionNumber}. ${COMMON_QUESTIONS.closing[0]}
 
 IMPORTANT RULES:
 - Ask questions one at a time, wait for their response
 - You can rephrase questions to sound natural, but cover these topics
 - Add brief encouragement between questions
-- After question 8, wrap up the interview
+- After question ${closingQuestionNumber}, wrap up the interview
 - At the end of your FIRST message, add: "Feel free to ask me anything during the interview too. If your role is broad (e.g., Teaching), you can specify the focus (e.g., Maths, English, or Primary)."
 
 FOLLOW-UP QUESTIONS (CRITICAL):
@@ -381,10 +914,10 @@ FOLLOW-UP QUESTIONS (CRITICAL):
 - Keep follow-ups short (1 sentence) - they're just prompts, not full questions
 
 ENDING THE INTERVIEW:
-- After covering all 8 questions, end with: "Great job today! Good luck with your ${jobRole} career - I'm confident you'll do well! [END INTERVIEW]"
+- After covering all ${closingQuestionNumber} questions, end with: "Great job today! Good luck with your ${jobRole} career - I'm confident you'll do well! [END INTERVIEW]"
 - The [END INTERVIEW] tag signals the app to navigate to feedback
 
-Start with question 1: Ask them to tell you about themselves and their interest in the ${jobRole} role.`
+Start with question 1 exactly in line with the selected mode: "${openerQuestion}"`
     }
   ];
 };
@@ -625,7 +1158,11 @@ const getElevenLabsAudio = async (text: string): Promise<string | null> => {
   }
 };
 
-export const speakText = async (text: string): Promise<boolean> => {
+type SpeakTextOptions = {
+  onPlaybackStart?: () => void;
+};
+
+export const speakText = async (text: string, options: SpeakTextOptions = {}): Promise<boolean> => {
   try {
     console.log('🔊 Starting TTS for text:', text.substring(0, 50) + '...');
     console.log('Full text length:', text.length);
@@ -659,6 +1196,7 @@ export const speakText = async (text: string): Promise<boolean> => {
         );
         currentSound = sound;
         await sound.setRateAsync(1.03, true, Audio.PitchCorrectionQuality.High);
+        options.onPlaybackStart?.();
 
         // Wait for playback to complete
         await new Promise<void>((resolve) => {
@@ -781,6 +1319,9 @@ export const speakText = async (text: string): Promise<boolean> => {
         // Play the sound
         console.log(`Playing audio for chunk ${i + 1}...`);
         await sound.playAsync();
+        if (i === 0) {
+          options.onPlaybackStart?.();
+        }
         
         // Wait for this chunk to finish before playing next using polling
         await new Promise<void>((resolve) => {

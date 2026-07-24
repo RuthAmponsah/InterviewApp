@@ -22,26 +22,36 @@ Notifications.setNotificationHandler({
 });
 
 // ==========================================
-// DUOLINGO-STYLE FUNNY NOTIFICATION MESSAGES
+// DAILY PRACTICE NOTIFICATION MESSAGES
 // ==========================================
 
 const DAILY_REMINDER_MESSAGES = [
-  { title: "Aya misses you! 🥺", body: "Your interview coach is waiting for you..." },
-  { title: "Quick practice? 🎯", body: "Just 5 minutes could land you your dream job!" },
-  { title: "Plot twist 📖", body: "You didn't practice today. Fix that?" },
-  { title: "Hey you! 👋", body: "Your future employer isn't going to interview themselves!" },
-  { title: "Confidence loading... ⏳", body: "Complete an interview to finish loading!" },
-  { title: "Fun fact 🧠", body: "People who practise interviews are 40% more likely to get hired" },
-  { title: "Knock knock 🚪", body: "Who's there? Your dream job. Practice to let it in!" },
-  { title: "Aya's getting lonely 😢", body: "She hasn't heard from you today..." },
-  { title: "Hot tip 🔥", body: "The best time to practice was yesterday. The second best is now!" },
-  { title: "Interview o'clock ⏰", body: "Time to sharpen those skills!" },
-  { title: "Breaking news 📰", body: "Local person one practice away from interview mastery!" },
-  { title: "Hi, it's Aya 👩‍💼", body: "I made you some new questions. Wanna see?" },
-  { title: "Excuse me 🙋", body: "Your interviews won't practice themselves!" },
-  { title: "Just saying... 💭", body: "Interviewing is a skill. Skills need practice!" },
-  { title: "Psst! 🤫", body: "Quick interview before bed? You'll sleep better knowing you practised!" },
+  { title: "Aya's ready when you are", body: "One quick practice could make tomorrow's answer sharper." },
+  { title: "Tiny practice, big confidence", body: "Want to run through one interview question?" },
+  { title: "Future you says thanks", body: "Your interview self will appreciate 5 minutes today." },
+  { title: "Keep your streak warm", body: "Aya has a question ready for you." },
+  { title: "Less scary, more prepared", body: "One answer today can make the real interview feel easier." },
+  { title: "Quick check-in", body: "Practise one answer before the evening disappears." },
+  { title: "Confidence is built in repeats", body: "Ready for today's practice?" },
+  { title: "Aya has your next question", body: "Open My Interview when you're ready." },
+  { title: "Five minutes. One question.", body: "A little more prepared than yesterday." },
+  { title: "Keep going", body: "The more you practise, the more natural your answers sound." },
+  { title: "Evening practice?", body: "Aya can help you polish one answer today." },
+  { title: "Don't wait until interview week", body: "Build the habit now." },
+  { title: "You're closer than you think", body: "Let's practise one strong answer." },
+  { title: "A calm interview starts here", body: "Ready for a quick session?" },
+  { title: "One thoughtful answer", body: "It could be the one you remember later." },
+  { title: "Your streak is calling", body: "Aya's ready to help you keep it going." },
+  { title: "Practise out loud", body: "Even once can make the real thing feel easier." },
+  { title: "Turn nerves into structure", body: "Try one question with Aya." },
+  { title: "Small step tonight", body: "Stronger answers tomorrow." },
+  { title: "Your next opportunity matters", body: "Practise with Aya?" },
 ];
+
+const DAILY_REMINDER_LOOKAHEAD_DAYS = 20;
+const DAILY_REMINDER_RECENT_WINDOW = 5;
+const DAILY_REMINDER_IDENTIFIERS_KEY = 'dailyReminderIdentifiers';
+const DAILY_REMINDER_HISTORY_KEY = 'dailyReminderMessageHistory';
 
 const STREAK_ENDING_MESSAGES = [
   { title: "🚨 STREAK ALERT!", body: "Your {streak}-day streak is about to end! One quick interview?" },
@@ -68,6 +78,66 @@ const WEEKLY_SUMMARY_MESSAGES = [
 
 const getRandomMessage = (messages: any[]) => {
   return messages[Math.floor(Math.random() * messages.length)];
+};
+
+const readJsonArray = async <T,>(key: string): Promise<T[]> => {
+  try {
+    const saved = await AsyncStorage.getItem(key);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
+const pickReminderMessageIndexes = (count: number, recentIndexes: number[]) => {
+  const picked: number[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const blocked = new Set([
+      ...recentIndexes.slice(-DAILY_REMINDER_RECENT_WINDOW),
+      ...picked.slice(-DAILY_REMINDER_RECENT_WINDOW),
+    ]);
+    const available = DAILY_REMINDER_MESSAGES
+      .map((_, index) => index)
+      .filter((index) => !blocked.has(index));
+    const pool = available.length > 0 ? available : DAILY_REMINDER_MESSAGES.map((_, index) => index);
+    picked.push(pool[Math.floor(Math.random() * pool.length)]);
+  }
+
+  return picked;
+};
+
+const getNextReminderDates = (hour: number, minute: number, count: number) => {
+  const now = new Date();
+  const dates: Date[] = [];
+  const first = new Date();
+  first.setHours(hour, minute, 0, 0);
+
+  if (first <= now) {
+    first.setDate(first.getDate() + 1);
+  }
+
+  for (let i = 0; i < count; i++) {
+    const date = new Date(first);
+    date.setDate(first.getDate() + i);
+    dates.push(date);
+  }
+
+  return dates;
+};
+
+const cancelDailyReminders = async () => {
+  const identifiers = await readJsonArray<string>(DAILY_REMINDER_IDENTIFIERS_KEY);
+  const legacyIdentifier = await AsyncStorage.getItem('dailyReminderIdentifier');
+
+  await Promise.all(
+    [...identifiers, legacyIdentifier].filter(Boolean).map((identifier) =>
+      Notifications.cancelScheduledNotificationAsync(identifier as string).catch(() => undefined)
+    )
+  );
+
+  await AsyncStorage.removeItem(DAILY_REMINDER_IDENTIFIERS_KEY);
+  await AsyncStorage.removeItem('dailyReminderIdentifier');
 };
 
 export const NOTIFICATION_PREF_SET_KEY = 'notif_push_preference_set';
@@ -129,38 +199,45 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
   }
 };
 
-// Schedule daily practice reminder with funny Duolingo-style messages
+// Schedule rolling daily practice reminders with varied messages
 export const scheduleDailyReminder = async (hour: number = 18, minute: number = 0) => {
   try {
     if (!(await arePushNotificationsEnabled())) return null;
 
-    // Cancel existing reminders first
-    await cancelAllReminders();
+    await cancelDailyReminders();
 
-    // Get a random funny message
-    const message = getRandomMessage(DAILY_REMINDER_MESSAGES);
+    const recentIndexes = await readJsonArray<number>(DAILY_REMINDER_HISTORY_KEY);
+    const messageIndexes = pickReminderMessageIndexes(DAILY_REMINDER_LOOKAHEAD_DAYS, recentIndexes);
+    const dates = getNextReminderDates(hour, minute, DAILY_REMINDER_LOOKAHEAD_DAYS);
+    const identifiers: string[] = [];
 
-    // Schedule daily notification
-    const identifier = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: message.title,
-        body: message.body,
-        sound: true,
-        data: { type: 'daily_reminder' },
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour,
-        minute,
-      },
-    });
+    for (let i = 0; i < dates.length; i++) {
+      const message = DAILY_REMINDER_MESSAGES[messageIndexes[i]];
+      const identifier = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: message.title,
+          body: message.body,
+          sound: true,
+          data: { type: 'daily_reminder', messageIndex: messageIndexes[i] },
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: dates[i],
+        },
+      });
+      identifiers.push(identifier);
+    }
 
-    // Save the notification identifier
-    await AsyncStorage.setItem('dailyReminderIdentifier', identifier);
+    await AsyncStorage.setItem(DAILY_REMINDER_IDENTIFIERS_KEY, JSON.stringify(identifiers));
+    await AsyncStorage.setItem('dailyReminderIdentifier', identifiers[0] || '');
     await AsyncStorage.setItem('dailyReminderTime', JSON.stringify({ hour, minute }));
-    console.log('Daily reminder scheduled for', `${hour}:${minute}`);
+    await AsyncStorage.setItem(
+      DAILY_REMINDER_HISTORY_KEY,
+      JSON.stringify([...recentIndexes, ...messageIndexes].slice(-DAILY_REMINDER_RECENT_WINDOW))
+    );
+    console.log(`Daily reminders scheduled for ${dates.length} days at`, `${hour}:${minute}`);
     
-    return identifier;
+    return identifiers[0] || null;
   } catch (error) {
     console.error('Error scheduling daily reminder:', error);
     return null;
@@ -312,6 +389,7 @@ export const cancelAllReminders = async () => {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
     await AsyncStorage.removeItem('dailyReminderIdentifier');
+    await AsyncStorage.removeItem(DAILY_REMINDER_IDENTIFIERS_KEY);
     await AsyncStorage.removeItem('weeklySummaryIdentifier');
     console.log('All reminders cancelled');
   } catch (error) {
@@ -322,11 +400,13 @@ export const cancelAllReminders = async () => {
 // Check if daily reminder is scheduled
 export const isDailyReminderScheduled = async (): Promise<boolean> => {
   try {
-    const identifier = await AsyncStorage.getItem('dailyReminderIdentifier');
-    if (!identifier) return false;
+    const identifiers = await readJsonArray<string>(DAILY_REMINDER_IDENTIFIERS_KEY);
+    const legacyIdentifier = await AsyncStorage.getItem('dailyReminderIdentifier');
+    const reminderIds = [...identifiers, legacyIdentifier].filter(Boolean);
+    if (reminderIds.length === 0) return false;
 
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    return scheduled.some(notif => notif.identifier === identifier);
+    return scheduled.some(notif => reminderIds.includes(notif.identifier));
   } catch (error) {
     console.error('Error checking daily reminder:', error);
     return false;

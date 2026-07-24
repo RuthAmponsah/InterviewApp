@@ -201,11 +201,11 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
               <TouchableOpacity
                 style={[
                   styles.planCard,
-                  selectedPlan === 'annual' && styles.planCardSelected,
+                  selectedPlan === 'monthly' && styles.planCardSelected,
                 ]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedPlan('annual');
+                  setSelectedPlan('monthly');
                 }}
               >
                 <View style={styles.planRow}>
@@ -213,7 +213,7 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
                     <Text style={styles.planName}>Monthly</Text>
                   </View>
                   <View style={styles.planPriceContainer}>
-                    <Text style={styles.planPrice}>{annualPrice}</Text>
+                    <Text style={styles.planPrice}>{monthlyPrice}</Text>
                     <Text style={styles.planPeriod}>per month</Text>
                   </View>
                 </View>
@@ -224,23 +224,23 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
               <TouchableOpacity
                 style={[
                   styles.planCard,
-                  selectedPlan === 'monthly' && styles.planCardSelected,
+                  selectedPlan === 'annual' && styles.planCardSelected,
                 ]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedPlan('monthly');
+                  setSelectedPlan('annual');
                 }}
               >
-                <View style={styles.bestValueBadge}>
-                  <Text style={styles.bestValueText}>BEST VALUE</Text>
-                </View>
                 <View style={styles.planRow}>
                   <View>
                     <Text style={styles.planName}>Annual</Text>
                     <Text style={styles.planSavings}>Save 37%</Text>
                   </View>
                   <View style={styles.planPriceContainer}>
-                    <Text style={styles.planPrice}>{monthlyPrice}</Text>
+                    <View style={styles.bestValueBadge}>
+                      <Text style={styles.bestValueText}>BEST VALUE</Text>
+                    </View>
+                    <Text style={styles.planPrice}>{annualPrice}</Text>
                     <Text style={styles.planPeriod}>per year</Text>
                   </View>
                 </View>
@@ -258,7 +258,7 @@ export default function PaywallModal({ visible, onClose, onSuccess }: PaywallMod
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.subscribeButtonText}>
-                  Start {selectedPlan === 'annual' ? 'Monthly' : 'Annual'} Plan - {selectedPrice}
+                  Start {selectedPlan === 'annual' ? 'Annual' : 'Monthly'} Plan - {selectedPrice}
                 </Text>
               )}
             </TouchableOpacity>
@@ -381,13 +381,11 @@ const makeStyles = (colors: any, isDark: boolean) =>
       backgroundColor: isDark ? '#1a2a3a' : colors.primaryBlue + '08',
     },
     bestValueBadge: {
-      position: 'absolute',
-      top: -10,
-      right: 16,
       backgroundColor: '#10b981',
       paddingHorizontal: 10,
       paddingVertical: 3,
       borderRadius: 10,
+      marginBottom: 6,
     },
     bestValueText: {
       color: '#fff',

@@ -1134,13 +1134,15 @@ export default function QuestionBank({ navigation }: any) {
                               loadPreviousAnswers(question.id);
                             }}
                           >
-                            <View style={styles.questionHeader}>
-                              <Text style={styles.categoryBadge}>{question.category}</Text>
-                              {question.isCustom && (
-                                <Text style={styles.customBadge}>Custom</Text>
-                              )}
+                            <View style={styles.questionMain}>
+                              <View style={styles.questionHeader}>
+                                <Text style={styles.categoryBadge}>{question.category}</Text>
+                                {question.isCustom && (
+                                  <Text style={styles.customBadge}>Custom</Text>
+                                )}
+                              </View>
+                              <Text style={styles.questionText}>{question.text}</Text>
                             </View>
-                            <Text style={styles.questionText}>{question.text}</Text>
                             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
                           </TouchableOpacity>
                           <View style={styles.actionButtons}>
@@ -1531,22 +1533,28 @@ const makeStyles = (colors: any, isDark: boolean) =>
       backgroundColor: isDark ? '#1d1d1d' : '#FFFFFF',
       borderRadius: 16,
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'stretch',
       marginBottom: 12,
       borderWidth: 1,
       borderColor: isDark ? '#333' : '#E5E7EB',
     },
     questionContent: {
       flex: 1,
-      padding: 16,
+      paddingVertical: 14,
+      paddingLeft: 16,
+      paddingRight: 8,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 8,
       shadowColor: '#000',
       shadowOpacity: 0.05,
       shadowRadius: 8,
       shadowOffset: { width: 0, height: 2 },
       elevation: 2,
+    },
+    questionMain: {
+      flex: 1,
+      minWidth: 0,
     },
     lockedQuestionContent: {
       flex: 1,
@@ -1557,9 +1565,10 @@ const makeStyles = (colors: any, isDark: boolean) =>
       gap: 12,
     },
     questionHeader: {
-      marginBottom: 8,
-      flexDirection: 'row',
-      gap: 8,
+      marginBottom: 10,
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      gap: 6,
     },
     categoryBadge: {
       ...typography.caption,
@@ -1570,7 +1579,7 @@ const makeStyles = (colors: any, isDark: boolean) =>
       paddingVertical: 4,
       borderRadius: 6,
       alignSelf: 'flex-start',
-      marginBottom: 8,
+      marginBottom: 0,
     },
     customBadge: {
       ...typography.caption,
@@ -1581,22 +1590,26 @@ const makeStyles = (colors: any, isDark: boolean) =>
       paddingVertical: 4,
       borderRadius: 6,
       alignSelf: 'flex-start',
-      marginBottom: 8,
+      marginBottom: 0,
     },
     actionButtons: {
       flexDirection: 'row',
       alignItems: 'center',
+      flexShrink: 0,
     },
     favoriteButton: {
-      padding: 16,
+      paddingVertical: 16,
+      paddingHorizontal: 10,
     },
     deleteButton: {
-      padding: 16,
+      paddingVertical: 16,
+      paddingHorizontal: 10,
     },
     questionText: {
       ...typography.bodyMedium,
       color: isDark ? '#fff' : colors.textDark,
-      flex: 1,
+      flexShrink: 1,
+      minWidth: 0,
     },
     answerSection: {
       gap: 16,

@@ -161,8 +161,10 @@ const Jobs: React.FC = () => {
       ? Object.values(appliedJobDetails).filter((j) => appliedJobs.includes(j.id))
       : jobs.filter((j) => !appliedJobs.includes(j.id));
 
-  // Apply remote filter for additional client-side filtering
-  if (remoteFilter !== 'All') {
+  // Apply work-location filters only to normal search results.
+  // Saved/Applied are their own views, so they should not stay visually or logically paired
+  // with Remote/Hybrid/On-site.
+  if (selectedCategory !== 'Saved Jobs' && selectedCategory !== 'Applied Jobs' && remoteFilter !== 'All') {
     filteredJobs = filteredJobs.filter(job => job.remote === remoteFilter);
   }
 
@@ -407,11 +409,16 @@ const Jobs: React.FC = () => {
               key={type}
               style={[
                 styles.filterChip,
-                (remoteFilter === type || selectedCategory === type) && styles.filterChipActive,
+                (
+                  type === 'Saved Jobs' || type === 'Applied Jobs'
+                    ? selectedCategory === type
+                    : selectedCategory !== 'Saved Jobs' && selectedCategory !== 'Applied Jobs' && remoteFilter === type
+                ) && styles.filterChipActive,
               ]}
               onPress={() => {
                 if (type === 'Saved Jobs' || type === 'Applied Jobs') {
                   setSelectedCategory(type);
+                  setRemoteFilter('All');
                   setDropdownOpen(false);
                 } else {
                   if (selectedCategory === 'Saved Jobs' || selectedCategory === 'Applied Jobs') {
@@ -424,7 +431,11 @@ const Jobs: React.FC = () => {
               <Text
                 style={[
                   styles.filterChipText,
-                  (remoteFilter === type || selectedCategory === type) && styles.filterChipTextActive,
+                  (
+                    type === 'Saved Jobs' || type === 'Applied Jobs'
+                      ? selectedCategory === type
+                      : selectedCategory !== 'Saved Jobs' && selectedCategory !== 'Applied Jobs' && remoteFilter === type
+                  ) && styles.filterChipTextActive,
                 ]}
               >
                 {type}

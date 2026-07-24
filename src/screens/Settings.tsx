@@ -192,7 +192,7 @@ const Settings = () => {
       </TouchableOpacity>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Version 1.0.0</Text>
+        <Text style={styles.footerText}>Version 1.1</Text>
         <Text style={styles.footerText}>
           Terms & Conditions · Privacy Policy
         </Text>

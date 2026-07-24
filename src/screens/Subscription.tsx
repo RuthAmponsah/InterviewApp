@@ -176,16 +176,16 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
           <TouchableOpacity
             style={[
               styles.planCard,
-              selectedPlan === 'annual' && styles.planCardSelected,
+              selectedPlan === 'monthly' && styles.planCardSelected,
             ]}
-            onPress={() => setSelectedPlan('annual')}
+            onPress={() => setSelectedPlan('monthly')}
           >
             <View style={styles.planHeader}>
               <View>
                 <Text style={styles.planName}>Monthly</Text>
               </View>
-              <View>
-                <Text style={styles.planPrice}>{annualPrice}</Text>
+              <View style={styles.planPriceContainer}>
+                <Text style={styles.planPrice}>{monthlyPrice}</Text>
                 <Text style={styles.planPeriod}>per month</Text>
               </View>
             </View>
@@ -199,21 +199,20 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
           <TouchableOpacity
             style={[
               styles.planCard,
-              selectedPlan === 'monthly' && styles.planCardSelected,
+              selectedPlan === 'annual' && styles.planCardSelected,
             ]}
-            onPress={() => setSelectedPlan('monthly')}
+            onPress={() => setSelectedPlan('annual')}
           >
-            <View style={styles.recommendedBadge}>
-              <Text style={styles.recommendedText}>BEST VALUE</Text>
-            </View>
-
             <View style={styles.planHeader}>
               <View>
                 <Text style={styles.planName}>Annual</Text>
                 <Text style={styles.planSavings}>Save 37%</Text>
               </View>
-              <View>
-                <Text style={styles.planPrice}>{monthlyPrice}</Text>
+              <View style={styles.planPriceContainer}>
+                <View style={styles.recommendedBadge}>
+                  <Text style={styles.recommendedText}>BEST VALUE</Text>
+                </View>
+                <Text style={styles.planPrice}>{annualPrice}</Text>
                 <Text style={styles.planPeriod}>per year</Text>
               </View>
             </View>
@@ -230,7 +229,7 @@ const Subscription: React.FC<Props> = ({ navigation, route }) => {
           onPress={handleSubscribe}
         >
           <Text style={styles.subscribeButtonText}>
-            Start {selectedPlan === 'annual' ? 'Monthly' : 'Annual'} Plan - {selectedPrice}
+            Start {selectedPlan === 'annual' ? 'Annual' : 'Monthly'} Plan - {selectedPrice}
           </Text>
         </TouchableOpacity>
 
@@ -341,13 +340,11 @@ const makeStyles = (colors: any, isDark: boolean) =>
       backgroundColor: colors.primaryBlue + '10',
     },
     recommendedBadge: {
-      position: 'absolute',
-      top: -10,
-      right: 20,
       backgroundColor: '#10b981',
       paddingHorizontal: 12,
       paddingVertical: 4,
       borderRadius: 12,
+      marginBottom: 8,
     },
     recommendedText: {
       color: '#fff',
@@ -371,6 +368,10 @@ const makeStyles = (colors: any, isDark: boolean) =>
       fontSize: 14,
       color: '#10b981',
       fontWeight: '600',
+    },
+    planPriceContainer: {
+      alignItems: 'flex-end',
+      flexShrink: 0,
     },
     planPrice: {
       fontSize: 28,

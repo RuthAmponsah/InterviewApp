@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, Component } from 'react';
 import { View, StyleSheet, useColorScheme, ActivityIndicator, Text, ScrollView } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { LinkingOptions, NavigationContainer } from '@react-navigation/native';
 import RootNavigator from './src/navigation/RootNavigator';
+import { RootStackParamList } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeContext';
 import { useFonts, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
 import { initializePurchases } from './src/services/purchaseService';
@@ -11,6 +12,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './src/config/supabase';
 
 const BRAND_BLUE = '#1E3A6E';
+
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ['interviewapp://'],
+  config: {
+    screens: {
+      ResetPasswordViaEmail: 'reset-password',
+      SignIn: 'sign-in',
+      SignUp: 'sign-up',
+      ForgotPassword: 'forgot-password',
+      MainTabs: '',
+    },
+  },
+};
 
 const AppLoadingScreen = ({ isDark, message = 'Loading My Interview...' }: { isDark: boolean; message?: string }) => (
   <View style={[styles.loadingScreen, { backgroundColor: isDark ? '#0f0f0f' : '#FFFFFF' }]}>
@@ -145,7 +159,7 @@ function AppContent() {
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
       <ThemeProvider>
-        <NavigationContainer>
+        <NavigationContainer linking={linking}>
           <RootNavigator />
         </NavigationContainer>
       </ThemeProvider>

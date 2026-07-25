@@ -12,7 +12,7 @@ import { supabase } from '../config/supabase';
 export const sendPasswordResetEmail = async (email: string): Promise<boolean> => {
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'interviewapp://reset-password',
+      redirectTo: 'https://ruthamponsah.github.io/InterviewApp/reset-password/',
     });
 
     if (error) {

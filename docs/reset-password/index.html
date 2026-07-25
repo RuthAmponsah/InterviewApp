@@ -114,11 +114,19 @@
 
     const params = getParams();
     const tokenHash = params.get("token_hash") || params.get("tokenHash") || "";
+    const accessToken = params.get("access_token") || "";
+    const refreshToken = params.get("refresh_token") || "";
+    const token = params.get("token") || "";
+    const email = params.get("email") || "";
     const code = params.get("code") || "";
     const type = params.get("type") || "recovery";
 
     const appParams = new URLSearchParams();
     if (tokenHash) appParams.set("token_hash", tokenHash);
+    if (accessToken) appParams.set("access_token", accessToken);
+    if (refreshToken) appParams.set("refresh_token", refreshToken);
+    if (token) appParams.set("token", token);
+    if (email) appParams.set("email", email);
     if (code) appParams.set("code", code);
     appParams.set("type", type);
 

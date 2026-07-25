@@ -62,6 +62,9 @@ export type RootStackParamList = {
     accessToken?: string;
     refreshToken?: string;
     tokenHash?: string;
+    token_hash?: string;
+    access_token?: string;
+    refresh_token?: string;
     type?: string;
   } | undefined;
   Welcome: undefined;
@@ -219,7 +222,11 @@ function MainTabs() {
 // -----------------------------
 // ROOT NAV
 // -----------------------------
-const RootNavigator = () => {
+type RootNavigatorProps = {
+  pendingResetPasswordParams?: RootStackParamList['ResetPasswordViaEmail'];
+};
+
+const RootNavigator = ({ pendingResetPasswordParams }: RootNavigatorProps) => {
   const { colors } = useTheme();
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -274,6 +281,7 @@ const RootNavigator = () => {
     const params = parseResetPasswordLink(url);
     if (!params) return false;
 
+    console.log('🔐 Password reset link detected, opening reset password screen');
     resetLinkHandledRef.current = true;
     setResetPasswordParams(params);
     setInitialRoute('ResetPasswordViaEmail');
@@ -358,6 +366,15 @@ const RootNavigator = () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!pendingResetPasswordParams) return;
+
+    console.log('🔐 App-level password reset link routed to reset password screen');
+    resetLinkHandledRef.current = true;
+    setResetPasswordParams(pendingResetPasswordParams);
+    setInitialRoute('ResetPasswordViaEmail');
+  }, [pendingResetPasswordParams]);
 
   useEffect(() => {
     const determineInitialRoute = async () => {

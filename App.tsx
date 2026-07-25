@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, Component } from 'react';
-import { View, StyleSheet, useColorScheme, ActivityIndicator, Text, ScrollView } from 'react-native';
-import { LinkingOptions, NavigationContainer } from '@react-navigation/native';
+import { View, StyleSheet, useColorScheme, ActivityIndicator, Text, ScrollView, Linking } from 'react-native';
+import { createNavigationContainerRef, LinkingOptions, NavigationContainer } from '@react-navigation/native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { RootStackParamList } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeContext';
@@ -12,6 +12,39 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './src/config/supabase';
 
 const BRAND_BLUE = '#1E3A6E';
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
+const parseResetPasswordLink = (url: string | null): RootStackParamList['ResetPasswordViaEmail'] => {
+  if (!url || (!url.includes('reset-password') && !url.includes('type=recovery'))) {
+    return undefined;
+  }
+
+  const parsedParams: Record<string, string> = {};
+  const fragments = url.split(/[?#]/).slice(1);
+
+  for (const fragment of fragments) {
+    for (const pair of fragment.split('&')) {
+      const separatorIndex = pair.indexOf('=');
+      if (separatorIndex === -1) continue;
+
+      const rawKey = pair.slice(0, separatorIndex);
+      const rawValue = pair.slice(separatorIndex + 1);
+      if (!rawKey || !rawValue) continue;
+
+      parsedParams[decodeURIComponent(rawKey)] = decodeURIComponent(rawValue);
+    }
+  }
+
+  return {
+    code: parsedParams.code,
+    token: parsedParams.token,
+    email: parsedParams.email,
+    accessToken: parsedParams.access_token,
+    refreshToken: parsedParams.refresh_token,
+    tokenHash: parsedParams.token_hash,
+    type: parsedParams.type,
+  };
+};
 
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ['interviewapp://'],
@@ -92,6 +125,9 @@ function AppContent() {
   });
   const [showSplash, setShowSplash] = useState(true);
   const [fontError, setFontError] = useState(false);
+  const [pendingResetPasswordParams, setPendingResetPasswordParams] =
+    useState<RootStackParamList['ResetPasswordViaEmail']>(undefined);
+  const [navigationReady, setNavigationReady] = useState(false);
 
   useEffect(() => {
     // Check if fonts failed to load or took too long
@@ -121,6 +157,36 @@ function AppContent() {
     // Restore Supabase session from AsyncStorage if it exists
     restoreSupabaseSession();
   }, []);
+
+  useEffect(() => {
+    const handleUrl = (url: string | null) => {
+      const resetParams = parseResetPasswordLink(url);
+      if (!resetParams) return;
+
+      console.log('🔐 App received password reset deep link');
+      setPendingResetPasswordParams({ ...resetParams });
+    };
+
+    Linking.getInitialURL().then(handleUrl).catch((error) => {
+      console.warn('Unable to read initial URL:', error);
+    });
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      handleUrl(url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!pendingResetPasswordParams || !navigationReady || !navigationRef.isReady()) {
+      return;
+    }
+
+    navigationRef.navigate('ResetPasswordViaEmail', pendingResetPasswordParams);
+  }, [navigationReady, pendingResetPasswordParams]);
 
   const restoreSupabaseSession = async () => {
     try {
@@ -159,8 +225,12 @@ function AppContent() {
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#ffffff' }]}>
       <ThemeProvider>
-        <NavigationContainer linking={linking}>
-          <RootNavigator />
+        <NavigationContainer
+          ref={navigationRef}
+          linking={linking}
+          onReady={() => setNavigationReady(true)}
+        >
+          <RootNavigator pendingResetPasswordParams={pendingResetPasswordParams} />
         </NavigationContainer>
       </ThemeProvider>
       {showSplash && (

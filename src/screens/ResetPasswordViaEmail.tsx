@@ -28,7 +28,12 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const styles = makeStyles(colors, isDark);
-  const resetParams = route.params;
+  const resetParams = {
+    ...route.params,
+    accessToken: route.params?.accessToken || route.params?.access_token,
+    refreshToken: route.params?.refreshToken || route.params?.refresh_token,
+    tokenHash: route.params?.tokenHash || route.params?.token_hash,
+  };
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

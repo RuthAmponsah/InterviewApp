@@ -224,9 +224,14 @@ function MainTabs() {
 // -----------------------------
 type RootNavigatorProps = {
   pendingResetPasswordParams?: RootStackParamList['ResetPasswordViaEmail'];
+  pendingAuthSessionParams?: {
+    accessToken?: string;
+    refreshToken?: string;
+    type?: string;
+  };
 };
 
-const RootNavigator = ({ pendingResetPasswordParams }: RootNavigatorProps) => {
+const RootNavigator = ({ pendingResetPasswordParams, pendingAuthSessionParams }: RootNavigatorProps) => {
   const { colors } = useTheme();
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -266,6 +271,36 @@ const RootNavigator = ({ pendingResetPasswordParams }: RootNavigatorProps) => {
     };
   };
 
+  const parseSupabaseSessionLink = (url: string | null) => {
+    if (!url) return undefined;
+
+    const parsedParams: Record<string, string> = {};
+    const fragments = url.split(/[?#]/).slice(1);
+
+    for (const fragment of fragments) {
+      for (const pair of fragment.split('&')) {
+        const separatorIndex = pair.indexOf('=');
+        if (separatorIndex === -1) continue;
+
+        const rawKey = pair.slice(0, separatorIndex);
+        const rawValue = pair.slice(separatorIndex + 1);
+        if (!rawKey || !rawValue) continue;
+
+        parsedParams[decodeURIComponent(rawKey)] = decodeURIComponent(rawValue);
+      }
+    }
+
+    if (!parsedParams.access_token || !parsedParams.refresh_token || parsedParams.type === 'recovery') {
+      return undefined;
+    }
+
+    return {
+      accessToken: parsedParams.access_token,
+      refreshToken: parsedParams.refresh_token,
+      type: parsedParams.type,
+    };
+  };
+
   const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> => {
     return Promise.race([
       promise,
@@ -285,6 +320,30 @@ const RootNavigator = ({ pendingResetPasswordParams }: RootNavigatorProps) => {
     resetLinkHandledRef.current = true;
     setResetPasswordParams(params);
     setInitialRoute('ResetPasswordViaEmail');
+    return true;
+  };
+
+  const openPasswordFreeSession = async (
+    params: RootNavigatorProps['pendingAuthSessionParams']
+  ) => {
+    if (!params?.accessToken || !params?.refreshToken) return false;
+
+    const { error } = await supabase.auth.setSession({
+      access_token: params.accessToken,
+      refresh_token: params.refreshToken,
+    });
+
+    if (error) {
+      console.warn('Unable to open password-free login link:', error);
+      return false;
+    }
+
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      await syncUserContextFromSession(data.session);
+    }
+
+    setInitialRoute('MainTabs');
     return true;
   };
 
@@ -348,7 +407,12 @@ const RootNavigator = ({ pendingResetPasswordParams }: RootNavigatorProps) => {
 
   useEffect(() => {
     const sub = Linking.addEventListener('url', ({ url }) => {
-      handleResetPasswordUrl(url);
+      if (handleResetPasswordUrl(url)) return;
+
+      const sessionParams = parseSupabaseSessionLink(url);
+      if (sessionParams) {
+        openPasswordFreeSession(sessionParams);
+      }
     });
 
     const {
@@ -377,10 +441,22 @@ const RootNavigator = ({ pendingResetPasswordParams }: RootNavigatorProps) => {
   }, [pendingResetPasswordParams]);
 
   useEffect(() => {
+    if (!pendingAuthSessionParams) return;
+
+    console.log('🔑 App-level password-free login link routed to app session');
+    openPasswordFreeSession(pendingAuthSessionParams);
+  }, [pendingAuthSessionParams]);
+
+  useEffect(() => {
     const determineInitialRoute = async () => {
       try {
         const initialUrl = await Linking.getInitialURL();
         if (handleResetPasswordUrl(initialUrl)) {
+          return;
+        }
+
+        const initialSessionParams = parseSupabaseSessionLink(initialUrl);
+        if (await openPasswordFreeSession(initialSessionParams)) {
           return;
         }
 

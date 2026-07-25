@@ -53,6 +53,8 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fallbackEmail, setFallbackEmail] = useState(resetParams?.email || '');
+  const [magicLinkLoading, setMagicLinkLoading] = useState(false);
 
   const validateToken = async () => {
     try {
@@ -192,6 +194,42 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
+  const onSendMagicLoginLink = async () => {
+    const cleanEmail = fallbackEmail.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(cleanEmail)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      return;
+    }
+
+    setMagicLinkLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: {
+          emailRedirectTo: 'interviewapp://',
+        },
+      });
+
+      if (error) {
+        Alert.alert('Could Not Send Link', error.message || 'Please try again.');
+        return;
+      }
+
+      Alert.alert(
+        'Login Link Sent',
+        'We sent you a password-free login link. Open it on this device to get back into your account.'
+      );
+    } catch (error) {
+      console.error('Magic login link error:', error);
+      Alert.alert('Could Not Send Link', 'Please try again.');
+    } finally {
+      setMagicLinkLoading(false);
+    }
+  };
+
   if (validatingToken) {
     return (
       <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -215,6 +253,34 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
               title="Request New Reset Link"
               onPress={() => navigation.navigate('ForgotPassword')}
             />
+            <View style={styles.fallbackBox}>
+              <Text style={styles.fallbackTitle}>Still having trouble?</Text>
+              <Text style={styles.fallbackCopy}>
+                Send yourself a password-free login link instead.
+              </Text>
+              <TextInput
+                style={styles.fallbackInput}
+                placeholder="Email address"
+                placeholderTextColor={colors.textMuted}
+                value={fallbackEmail}
+                onChangeText={setFallbackEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                textContentType="emailAddress"
+              />
+              <TouchableOpacity
+                style={[styles.secondaryButton, magicLinkLoading && styles.disabledButton]}
+                onPress={onSendMagicLoginLink}
+                disabled={magicLinkLoading}
+                accessibilityRole="button"
+              >
+                {magicLinkLoading ? (
+                  <ActivityIndicator size="small" color={colors.primaryBlue} />
+                ) : (
+                  <Text style={styles.secondaryButtonText}>Send login link</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </TouchableWithoutFeedback>
       </View>
@@ -380,6 +446,54 @@ const makeStyles = (colors: any, isDark: boolean) =>
       color: '#EF4444',
       marginBottom: 12,
       lineHeight: 18,
+    },
+    fallbackBox: {
+      marginTop: 22,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : colors.border,
+      borderRadius: 16,
+      backgroundColor: isDark ? '#171717' : '#FFFFFF',
+    },
+    fallbackTitle: {
+      ...typography.label,
+      color: isDark ? '#fff' : colors.textDark,
+      textAlign: 'center',
+      marginBottom: 6,
+    },
+    fallbackCopy: {
+      ...typography.bodySmall,
+      color: isDark ? '#b5b5b5' : colors.textMuted,
+      textAlign: 'center',
+      marginBottom: 12,
+      lineHeight: 18,
+    },
+    fallbackInput: {
+      ...typography.bodyMedium,
+      minHeight: 48,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      color: isDark ? '#fff' : colors.textDark,
+      backgroundColor: isDark ? '#1d1d1d' : '#F8FAFC',
+      marginBottom: 12,
+    },
+    secondaryButton: {
+      minHeight: 48,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.primaryBlue,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 14,
+    },
+    disabledButton: {
+      opacity: 0.6,
+    },
+    secondaryButtonText: {
+      ...typography.label,
+      color: colors.primaryBlue,
     },
   });
 

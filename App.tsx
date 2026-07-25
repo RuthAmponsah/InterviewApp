@@ -14,6 +14,12 @@ import { supabase } from './src/config/supabase';
 const BRAND_BLUE = '#1E3A6E';
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
+type SupabaseLinkSession = {
+  accessToken?: string;
+  refreshToken?: string;
+  type?: string;
+};
+
 const parseResetPasswordLink = (url: string | null): RootStackParamList['ResetPasswordViaEmail'] => {
   if (!url || (!url.includes('reset-password') && !url.includes('type=recovery'))) {
     return undefined;
@@ -46,15 +52,50 @@ const parseResetPasswordLink = (url: string | null): RootStackParamList['ResetPa
   };
 };
 
+const parseLinkParams = (url: string | null): Record<string, string> => {
+  if (!url) return {};
+
+  const parsedParams: Record<string, string> = {};
+  const fragments = url.split(/[?#]/).slice(1);
+
+  for (const fragment of fragments) {
+    for (const pair of fragment.split('&')) {
+      const separatorIndex = pair.indexOf('=');
+      if (separatorIndex === -1) continue;
+
+      const rawKey = pair.slice(0, separatorIndex);
+      const rawValue = pair.slice(separatorIndex + 1);
+      if (!rawKey || !rawValue) continue;
+
+      parsedParams[decodeURIComponent(rawKey)] = decodeURIComponent(rawValue);
+    }
+  }
+
+  return parsedParams;
+};
+
+const parseSupabaseSessionLink = (url: string | null): SupabaseLinkSession | undefined => {
+  const parsedParams = parseLinkParams(url);
+  if (!parsedParams.access_token || !parsedParams.refresh_token || parsedParams.type === 'recovery') {
+    return undefined;
+  }
+
+  return {
+    accessToken: parsedParams.access_token,
+    refreshToken: parsedParams.refresh_token,
+    type: parsedParams.type,
+  };
+};
+
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ['interviewapp://'],
   config: {
     screens: {
       ResetPasswordViaEmail: 'reset-password',
+      MainTabs: '',
       SignIn: 'sign-in',
       SignUp: 'sign-up',
       ForgotPassword: 'forgot-password',
-      MainTabs: '',
     },
   },
 };
@@ -127,6 +168,8 @@ function AppContent() {
   const [fontError, setFontError] = useState(false);
   const [pendingResetPasswordParams, setPendingResetPasswordParams] =
     useState<RootStackParamList['ResetPasswordViaEmail']>(undefined);
+  const [pendingAuthSessionParams, setPendingAuthSessionParams] =
+    useState<SupabaseLinkSession | undefined>(undefined);
   const [navigationReady, setNavigationReady] = useState(false);
 
   useEffect(() => {
@@ -161,10 +204,17 @@ function AppContent() {
   useEffect(() => {
     const handleUrl = (url: string | null) => {
       const resetParams = parseResetPasswordLink(url);
-      if (!resetParams) return;
+      if (resetParams) {
+        console.log('🔐 App received password reset deep link');
+        setPendingResetPasswordParams({ ...resetParams });
+        return;
+      }
 
-      console.log('🔐 App received password reset deep link');
-      setPendingResetPasswordParams({ ...resetParams });
+      const sessionParams = parseSupabaseSessionLink(url);
+      if (!sessionParams) return;
+
+      console.log('🔑 App received password-free login deep link');
+      setPendingAuthSessionParams({ ...sessionParams });
     };
 
     Linking.getInitialURL().then(handleUrl).catch((error) => {
@@ -187,6 +237,36 @@ function AppContent() {
 
     navigationRef.navigate('ResetPasswordViaEmail', pendingResetPasswordParams);
   }, [navigationReady, pendingResetPasswordParams]);
+
+  useEffect(() => {
+    if (!pendingAuthSessionParams || !navigationReady || !navigationRef.isReady()) {
+      return;
+    }
+
+    const openMagicLoginSession = async () => {
+      if (!pendingAuthSessionParams.accessToken || !pendingAuthSessionParams.refreshToken) {
+        return;
+      }
+
+      const { error } = await supabase.auth.setSession({
+        access_token: pendingAuthSessionParams.accessToken,
+        refresh_token: pendingAuthSessionParams.refreshToken,
+      });
+
+      if (error) {
+        console.warn('Unable to open password-free login link:', error);
+        navigationRef.navigate('SignIn');
+        return;
+      }
+
+      navigationRef.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' }],
+      });
+    };
+
+    openMagicLoginSession();
+  }, [navigationReady, pendingAuthSessionParams]);
 
   const restoreSupabaseSession = async () => {
     try {
@@ -230,7 +310,10 @@ function AppContent() {
           linking={linking}
           onReady={() => setNavigationReady(true)}
         >
-          <RootNavigator pendingResetPasswordParams={pendingResetPasswordParams} />
+          <RootNavigator
+            pendingResetPasswordParams={pendingResetPasswordParams}
+            pendingAuthSessionParams={pendingAuthSessionParams}
+          />
         </NavigationContainer>
       </ThemeProvider>
       {showSplash && (

@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -28,12 +28,22 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const styles = makeStyles(colors, isDark);
-  const resetParams = {
+  const resetParams = useMemo(() => ({
     ...route.params,
     accessToken: route.params?.accessToken || route.params?.access_token,
     refreshToken: route.params?.refreshToken || route.params?.refresh_token,
     tokenHash: route.params?.tokenHash || route.params?.token_hash,
-  };
+  }), [route.params]);
+  const validationKey = [
+    resetParams?.code,
+    resetParams?.token,
+    resetParams?.email,
+    resetParams?.accessToken,
+    resetParams?.refreshToken,
+    resetParams?.tokenHash,
+    resetParams?.type,
+  ].filter(Boolean).join('|');
+  const validatedLinkRef = useRef<string | null>(null);
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -44,15 +54,12 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formError, setFormError] = useState('');
 
-  useEffect(() => {
-    validateToken();
-  }, [resetParams]);
-
   const validateToken = async () => {
     try {
-      const isActiveRecoverySession = resetParams?.type === 'recovery' && resetParams.code === '__active_recovery_session__';
+      const isRecoveryLink = resetParams?.type === 'recovery';
+      const isActiveRecoverySession = isRecoveryLink && resetParams.code === '__active_recovery_session__';
       const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData.session && isActiveRecoverySession) {
+      if (sessionData.session && (isRecoveryLink || isActiveRecoverySession)) {
         setTokenValid(true);
         setValidatingToken(false);
         return;
@@ -120,6 +127,15 @@ const ResetPasswordViaEmail: React.FC<Props> = ({ route, navigation }) => {
       setValidatingToken(false);
     }
   };
+
+  useEffect(() => {
+    if (validatedLinkRef.current === validationKey) {
+      return;
+    }
+
+    validatedLinkRef.current = validationKey;
+    validateToken();
+  }, [validationKey]);
 
   const onResetPassword = async () => {
     setFormError('');
